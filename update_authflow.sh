@@ -1,3 +1,5 @@
+#!/bin/bash
+cat << 'INNER_EOF' > src/components/AuthFlow.tsx
 import React, { useState, useEffect } from 'react';
 import { Plus, UserX, User, ArrowRight, ShieldAlert } from 'lucide-react';
 import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
@@ -178,9 +180,9 @@ export function AuthFlow({ onConfirm }: { onConfirm: () => void }) {
   return (
     <div 
       className="min-h-screen flex flex-col items-center justify-start relative overflow-hidden bg-cover bg-center transition-all duration-700 ease-in-out"
-      style={{ backgroundImage: `url(${bgImage})` }}
+      style={{ backgroundImage: \`url(\${bgImage})\` }}
     >
-      <div className={`absolute inset-0 bg-black transition-opacity duration-700 ${view === 'lockscreen' ? 'opacity-20' : 'opacity-60 backdrop-blur-xl'}`} />
+      <div className={\`absolute inset-0 bg-black transition-opacity duration-700 \${view === 'lockscreen' ? 'opacity-20' : 'opacity-60 backdrop-blur-xl'}\`} />
 
       <AnimatePresence mode="wait">
         {view === 'lockscreen' && (
@@ -272,7 +274,7 @@ export function AuthFlow({ onConfirm }: { onConfirm: () => void }) {
                   <button 
                     key={acc.uid} 
                     onClick={() => { setSelectedAccount(acc); setPinInput(''); setError(''); }}
-                    className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${selectedAccount?.uid === acc.uid ? 'bg-white/20' : 'hover:bg-white/10'}`}
+                    className={\`flex items-center gap-3 p-2 rounded-lg transition-colors \${selectedAccount?.uid === acc.uid ? 'bg-white/20' : 'hover:bg-white/10'}\`}
                   >
                     <img src={acc.avatar} className="w-10 h-10 rounded-full border border-white/20" />
                     <div className="flex flex-col items-start">
@@ -354,3 +356,4 @@ export function AuthFlow({ onConfirm }: { onConfirm: () => void }) {
     </div>
   );
 }
+INNER_EOF

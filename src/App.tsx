@@ -670,14 +670,6 @@ export default function App() {
           <div className="absolute inset-0 bg-gradient-to-tr from-black/80 via-transparent to-black/40" />
         </div>
 
-        <motion.button 
-          layoutId="guide-button"
-          onClick={() => setIsGuideOpen(true)}
-          className="fixed top-8 right-8 z-[260] w-12 h-12 rounded-full bg-green-500 hover:bg-green-400 text-black font-bold text-xl flex items-center justify-center shadow-lg transition-transform hover:scale-105 opacity-50 hover:opacity-100"
-        >
-          E
-        </motion.button>
-
         <EboxMusicToast />
         <GuideMenu 
           isOpen={isGuideOpen} 
@@ -916,6 +908,7 @@ export default function App() {
                 title={view.charAt(0).toUpperCase() + view.slice(1)} 
                 onClose={() => handleCloseView(view)} 
                 onMinimize={() => handleMinimizeView(view)}
+                onGuide={() => setIsGuideOpen(true)}
                 isActive={currentView === view}
                 onFocus={() => { if (currentView !== view) setCurrentView(view); }}
               >
@@ -942,7 +935,7 @@ export default function App() {
                 <div className="h-10 bg-[#181818] flex items-center justify-between select-none px-4 shrink-0 border-b border-white/5">
                   <div className="text-xs font-semibold text-zinc-300">{playingGame.title}</div>
                   <div className="flex items-center gap-4">
-                    <button className="text-zinc-400 hover:text-white transition-colors" title="Guide">
+                    <button onClick={() => setIsGuideOpen(true)} className="text-zinc-400 hover:text-white transition-colors" title="Guide">
                       <span className="font-bold text-sm">E</span>
                     </button>
                     <button onClick={handleMinimizeGame} className="text-zinc-400 hover:text-white transition-colors"><Minus size={16} /></button>

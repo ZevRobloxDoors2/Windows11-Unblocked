@@ -38,9 +38,32 @@ export const Desktop = ({
   onLogout: () => void
 }) => {
   const [startOpen, setStartOpen] = useState(false);
+  const [weather, setWeather] = useState<{ temp: number, condition: string } | null>(null);
+  useEffect(() => {
+    const fetchWeather = async () => {
+      try {
+        const response = await fetch("https://wttr.in/?format=j1");
+        const data = await response.json();
+        setWeather({
+          temp: parseInt(data.current_condition[0].temp_F),
+          condition: data.current_condition[0].weatherDesc[0].value
+        });
+      } catch (e) {
+        console.error(e);
+        setWeather({ temp: 84, condition: "Mostly Cloudy" });
+      }
+    };
+    fetchWeather();
+  }, []);
   const [showCredits, setShowCredits] = useState(false);
   const [showQuickSettings, setShowQuickSettings] = useState(false);
   const [showBatteryNotice, setShowBatteryNotice] = useState(false);
+  
+  const [qsWifi, setQsWifi] = useState(true);
+  const [qsSound, setQsSound] = useState(true);
+  const [qsDnd, setQsDnd] = useState(false);
+  const [qsLowPower, setQsLowPower] = useState(false);
+
   const [fullscreenCountdown, setFullscreenCountdown] = useState(5);
   const [showFullscreenModal, setShowFullscreenModal] = useState(true);
   const [contextMenu, setContextMenu] = useState<{x: number, y: number} | null>(null);
@@ -85,6 +108,36 @@ export const Desktop = ({
       setBgImage(url);
       localStorage.setItem('win11_bg', url);
     }
+  };
+
+  const handlePanicMode = () => {
+    const win = window.open('about:blank', '_blank');
+    if (win) {
+      win.document.body.style.margin = '0';
+      win.document.body.style.height = '100vh';
+      const iframe = win.document.createElement('iframe');
+      iframe.style.border = 'none';
+      iframe.style.width = '100%';
+      iframe.style.height = '100%';
+      iframe.style.margin = '0';
+      iframe.src = 'https://classroom.google.com';
+      win.document.body.appendChild(iframe);
+      window.location.replace('https://google.com');
+    } else {
+      window.location.replace('https://classroom.google.com');
+    }
+  };
+
+  const handleDisguiseMode = () => {
+    document.title = 'Dashboard';
+    let link: HTMLLinkElement = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.head.appendChild(link);
+    }
+    link.href = 'https://du11hjcvx0uqb.cloudfront.net/dist/images/favicon-e10d657a73.ico';
+    setShowQuickSettings(false);
   };
 
   useEffect(() => {
@@ -195,6 +248,42 @@ export const Desktop = ({
               </button>
             </div>
 
+            <div className="flex justify-between items-center mb-4 px-2">
+              <h3 className="text-sm font-semibold text-white">Recommended</h3>
+              <button className="text-xs text-white/70 hover:text-white bg-white/5 hover:bg-white/10 px-2 py-1 rounded transition-colors">More {'>'}</button>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-2 mb-4 px-2 overflow-y-auto max-h-[220px]">
+              {installedGames.slice(0, 6).map(game => (
+                <button 
+                  key={`rec-${game.id}`}
+                  onClick={() => { setStartOpen(false); onPlayGame(game); }} 
+                  className="flex items-center gap-3 hover:bg-white/10 p-2 rounded-md transition-colors"
+                >
+                  <img src={game.image} alt={game.title} className="w-8 h-8 rounded object-cover" />
+                  <div className="flex flex-col text-left">
+                    <span className="text-xs font-semibold text-white truncate max-w-[120px]">{game.title}</span>
+                    <span className="text-[10px] text-white/50">Recently opened</span>
+                  </div>
+                </button>
+              ))}
+              {openViews && openViews.length > 0 && openViews.slice(0, 2).map(view => (
+                <button 
+                  key={`rec-app-${view}`}
+                  onClick={() => { setStartOpen(false); setCurrentView(view); }} 
+                  className="flex items-center gap-3 hover:bg-white/10 p-2 rounded-md transition-colors"
+                >
+                  <div className="w-8 h-8 rounded bg-white/10 flex items-center justify-center">
+                     <SettingsIcon size={16} className="text-white" />
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <span className="text-xs font-semibold text-white capitalize">{view}</span>
+                    <span className="text-[10px] text-white/50">Recently opened</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+
             <div className="mt-auto flex items-center justify-between bg-[#1c1c1c] -mx-6 -mb-6 p-4 rounded-b-xl border-t border-white/5">
               <div onClick={() => { setStartOpen(false); setCurrentView('profile'); }} className="flex items-center gap-3 hover:bg-white/10 p-2 rounded-md cursor-pointer transition-colors">
                 <img src={profile.avatar} className="w-8 h-8 rounded-full" />
@@ -219,45 +308,45 @@ export const Desktop = ({
             className="absolute bottom-16 right-4 w-80 bg-[#242424]/95 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl flex flex-col p-5 z-[200]"
           >
             <div className="grid grid-cols-3 gap-3 mb-4">
-              <button className="flex flex-col items-center gap-2 group">
-                <div className="w-full aspect-video bg-white/10 rounded-md flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+              <button onClick={() => setQsWifi(!qsWifi)} className="flex flex-col items-center gap-2 group">
+                <div className={`w-full aspect-video rounded-md flex items-center justify-center transition-colors ${qsWifi ? 'bg-[#00A4EF]/20 border border-[#00A4EF]/30 group-hover:bg-[#00A4EF]/30' : 'bg-white/10 group-hover:bg-white/20'}`}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={qsWifi ? "#00A4EF" : "white"} strokeWidth="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
                 </div>
                 <span className="text-[10px] text-white/90 font-medium">Wi-Fi</span>
               </button>
-              <button className="flex flex-col items-center gap-2 group">
-                <div className="w-full aspect-video bg-[#00A4EF]/20 border border-[#00A4EF]/30 rounded-md flex items-center justify-center group-hover:bg-[#00A4EF]/30 transition-colors">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00A4EF" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+              <button onClick={() => setQsSound(!qsSound)} className="flex flex-col items-center gap-2 group">
+                <div className={`w-full aspect-video rounded-md flex items-center justify-center transition-colors ${qsSound ? 'bg-[#00A4EF]/20 border border-[#00A4EF]/30 group-hover:bg-[#00A4EF]/30' : 'bg-white/10 group-hover:bg-white/20'}`}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={qsSound ? "#00A4EF" : "white"} strokeWidth="2">{qsSound ? <><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></> : <><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></>}</svg>
                 </div>
                 <span className="text-[10px] text-white/90 font-medium">Sound</span>
               </button>
-              <button className="flex flex-col items-center gap-2 group">
-                <div className="w-full aspect-video bg-white/10 rounded-md flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+              <button onClick={() => setQsDnd(!qsDnd)} className="flex flex-col items-center gap-2 group">
+                <div className={`w-full aspect-video rounded-md flex items-center justify-center transition-colors ${qsDnd ? 'bg-purple-500/20 border border-purple-500/30 group-hover:bg-purple-500/30' : 'bg-white/10 group-hover:bg-white/20'}`}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={qsDnd ? "#a855f7" : "white"} strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
                 </div>
                 <span className="text-[10px] text-white/90 font-medium">Do Not Disturb</span>
               </button>
-              <button className="flex flex-col items-center gap-2 group">
-                <div className="w-full aspect-video bg-white/10 rounded-md flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+              <button onClick={handlePanicMode} className="flex flex-col items-center gap-2 group">
+                <div className="w-full aspect-video bg-white/10 rounded-md flex items-center justify-center group-hover:bg-red-500/30 transition-colors">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-white group-hover:text-red-400" strokeWidth="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
                 </div>
                 <span className="text-[10px] text-white/90 font-medium">Panic Mode</span>
               </button>
-              <button className="flex flex-col items-center gap-2 group">
-                <div className="w-full aspect-video bg-white/10 rounded-md flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M2 12h20"></path><path d="M12 2v20"></path><path d="M4.93 4.93l14.14 14.14"></path><path d="M4.93 19.07L19.07 4.93"></path></svg>
+              <button onClick={handlePanicMode} className="flex flex-col items-center gap-2 group">
+                <div className="w-full aspect-video bg-white/10 rounded-md flex items-center justify-center group-hover:bg-blue-500/30 transition-colors">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-white group-hover:text-blue-400" strokeWidth="2"><path d="M2 12h20"></path><path d="M12 2v20"></path><path d="M4.93 4.93l14.14 14.14"></path><path d="M4.93 19.07L19.07 4.93"></path></svg>
                 </div>
                 <span className="text-[10px] text-white/90 font-medium">Teacher Mode</span>
               </button>
-              <button className="flex flex-col items-center gap-2 group">
-                <div className="w-full aspect-video bg-white/10 rounded-md flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              <button onClick={handleDisguiseMode} className="flex flex-col items-center gap-2 group">
+                <div className="w-full aspect-video bg-white/10 rounded-md flex items-center justify-center group-hover:bg-green-500/30 transition-colors">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-white group-hover:text-green-400" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                 </div>
                 <span className="text-[10px] text-white/90 font-medium">Disguise Mode</span>
               </button>
-              <button className="flex flex-col items-center gap-2 group">
-                <div className="w-full aspect-video bg-white/10 rounded-md flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><rect x="2" y="7" width="16" height="10" rx="2" ry="2"></rect><line x1="22" y1="11" x2="22" y2="13"></line><line x1="6" y1="12" x2="14" y2="12"></line><line x1="10" y1="8" x2="10" y2="16"></line></svg>
+              <button onClick={() => setQsLowPower(!qsLowPower)} className="flex flex-col items-center gap-2 group">
+                <div className={`w-full aspect-video rounded-md flex items-center justify-center transition-colors ${qsLowPower ? 'bg-amber-500/20 border border-amber-500/30 group-hover:bg-amber-500/30' : 'bg-white/10 group-hover:bg-white/20'}`}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={qsLowPower ? "#f59e0b" : "white"} strokeWidth="2"><rect x="2" y="7" width="16" height="10" rx="2" ry="2"></rect><line x1="22" y1="11" x2="22" y2="13"></line><line x1="6" y1="12" x2="14" y2="12"></line><line x1="10" y1="8" x2="10" y2="16"></line></svg>
                 </div>
                 <span className="text-[10px] text-white/90 font-medium">Low Power Mode</span>
               </button>
@@ -295,7 +384,7 @@ export const Desktop = ({
             <h3 className="text-sm font-bold text-white mb-1">Battery status</h3>
             <p className="text-xs text-white/80 leading-relaxed">
               {batteryInfo.isSupported 
-                ? `Your battery is at ${Math.round(batteryInfo.level * 100)}% and ${batteryInfo.charging ? 'charging' : 'not charging'}.`
+                ? `Your battery is at ${batteryInfo.level}% and ${batteryInfo.charging ? 'charging' : 'not charging'}.`
                 : "Battery information is not supported on this device or browser."}
             </p>
           </motion.div>
@@ -358,8 +447,8 @@ export const Desktop = ({
           <div className="flex items-center gap-2 hover:bg-white/10 px-2 py-1 rounded-md cursor-pointer transition-colors text-white">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.5 19a4.5 4.5 0 0 0 0-9h-.1A7 7 0 1 0 5 17h12.5Z"></path><path d="M12 2v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="M2 12h2"></path><path d="m4.93 19.07 1.41-1.41"></path></svg>
             <div className="flex flex-col">
-              <span className="text-[11px] font-semibold">72°F</span>
-              <span className="text-[10px] text-white/70">Mostly Clear</span>
+              <span className="text-[11px] font-semibold">{weather ? `${weather.temp}°F` : `...`}</span>
+              <span className="text-[10px] text-white/70 truncate max-w-[60px]">{weather ? weather.condition : `Loading`}</span>
             </div>
           </div>
           <button className="text-white hover:bg-white/10 p-1.5 rounded-md transition-colors" onClick={() => setShowCredits(!showCredits)}>
@@ -503,7 +592,7 @@ export const Desktop = ({
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
             {batteryInfo.isSupported && (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><rect x="2" y="7" width="16" height="10" rx="2" ry="2"></rect><line x1="22" y1="11" x2="22" y2="13"></line></svg>
+              <svg onClick={(e) => { e.stopPropagation(); setShowBatteryNotice(!showBatteryNotice); setShowQuickSettings(false); }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><rect x="2" y="7" width="16" height="10" rx="2" ry="2"></rect><line x1="22" y1="11" x2="22" y2="13"></line></svg>
             )}
           </div>
           

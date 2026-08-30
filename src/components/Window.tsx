@@ -2,7 +2,7 @@ import React, { ReactNode, useState, useRef, useEffect } from 'react';
 import { motion, useMotionValue, useVelocity, useTransform, useSpring, PanInfo } from 'motion/react';
 import { X, Minus, Square, Copy } from 'lucide-react';
 
-export const Window = ({ title, onClose, onMinimize, isActive = true, onFocus, children, className = '' }: { title: string, onClose: () => void, onMinimize?: () => void, isActive?: boolean, onFocus?: () => void, children: ReactNode, className?: string }) => {
+export const Window = ({ title, onClose, onMinimize, onGuide, isActive = true, onFocus, children, className = '' }: { title: string, onClose: () => void, onMinimize?: () => void, onGuide?: () => void, isActive?: boolean, onFocus?: () => void, children: ReactNode, className?: string }) => {
   const [windowState, setWindowState] = useState<'floating' | 'maximized' | 'left' | 'right'>('floating');
   const windowRef = useRef<HTMLDivElement>(null);
   
@@ -114,7 +114,7 @@ export const Window = ({ title, onClose, onMinimize, isActive = true, onFocus, c
         
         <div className={`text-xs font-semibold ${isActive ? 'text-zinc-300' : 'text-zinc-500'} pointer-events-none z-10 relative`}>{title}</div>
         <div className="flex items-center gap-1 z-10 relative">
-          <button className="text-zinc-400 hover:bg-white/10 hover:text-white transition-colors p-1.5 rounded-sm" title="Guide">
+          <button onClick={onGuide} className="text-zinc-400 hover:bg-white/10 hover:text-white transition-colors p-1.5 rounded-sm" title="Guide">
             <span className="font-bold text-sm">E</span>
           </button>
           <button onClick={onMinimize} className="text-zinc-400 hover:bg-white/10 hover:text-white transition-colors p-1.5 rounded-sm"><Minus size={16} /></button>

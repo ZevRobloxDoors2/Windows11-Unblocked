@@ -1,3 +1,5 @@
+#!/bin/bash
+cat << 'INNER_EOF' > src/components/Settings.tsx
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Monitor, Paintbrush, User, ShieldAlert, MonitorPlay, History, Upload } from 'lucide-react';
@@ -148,7 +150,7 @@ export function Settings({ profile, onBack, onLogout, isGuestMode }: { profile: 
           {pinError && <p className="text-red-500 font-semibold">{pinError}</p>}
           <div className="flex gap-4 my-4">
             {[0,1,2,3].map(i => (
-              <div key={i} className={`w-4 h-4 rounded-full transition-colors ${pinInput.length > i ? 'bg-white' : 'bg-zinc-700'}`} />
+              <div key={i} className={\`w-4 h-4 rounded-full transition-colors \${pinInput.length > i ? 'bg-white' : 'bg-zinc-700'}\`} />
             ))}
           </div>
           <div className="grid grid-cols-3 gap-4">
@@ -187,7 +189,7 @@ export function Settings({ profile, onBack, onLogout, isGuestMode }: { profile: 
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm ${activeTab === tab.id ? 'bg-[#00A4EF]/20 text-[#00A4EF]' : 'hover:bg-white/5 text-zinc-300 hover:text-white'}`}
+                className={\`flex items-center gap-3 px-3 py-2 rounded-md transition-colors text-sm \${activeTab === tab.id ? 'bg-[#00A4EF]/20 text-[#00A4EF]' : 'hover:bg-white/5 text-zinc-300 hover:text-white'}\`}
               >
                 <Icon size={16} />
                 {tab.label}
@@ -410,3 +412,4 @@ export function Settings({ profile, onBack, onLogout, isGuestMode }: { profile: 
     </>
   );
 }
+INNER_EOF

@@ -6,7 +6,6 @@ export const ALL_GAMES = [
     "type": "game",
     "file": "Games/1v1 LOL.html"
   },
-  
   {
     "id": "aceattorney",
     "title": "aceattorney",
@@ -14,7 +13,6 @@ export const ALL_GAMES = [
     "type": "game",
     "file": "Games/aceattorney.html"
   },
-  
   {
     "id": "Basketball Legend",
     "title": "Basketball Legend",
@@ -22,7 +20,6 @@ export const ALL_GAMES = [
     "type": "game",
     "file": "Games/Basketball Legend.html"
   },
-  
   {
     "id": "bitlife",
     "title": "bitlife",
@@ -30,7 +27,6 @@ export const ALL_GAMES = [
     "type": "game",
     "file": "Games/bitlife.html"
   },
-  
   {
     "id": "DoodleJump",
     "title": "DoodleJump",
@@ -143,7 +139,6 @@ export const ALL_GAMES = [
     "type": "game",
     "file": "Games/HypperSand.html"
   },
-  
   {
     "id": "miside",
     "title": "miside",
@@ -158,7 +153,6 @@ export const ALL_GAMES = [
     "type": "game",
     "file": "Games/not-my-neigh.html"
   },
-  
   {
     "id": "parkingfury",
     "title": "parkingfury",
@@ -180,8 +174,6 @@ export const ALL_GAMES = [
     "type": "game",
     "file": "Games/PixelFruit.html"
   },
-  
-  
   {
     "id": "Ragdoll Hit",
     "title": "Ragdoll Hit",
@@ -224,7 +216,6 @@ export const ALL_GAMES = [
     "type": "game",
     "file": "Games/Solar Smash.html"
   },
-  
   {
     "id": "Steal a Brainrot",
     "title": "Steal a Brainrot",
@@ -239,9 +230,6 @@ export const ALL_GAMES = [
     "type": "game",
     "file": "Games/undertaleyellow.html"
   },
-  
-  
-  
   {
     "id": "Discord",
     "title": "Discord",
@@ -312,7 +300,6 @@ export const ALL_GAMES = [
     "type": "app",
     "file": "https://opium.best/~/7dm8ml54/hudiigjq/https%3A%2F%2Fwww.instagram.com%2F"
   },
-
   {
     "id": "Snapchat",
     "title": "Snapchat",
@@ -333,5 +320,54 @@ export const ALL_GAMES = [
     "image": "https://upload.wikimedia.org/wikipedia/commons/0/09/YouTube_full-color_icon_%282017%29.svg",
     "type": "app",
     "file": "https://nhjkdbiondnnd.dila.cl/embed.html#https://youtube.com/"
+  },
+  {
+    "id": "Backrooms",
+    "title": "Backrooms",
+    "image": "https://ui-avatars.com/api/?name=Backrooms&background=random&color=fff&size=256&font-size=0.33",
+    "type": "game",
+    "file": "Games/Backrooms.html"
+  },
+  {
+    "id": "Bendy and the Ink Machine",
+    "title": "Bendy and the Ink Machine",
+    "image": "https://ui-avatars.com/api/?name=Bendy%20and%20the%20Ink%20Machine&background=random&color=fff&size=256&font-size=0.33",
+    "type": "game",
+    "file": "Games/Bendy and the Ink Machine.html"
+  },
+  {
+    "id": "Grand Theft Auto 3",
+    "title": "Grand Theft Auto 3",
+    "image": "https://ui-avatars.com/api/?name=Grand%20Theft%20Auto%203&background=random&color=fff&size=256&font-size=0.33",
+    "type": "game",
+    "file": "Games/Grand Theft Auto 3.html"
+  },
+  {
+    "id": "Kindergarten",
+    "title": "Kindergarten",
+    "image": "https://ui-avatars.com/api/?name=Kindergarten&background=random&color=fff&size=256&font-size=0.33",
+    "type": "game",
+    "file": "Games/Kindergarten.html"
+  },
+  {
+    "id": "Phoenix_Wright",
+    "title": "Phoenix_Wright",
+    "image": "https://ui-avatars.com/api/?name=Phoenix_Wright&background=random&color=fff&size=256&font-size=0.33",
+    "type": "game",
+    "file": "Games/Phoenix_Wright.zip"
+  },
+  {
+    "id": "Roblox",
+    "title": "Roblox",
+    "image": "https://ui-avatars.com/api/?name=Roblox&background=random&color=fff&size=256&font-size=0.33",
+    "type": "game",
+    "file": "Games/Roblox.html"
+  },
+  {
+    "id": "Totally Accurate Battle Simulator (TABS)",
+    "title": "Totally Accurate Battle Simulator (TABS)",
+    "image": "https://ui-avatars.com/api/?name=Totally%20Accurate%20Battle%20Simulator%20(TABS)&background=random&color=fff&size=256&font-size=0.33",
+    "type": "game",
+    "file": "Games/Totally Accurate Battle Simulator (TABS).html"
   }
 ];
