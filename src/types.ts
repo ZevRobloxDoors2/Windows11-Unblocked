@@ -10,6 +10,7 @@ export interface UserProfile {
   vibrationEnabled?: boolean;
   homeTheme?: string;
   quickResumeEnabled?: boolean;
+  installedApps?: string[];
 }
 
 export interface FriendRequest {

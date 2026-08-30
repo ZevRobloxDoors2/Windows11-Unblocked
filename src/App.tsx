@@ -28,8 +28,12 @@ import { GlobalNotifications } from './components/GlobalNotifications';
 
 import { ActivityFeed } from './components/ActivityFeed';
 import { GlobalSearch } from './components/GlobalSearch';
+import { Desktop } from './components/Desktop';
+import { Minus, Square, X } from 'lucide-react';
+import { Window } from './components/Window';
+import { WinStore } from './components/WinStore';
 
-type View = 'home' | 'library' | 'profile' | 'settings' | 'notifications' | 'friends' | 'chat' | 'party' | 'activity';
+type View = 'home' | 'store' | 'profile' | 'settings' | 'notifications' | 'friends' | 'chat' | 'party' | 'activity';
 
 const getThemeClasses = (themeId?: string) => {
   switch (themeId) {
@@ -175,6 +179,20 @@ export default function App() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [currentView, setCurrentView] = useState<View>('home');
   const [libraryTab, setLibraryTab] = useState<'games'|'apps'>('games');
+  
+  const [installedApps, setInstalledApps] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('installed_apps') || '[]');
+    } catch(e) {
+      return [];
+    }
+  });
+
+  const handleInstallApp = (id: string) => {
+    const newApps = [...installedApps, id];
+    setInstalledApps(newApps);
+    localStorage.setItem('installed_apps', JSON.stringify(newApps));
+  };
   
   const activeProfile = isGuestMode ? {
     uid: 'guest',
@@ -598,26 +616,23 @@ export default function App() {
       <style>{cursorCss}</style>
       <DMCAModal />
       <GlobalNotifications profile={activeProfile} playingGame={!!playingGame} activeChatId={currentView === 'chat' && chatConfig ? (chatConfig.isGroup ? chatConfig.id : chatConfig.id) : null} onNavigateToChat={(id, isGroup, name) => { setChatConfig({id, name, isGroup}); setCurrentView('chat'); }} onNavigateToParty={(id) => { setActivePartyId(id); setCurrentView('party'); }} />
-      <div className={`h-screen ${ideMode ? "bg-[#1e1e1e]" : getThemeClasses(activeProfile.homeTheme)} text-white font-sans overflow-hidden flex flex-col relative z-0`}>
-      {ideMode && (
-        <div className="flex h-full w-full absolute inset-0 z-0 pointer-events-none">
-          <div className="w-64 bg-[#252526] border-r border-[#333333] flex flex-col">
-            <div className="h-9 flex items-center px-4 text-[11px] text-[#cccccc] uppercase tracking-wider font-semibold">Explorer</div>
-            <div className="px-4 py-1 text-sm text-[#cccccc] flex items-center gap-2"><ChevronDown size={14}/> PROJECT</div>
-            <div className="px-8 py-1 text-sm text-[#4af626] bg-[#37373d]">index.html</div>
-            <div className="px-8 py-1 text-sm text-[#cccccc]">style.css</div>
-            <div className="px-8 py-1 text-sm text-[#cccccc]">app.js</div>
-          </div>
-          <div className="flex-1 flex flex-col bg-[#1e1e1e]">
-            <div className="h-9 bg-[#2d2d2d] flex items-center">
-              <div className="px-4 h-full bg-[#1e1e1e] border-t-2 border-[#4af626] text-[#4af626] flex items-center text-sm">index.html</div>
-            </div>
-            <div className="flex-1 relative">
-            </div>
-          </div>
-        </div>
-      )}
-      <div className={`flex-1 min-h-0 flex flex-col ${ideMode ? "ml-64 mt-9" : ""} relative z-10`}>
+      <div className={`h-screen bg-black text-white font-sans overflow-hidden flex flex-col relative z-0`}>
+      <div className={`flex-1 min-h-0 flex flex-col relative z-10`}>
+        
+        <Desktop 
+          profile={activeProfile} 
+          installedApps={installedApps} 
+          onOpenStore={() => setCurrentView('store')} 
+          onOpenSearch={() => setIsSearchOpen(true)}
+          onPlayGame={handlePlayGame}
+          time={time}
+          batteryInfo={batteryInfo}
+          currentView={currentView}
+          setCurrentView={(v) => setCurrentView(v as View)}
+          notificationCount={notificationCount}
+          onLogout={handleLogout}
+        />
+
         <WelcomeMessage />
         <div className="fixed inset-0 z-[-1] opacity-50">
           <div className="absolute inset-0 bg-gradient-to-tr from-black/80 via-transparent to-black/40" />
@@ -811,60 +826,6 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        <nav className="flex items-start justify-between px-12 pt-12 pb-4 z-50 shrink-0">
-          <div 
-            className="flex items-center gap-4 cursor-pointer hover:bg-white/10 p-2 -ml-2 rounded-xl transition-colors focus:ring-2 focus:ring-green-500 focus:outline-none"
-            onClick={() => setCurrentView('profile')}
-            tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && setCurrentView('profile')}
-          >
-            <img src={activeProfile.avatar} alt="Avatar" className="w-14 h-14 rounded-full border-2 border-white/20 object-cover" />
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <h2 className="font-semibold text-lg leading-tight">
-                  {activeProfile.gamertag}
-                </h2>
-              </div>
-              <div className="flex items-center gap-1.5 text-zinc-300 mt-0.5">
-                <Trophy size={14} className="text-zinc-400" />
-                <span className="text-sm font-medium">{activeProfile.score}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-6 text-zinc-100">
-            <button onClick={() => setIsSearchOpen(true)} className="hover:text-green-400 transition-colors focus:ring-2 focus:ring-green-500 focus:outline-none rounded-full p-1">
-              <Search size={22} />
-            </button>
-            <button onClick={() => setCurrentView('notifications')} className="relative hover:text-green-400 transition-colors focus:ring-2 focus:ring-green-500 focus:outline-none rounded-full p-1">
-              <Bell size={22} />
-              {notificationCount > 0 && (
-                <span className="absolute -top-1 -right-1.5 bg-green-500 text-black text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-[#1a1a1a]">
-                  {notificationCount}
-                </span>
-              )}
-            </button>
-            <button onClick={() => setCurrentView('friends')} className="hover:text-green-400 transition-colors focus:ring-2 focus:ring-green-500 focus:outline-none rounded-full p-1">
-              <Users size={22} />
-            </button>
-            <div className="flex items-center gap-4">
-              {batteryInfo.isSupported && (
-                <div className="flex items-center gap-1.5 text-zinc-300">
-                  <span className="text-sm font-medium">{batteryInfo.level}%</span>
-                  {batteryInfo.charging ? (
-                    <BatteryCharging size={20} className="text-green-400" />
-                  ) : (
-                    <>
-                      {batteryInfo.level > 80 && <BatteryFull size={20} />}
-                      {batteryInfo.level > 20 && batteryInfo.level <= 80 && <BatteryMedium size={20} />}
-                      {batteryInfo.level <= 20 && <BatteryLow size={20} className="text-red-500" />}
-                    </>
-                  )}
-                </div>
-              )}
-              <span className="font-semibold text-lg">{time}</span>
-            </div>
-          </div>
-        </nav>
 
         <AnimatePresence>
           {showGreetingToast && (
@@ -913,184 +874,87 @@ export default function App() {
         </AnimatePresence>
 
         <AnimatePresence>
+          {currentView !== 'home' && (
+            <Window title={currentView.charAt(0).toUpperCase() + currentView.slice(1)} onClose={() => setCurrentView('home')}>
+              {currentView === 'store' && <WinStore installedApps={installedApps} onInstall={handleInstallApp} onPlay={handlePlayGame} />}
+              {currentView === 'profile' && <Profile userProfile={activeProfile as any} onBack={() => setCurrentView('home')} />}
+              {currentView === 'settings' && <SettingsView profile={activeProfile as any} onBack={() => setCurrentView('home')} onLogout={handleLogout} isGuestMode={isGuestMode} />}
+              {currentView === 'friends' && <Friends userProfile={activeProfile as any} onBack={() => setCurrentView('home')} onChat={(id, name, isGroup) => { setChatConfig({id, name, isGroup: !!isGroup}); setCurrentView('chat'); }} />}
+              {currentView === 'chat' && (chatConfig ? <Chat userProfile={activeProfile as any} friendId={!chatConfig.isGroup ? chatConfig.id : undefined} friendGamertag={!chatConfig.isGroup ? chatConfig.name : undefined} chatId={chatConfig.isGroup ? chatConfig.id : undefined} isGroup={chatConfig.isGroup} chatName={chatConfig.isGroup ? chatConfig.name : undefined} onBack={() => setCurrentView('friends')} /> : <div className="flex h-full items-center justify-center text-zinc-400 flex-col gap-4"><div>Select a friend to start chatting</div><button onClick={() => setCurrentView('friends')} className="px-4 py-2 bg-blue-600 text-white rounded">Open Friends</button></div>)}
+              {currentView === 'party' && <Party profile={activeProfile as any} initialPartyId={activePartyId} onBack={() => { setActivePartyId(undefined); setCurrentView('home'); }} />}
+              {currentView === 'notifications' && <Notifications userProfile={activeProfile as any} onBack={() => setCurrentView('home')} />}
+              {currentView === 'activity' && <ActivityFeed profile={activeProfile as any} />}
+            </Window>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
           {(playingGame || suspendedGames.length > 0) && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className={`fixed inset-0 z-[100] bg-black flex flex-col ${playingGame ? '' : 'pointer-events-none opacity-0'}`}
-              style={{ display: playingGame ? 'flex' : 'none' }}
+            <div 
+              className={`fixed z-[150] bg-black flex flex-col overflow-hidden transition-all duration-300 ${playingGame ? 'inset-4 sm:inset-12 border border-white/10 rounded-lg shadow-2xl' : 'inset-0 pointer-events-none opacity-0'}`}
+              style={{ display: (playingGame || suspendedGames.length > 0) ? 'flex' : 'none', visibility: playingGame ? 'visible' : 'hidden' }}
             >
+              {playingGame && (
+                <div className="h-10 bg-[#181818] flex items-center justify-between select-none px-4 shrink-0 border-b border-white/5">
+                  <div className="text-xs font-semibold text-zinc-300">{playingGame.title}</div>
+                  <div className="flex items-center gap-4">
+                    <button className="text-zinc-400 hover:text-white transition-colors"><Minus size={16} /></button>
+                    <button className="text-zinc-400 hover:text-white transition-colors"><Square size={14} /></button>
+                    <button onClick={handleStopGame} className="text-zinc-400 hover:bg-red-500 hover:text-white transition-colors p-1 rounded-sm"><X size={18} /></button>
+                  </div>
+                </div>
+              )}
+
               <AnimatePresence>
                 {isLoadingGame && playingGame && (
                   <motion.div 
                     initial={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="absolute inset-0 z-[110] bg-black flex flex-col items-center justify-center gap-6"
+                    className="absolute inset-0 top-10 z-[110] bg-black flex flex-col items-center justify-center gap-6"
                   >
-                    <div className="w-16 h-16 border-4 border-zinc-800 border-t-green-500 rounded-full animate-spin" />
-                    <p className="text-xl font-semibold animate-pulse">Loading {playingGame.title}...</p>
+                    <div className="w-16 h-16 border-4 border-zinc-800 border-t-blue-500 rounded-full animate-spin" />
+                    <p className="text-xl font-semibold animate-pulse text-white">Loading {playingGame.title}...</p>
                   </motion.div>
                 )}
               </AnimatePresence>
 
-              
               {(() => {
                 const allActive = [...suspendedGames.map(s => s.game)];
                 if (playingGame && !allActive.find(g => g.id === playingGame.id)) {
                   allActive.push(playingGame);
                 }
                 return allActive.map((g, idx) => (
-                  <div className={playingGame?.id === g.id ? "flex-1 w-full relative bg-white block" : "hidden"} key={g.id}>
-                    
+                  <div className={playingGame?.id === g.id ? "flex-1 w-full h-full relative bg-white block" : "hidden"} key={g.id}>
                     {localStorage.getItem('anti_deledao') === 'true' && playingGame?.id === g.id && (
                       <div className="absolute inset-0 pointer-events-none z-[105]" style={{ backgroundImage: 'url(https://upload.wikimedia.org/wikipedia/commons/c/c3/Google_Docs_logo_%282014-2020%29.svg)', backgroundRepeat: 'repeat', opacity: 0.1 }} />
                     )}
-
                     {g.id === 'GTA V' && playingGame?.id === g.id && !isLoadingGame && (
                       <div className="absolute top-4 left-4 z-[200] bg-zinc-900 border-2 border-red-500 p-4 rounded-lg shadow-2xl max-w-sm pointer-events-auto">
                         <div className="flex justify-between items-start mb-2">
                           <h3 className="text-red-400 font-bold">GTA V Launch Instructions:</h3>
                         </div>
                         <ol className="text-sm text-white list-decimal list-inside space-y-2 mb-2">
-                          <li>Click <strong>Library</strong> on the bottom right corner.</li>
-                          <li>Click the <strong>Cloud</strong> button in the search bar.</li>
+                          <li>Open Win Store.</li>
                           <li>Search up <strong>Grand</strong>.</li>
                           <li>Click on <strong>GTA V</strong>.</li>
                         </ol>
                       </div>
                     )}
                     <iframe 
-                    key={g.id}
-                    src={getUrl(g.file, idx)} 
-                    className="w-full h-full" 
-                    sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-popups allow-presentation"
-                    allow="fullscreen; autoplay; gamepad"
-                    onLoad={() => { if (playingGame?.id === g.id) setIsLoadingGame(false); }}
-                  />
+                      key={g.id}
+                      src={getUrl(g.file, idx)} 
+                      className="w-full h-full" 
+                      sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-popups allow-presentation"
+                      allow="fullscreen; autoplay; gamepad"
+                      onLoad={() => { if (playingGame?.id === g.id) setIsLoadingGame(false); }}
+                    />
                   </div>
                 ));
               })()}
-            </motion.div>
+            </div>
           )}
         </AnimatePresence>
 
-        <main className="flex-1 min-h-0 overflow-hidden relative z-10 flex flex-col w-full">
-          <AnimatePresence mode="wait">
-            {currentView === 'home' && (
-              <motion.div key="home" initial={{ opacity: 0, scale: 0.98, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98, y: -10 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="flex flex-col flex-1 min-h-0 overflow-y-auto pb-8">
-                <div className="flex gap-4 shrink-0 overflow-x-auto pb-4 items-center px-12 pt-8">
-                  <div tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && setCurrentView('library')} onClick={() => setCurrentView('library')} className="w-[160px] h-[160px] bg-zinc-800/90 rounded-lg flex flex-col justify-center items-center border-[3px] border-transparent hover:border-green-500 focus:border-green-500 focus:outline-none group cursor-pointer flex-shrink-0 transition-all duration-300 ease-out hover:scale-110 focus:scale-110 hover:shadow-[0_0_20px_rgba(34,197,94,0.6)] focus:shadow-[0_0_20px_rgba(34,197,94,0.6)] hover:z-10 focus:z-10">
-                    <Library className="text-zinc-300 mb-2 group-hover:text-white transition-colors" size={48} />
-                    <span className="font-semibold text-sm text-center px-1 text-white">My games & apps</span>
-                  </div>
-                  
-                  {displayGames.slice(0,8).map((g) => (
-                    <div tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && handlePlayGame({id: g.id, title: g.title, file: g.file})} key={g.id} onClick={() => handlePlayGame({id: g.id, title: g.title, file: g.file})} className="w-[160px] h-[160px] rounded-lg overflow-hidden border-[3px] border-transparent hover:border-green-500 focus:border-green-500 focus:outline-none flex-shrink-0 group cursor-pointer flex-col relative transition-all duration-300 ease-out hover:scale-110 focus:scale-110 hover:shadow-[0_0_20px_rgba(34,197,94,0.6)] focus:shadow-[0_0_20px_rgba(34,197,94,0.6)] hover:z-10 focus:z-10">
-                      <img src={g.image} className="w-full h-full object-cover group-hover:scale-105 group-focus:scale-105 transition-transform" />
-                    </div>
-                  ))}
-
-                  <div tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && setCurrentView('settings')} onClick={() => setCurrentView('settings')} className="w-[160px] h-[160px] bg-zinc-800/90 rounded-lg flex flex-col justify-center items-center border-[3px] border-transparent hover:border-green-500 focus:border-green-500 focus:outline-none group cursor-pointer flex-shrink-0 transition-all duration-300 ease-out hover:scale-110 focus:scale-110 hover:shadow-[0_0_20px_rgba(34,197,94,0.6)] focus:shadow-[0_0_20px_rgba(34,197,94,0.6)] hover:z-10 focus:z-10">
-                    <Settings size={48} className="text-zinc-300 group-hover:text-white group-focus:text-white transition-colors mb-2" />
-                    <span className="font-semibold text-sm text-white">Settings</span>
-                  </div>
-
-                  <div tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && setCurrentView('friends')} onClick={() => setCurrentView('friends')} className="w-[160px] h-[160px] bg-purple-600 rounded-lg flex flex-col justify-center items-center border-[3px] border-transparent hover:border-green-500 focus:border-green-500 focus:outline-none group cursor-pointer flex-shrink-0 transition-all duration-300 ease-out hover:scale-110 focus:scale-110 hover:shadow-[0_0_20px_rgba(34,197,94,0.6)] focus:shadow-[0_0_20px_rgba(34,197,94,0.6)] hover:z-10 focus:z-10">
-                    <Users size={48} className="text-white mb-2" />
-                    <span className="font-semibold text-sm text-white">Friends</span>
-                  </div>
-
-                  <div tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && setCurrentView('activity')} onClick={() => setCurrentView('activity')} className="w-[160px] h-[160px] bg-blue-600 rounded-lg flex flex-col justify-center items-center border-[3px] border-transparent hover:border-green-500 focus:border-green-500 focus:outline-none group cursor-pointer flex-shrink-0 transition-all duration-300 ease-out hover:scale-110 focus:scale-110 hover:shadow-[0_0_20px_rgba(34,197,94,0.6)] focus:shadow-[0_0_20px_rgba(34,197,94,0.6)] hover:z-10 focus:z-10">
-                    <Flame size={48} className="text-white mb-2 group-hover:text-yellow-400 transition-colors" />
-                    <span className="font-semibold text-sm text-white">Activity</span>
-                  </div>
-                    
-                </div>
-
-                {suspendedGames.length > 0 && (
-                  <div className="px-12 mt-4">
-                    <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-green-400">
-                      <Zap size={24} className="fill-green-400 text-green-400" /> Quick Resume
-                    </h3>
-                    <div className="flex gap-4 overflow-x-auto pb-4 custom-scroll">
-                      {suspendedGames.map((sg) => {
-                        const gameData = ALL_GAMES.find(g => g.id === sg.game.id);
-                        return (
-                          <div tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && handlePlayGame(sg.game)} key={sg.game.id} onClick={() => handlePlayGame(sg.game)} className="w-[200px] h-[120px] rounded-lg overflow-hidden border-[3px] border-transparent hover:border-green-500 focus:border-green-500 focus:outline-none flex-shrink-0 group cursor-pointer flex-col relative bg-zinc-800 transition-all duration-300 ease-out hover:scale-110 focus:scale-110 hover:shadow-[0_0_20px_rgba(34,197,94,0.6)] focus:shadow-[0_0_20px_rgba(34,197,94,0.6)] hover:z-10 focus:z-10">
-                            {gameData?.image && <img src={gameData.image} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-105 transition-all" />}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-3">
-                              <span className="font-bold text-sm text-white line-clamp-1">{sg.game.title}</span>
-                              <span className="text-xs text-green-400 font-bold drop-shadow-md">{sg.minutes} min played</span>
-                            </div>
-                            <div className="absolute top-2 right-2 bg-green-500 text-black p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Play size={14} fill="currentColor" />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </motion.div>
-            )}
-
-            {currentView === 'library' && (
-              <motion.div key="library" initial={{ opacity: 0, scale: 0.98, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98, y: -10 }} transition={{ duration: 0.2, ease: 'easeOut' }} className="flex flex-col flex-1 min-h-0 h-full overflow-hidden px-12 pt-8">
-                <div className="flex items-center gap-4 mb-2 shrink-0">
-                  <button onClick={() => setCurrentView('home')} className="p-2 hover:bg-white/10 rounded-full transition-colors -ml-2">
-                    <ChevronLeft size={24} />
-                  </button>
-                  <h2 className="text-3xl font-black">My games & apps</h2>
-                </div>
-                <div className="flex flex-1 min-h-0 gap-8">
-                  <div className="w-48 flex flex-col gap-2 shrink-0">
-                    <button 
-                      onClick={() => setLibraryTab('games')}
-                      className={`text-left px-4 py-3 rounded-md font-bold transition-colors ${libraryTab === 'games' ? 'bg-green-600 text-white' : 'hover:bg-white/10 text-zinc-400'}`}
-                    >
-                      Games
-                    </button>
-                    <button 
-                      onClick={() => setLibraryTab('apps')}
-                      className={`text-left px-4 py-3 rounded-md font-bold transition-colors ${libraryTab === 'apps' ? 'bg-green-600 text-white' : 'hover:bg-white/10 text-zinc-400'}`}
-                    >
-                      Apps
-                    </button>
-                  </div>
-                  <div className="flex-1 overflow-y-auto min-h-0">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 pb-12">
-                      {displayGames.filter(g => (g as any).type === (libraryTab === 'games' ? 'game' : 'app')).map(item => (
-                        <div tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && handlePlayGame({id: item.id, title: item.title, file: item.file})} key={item.id} onClick={() => handlePlayGame({id: item.id, title: item.title, file: item.file})} className="group cursor-pointer">
-                          <div className="aspect-[3/4] bg-zinc-800 rounded-md overflow-hidden border-[3px] border-transparent group-hover:border-green-500 group-focus:border-green-500 transition-colors relative">
-                            <img src={item.image} className="w-full h-full object-cover group-hover:scale-105 group-focus:scale-105 transition-transform" alt={item.title} />
-                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 group-focus:opacity-100 flex items-center justify-center transition-opacity">
-                              <Trophy size={48} className="text-green-500" />
-                            </div>
-                          </div>
-                          <div className="mt-2 px-1">
-                            <p className="font-semibold text-sm truncate">{item.title}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {currentView === 'profile' && <Profile key="profile" userProfile={activeProfile} onBack={() => setCurrentView('home')} />}
-            
-            {currentView === 'friends' && <Friends key="friends" userProfile={activeProfile} onBack={() => setCurrentView('home')} onChat={(id, name, isGroup) => { setChatConfig({id, name, isGroup: !!isGroup}); setCurrentView('chat'); }} />}
-            
-            {currentView === 'notifications' && <Notifications key="notifications" userProfile={activeProfile} onBack={() => setCurrentView('home')} />}
-            {currentView === 'party' && <Party key="party" profile={activeProfile} initialPartyId={activePartyId} onBack={() => { setActivePartyId(undefined); setCurrentView('home'); }} />}
-            {currentView === 'activity' && <ActivityFeed key="activity" />}
-            {currentView === 'chat' && chatConfig && <Chat key="chat" userProfile={activeProfile} friendId={!chatConfig.isGroup ? chatConfig.id : undefined} friendGamertag={!chatConfig.isGroup ? chatConfig.name : undefined} chatId={chatConfig.isGroup ? chatConfig.id : undefined} isGroup={chatConfig.isGroup} chatName={chatConfig.isGroup ? chatConfig.name : undefined} onBack={() => setCurrentView('friends')} />}
-
-            {currentView === 'settings' && <SettingsView profile={activeProfile as any} onBack={() => setCurrentView('home')} onLogout={handleLogout} isGuestMode={isGuestMode} />}
-          </AnimatePresence>
-        </main>
       </div>
       </div>
     </>

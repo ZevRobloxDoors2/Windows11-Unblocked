@@ -31,11 +31,8 @@ export function GlobalNotifications({ profile, playingGame, activeChatId, onNavi
           if (muteAll) return;
           if (dnd && playingGame) return;
           
-          // Don't toast if we're actively looking at this chat
-          // Prevent spam: only toast new group chat messages or unread DMs
           if (data.type === 'message') {
             if (data.isGroup && (Date.now() - (data.createdAt?.toMillis() || Date.now()) > 10000)) {
-               // Ignore old group chat messages when opening app
                return;
             }
             if (data.chatId === activeChatId || data.fromUid === activeChatId) {
@@ -76,23 +73,40 @@ export function GlobalNotifications({ profile, playingGame, activeChatId, onNavi
   };
 
   return (
-    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[500] flex flex-col gap-2 pointer-events-none">
+    <div className="fixed bottom-16 right-4 z-[500] flex flex-col items-end gap-2 pointer-events-none">
       <AnimatePresence>
         {activeToasts.map(toast => (
           <motion.div
             key={toast.id}
-            initial={{ opacity: 0, y: 20, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="pointer-events-auto bg-zinc-900 border border-zinc-700 px-6 py-3 rounded-lg shadow-2xl cursor-pointer hover:bg-zinc-800 transition-colors flex items-center gap-3"
+            initial={{ opacity: 0, x: 50, scale: 0.95 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 50, scale: 0.95 }}
+            className="pointer-events-auto bg-[#242424]/95 backdrop-blur-2xl border border-white/10 w-80 px-4 py-3 rounded-lg shadow-2xl cursor-pointer hover:bg-white/10 transition-colors flex gap-3 relative overflow-hidden group"
             onClick={() => handleToastClick(toast)}
           >
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0" />
-            <span className="text-white font-semibold text-sm sm:text-base">
-              {toast.type === 'message' 
-                ? (toast.isGroup ? `${toast.fromGamertag} messaged the group ${toast.chatName}` : `${toast.fromGamertag} has messaged you`) 
-                : `${toast.fromGamertag} has invited you to a Party`}
-            </span>
+            <div className="flex-1">
+              <div className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1 flex justify-between">
+                <span>{toast.type === 'message' ? 'Message' : 'Party Invite'}</span>
+              </div>
+              <div className="text-sm text-white font-medium">
+                {toast.type === 'message' 
+                  ? (toast.isGroup ? `${toast.fromGamertag} messaged the group ${toast.chatName}` : `${toast.fromGamertag} has messaged you`) 
+                  : `${toast.fromGamertag} has invited you to a Party`}
+              </div>
+              <div className="text-xs text-zinc-400 mt-1">
+                {toast.type === 'message' ? 'Click to reply' : 'Click to join party'}
+              </div>
+            </div>
+            <button 
+              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 bg-white/10 hover:bg-red-500 rounded transition-all text-white"
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveToasts(prev => prev.filter(t => t.id !== toast.id));
+                updateDoc(doc(db, 'notifications', toast.id), { read: true }).catch(() => {});
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
           </motion.div>
         ))}
       </AnimatePresence>
