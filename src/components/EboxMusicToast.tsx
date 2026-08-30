@@ -36,7 +36,7 @@ export function EboxMusicToast() {
           </div>
           <div className="flex flex-col overflow-hidden">
             <span className="text-xs font-semibold text-green-500 uppercase tracking-wider mb-0.5 flex items-center gap-1">
-              <Headphones size={12} /> Ebox Music
+              <Headphones size={12} /> Win Music
             </span>
             <span className="text-white font-medium truncate">{song.title}</span>
             <span className="text-zinc-400 text-sm truncate">{song.artist}</span>

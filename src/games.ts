@@ -264,8 +264,8 @@ export const ALL_GAMES = [
     "file": "Apps/EboxFlix.html"
   },
   {
-    "id": "Ebox Music",
-    "title": "Ebox Music",
+    "id": "Win Music",
+    "title": "Win Music",
     "image": "https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg",
     "type": "app",
     "file": "Apps/Ebox Music.html"

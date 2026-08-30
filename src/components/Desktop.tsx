@@ -14,6 +14,10 @@ export const Desktop = ({
   batteryInfo,
   currentView,
   setCurrentView,
+  openViews,
+  minimizedViews,
+  playingGame,
+  suspendedGames,
   notificationCount,
   onLogout
 }: { 
@@ -26,12 +30,41 @@ export const Desktop = ({
   batteryInfo: any,
   currentView: string,
   setCurrentView: (view: string) => void,
+  openViews?: string[],
+  minimizedViews?: string[],
+  playingGame?: any,
+  suspendedGames?: any[],
   notificationCount: number,
   onLogout: () => void
 }) => {
   const [startOpen, setStartOpen] = useState(false);
+  const [showCredits, setShowCredits] = useState(false);
+  const [showQuickSettings, setShowQuickSettings] = useState(false);
+  const [showBatteryNotice, setShowBatteryNotice] = useState(false);
+  const [fullscreenCountdown, setFullscreenCountdown] = useState(5);
+  const [showFullscreenModal, setShowFullscreenModal] = useState(true);
   const [contextMenu, setContextMenu] = useState<{x: number, y: number} | null>(null);
   const [bgImage, setBgImage] = useState(() => localStorage.getItem('win11_bg') || 'https://images.unsplash.com/photo-1622737133809-d95047b9e673?auto=format&fit=crop&w=2000&q=80');
+
+  useEffect(() => {
+    if (fullscreenCountdown > 0) {
+      const timer = setTimeout(() => setFullscreenCountdown(fullscreenCountdown - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (fullscreenCountdown === 0 && showFullscreenModal) {
+      setShowFullscreenModal(false);
+      try {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => console.log('Fullscreen blocked by browser'));
+        }
+      } catch(e) {}
+    }
+  }, [fullscreenCountdown, showFullscreenModal]);
+
+  useEffect(() => {
+    // Show battery notice shortly after desktop mounts
+    const timer = setTimeout(() => setShowBatteryNotice(true), 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const installedGames = ALL_GAMES.filter(g => installedApps.includes(g.id));
 
@@ -175,9 +208,164 @@ export const Desktop = ({
         )}
       </AnimatePresence>
 
+      {/* Quick Settings Modal */}
+      <AnimatePresence>
+        {showQuickSettings && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 50, scale: 0.95 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+            className="absolute bottom-16 right-4 w-80 bg-[#242424]/95 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl flex flex-col p-5 z-[200]"
+          >
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              <button className="flex flex-col items-center gap-2 group">
+                <div className="w-full aspect-video bg-white/10 rounded-md flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+                </div>
+                <span className="text-[10px] text-white/90 font-medium">Wi-Fi</span>
+              </button>
+              <button className="flex flex-col items-center gap-2 group">
+                <div className="w-full aspect-video bg-[#00A4EF]/20 border border-[#00A4EF]/30 rounded-md flex items-center justify-center group-hover:bg-[#00A4EF]/30 transition-colors">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00A4EF" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+                </div>
+                <span className="text-[10px] text-white/90 font-medium">Sound</span>
+              </button>
+              <button className="flex flex-col items-center gap-2 group">
+                <div className="w-full aspect-video bg-white/10 rounded-md flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                </div>
+                <span className="text-[10px] text-white/90 font-medium">Do Not Disturb</span>
+              </button>
+              <button className="flex flex-col items-center gap-2 group">
+                <div className="w-full aspect-video bg-white/10 rounded-md flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+                </div>
+                <span className="text-[10px] text-white/90 font-medium">Panic Mode</span>
+              </button>
+              <button className="flex flex-col items-center gap-2 group">
+                <div className="w-full aspect-video bg-white/10 rounded-md flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M2 12h20"></path><path d="M12 2v20"></path><path d="M4.93 4.93l14.14 14.14"></path><path d="M4.93 19.07L19.07 4.93"></path></svg>
+                </div>
+                <span className="text-[10px] text-white/90 font-medium">Teacher Mode</span>
+              </button>
+              <button className="flex flex-col items-center gap-2 group">
+                <div className="w-full aspect-video bg-white/10 rounded-md flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </div>
+                <span className="text-[10px] text-white/90 font-medium">Disguise Mode</span>
+              </button>
+              <button className="flex flex-col items-center gap-2 group">
+                <div className="w-full aspect-video bg-white/10 rounded-md flex items-center justify-center group-hover:bg-white/20 transition-colors">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><rect x="2" y="7" width="16" height="10" rx="2" ry="2"></rect><line x1="22" y1="11" x2="22" y2="13"></line><line x1="6" y1="12" x2="14" y2="12"></line><line x1="10" y1="8" x2="10" y2="16"></line></svg>
+                </div>
+                <span className="text-[10px] text-white/90 font-medium">Low Power Mode</span>
+              </button>
+            </div>
+            
+            <div className="flex flex-col gap-3 mt-2 border-t border-white/5 pt-4">
+              <div className="flex items-center gap-3">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                <input type="range" min="0" max="100" defaultValue="50" className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer" />
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Battery Notice (Windows 11 Toast) */}
+      <AnimatePresence>
+        {showBatteryNotice && (
+          <motion.div 
+            initial={{ opacity: 0, x: 50, scale: 0.95 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 50, scale: 0.95 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="absolute bottom-16 right-4 w-80 bg-[#242424]/95 backdrop-blur-2xl border border-white/10 rounded-lg shadow-2xl flex flex-col p-4 z-[300]"
+          >
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00A4EF" strokeWidth="2"><rect x="2" y="7" width="16" height="10" rx="2" ry="2"></rect><line x1="22" y1="11" x2="22" y2="13"></line></svg>
+                <span className="text-[11px] font-semibold text-white/90 uppercase tracking-wide">System</span>
+              </div>
+              <button onClick={() => setShowBatteryNotice(false)} className="text-zinc-400 hover:text-white transition-colors">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+              </button>
+            </div>
+            <h3 className="text-sm font-bold text-white mb-1">Battery status</h3>
+            <p className="text-xs text-white/80 leading-relaxed">
+              {batteryInfo.isSupported 
+                ? `Your battery is at ${Math.round(batteryInfo.level * 100)}% and ${batteryInfo.charging ? 'charging' : 'not charging'}.`
+                : "Battery information is not supported on this device or browser."}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Fullscreen Modal */}
+      <AnimatePresence>
+        {showFullscreenModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[1000] bg-black/80 flex items-center justify-center pointer-events-none"
+          >
+            <div className="bg-zinc-900 border border-white/10 p-8 rounded-xl shadow-2xl flex flex-col items-center">
+              <h2 className="text-2xl font-bold text-white mb-2">Going in Fullscreen</h2>
+              <p className="text-4xl font-black text-[#00A4EF]">{fullscreenCountdown}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Credits Modal */}
+      <AnimatePresence>
+        {showCredits && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 50, scale: 0.95 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+            className="absolute bottom-16 left-4 w-72 bg-[#242424]/95 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl flex flex-col p-6 z-[200]"
+          >
+            <h3 className="text-lg font-bold text-white mb-4">Credits</h3>
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-sm font-semibold text-[#00A4EF]">Coders:</h4>
+                <p className="text-xs text-white/80 mt-1">EyesHD - Owner</p>
+                <p className="text-xs text-white/80">Gemini - Co-Owner</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-semibold text-[#00A4EF]">Testers:</h4>
+                <p className="text-xs text-white/80 mt-1">Sebastian Call Lopez</p>
+                <p className="text-xs text-white/80">Pierre Bell</p>
+                <p className="text-xs text-white/80">Cameron Barefield</p>
+              </div>
+              <div className="pt-2 border-t border-white/10">
+                <p className="text-[10px] text-white/60 italic leading-tight">Thank you to all of the Testers for their support and their testing for looking out for problems for our release!!!</p>
+                <p className="text-[10px] text-white/80 font-bold mt-2 text-center">THANK YOU ALL FOR TRYING OUT MY WINDOWS 11!!!</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Taskbar */}
-      <div className="absolute bottom-0 left-0 w-full h-12 bg-[#101010]/80 backdrop-blur-3xl border-t border-white/10 shadow-[0_-2px_15px_rgba(255,255,255,0.03)] flex items-center justify-between px-2 z-[250]">
-        <div className="flex-1"></div>
+      <div className="absolute bottom-0 left-0 w-full h-12 bg-transparent backdrop-blur-[50px] border-t border-white/10 shadow-[0_-2px_15px_rgba(255,255,255,0.03)] flex items-center justify-between px-2 z-[250]">
+        <div className="flex-1 flex items-center h-full gap-2 px-2">
+          {/* Weather Widget */}
+          <div className="flex items-center gap-2 hover:bg-white/10 px-2 py-1 rounded-md cursor-pointer transition-colors text-white">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.5 19a4.5 4.5 0 0 0 0-9h-.1A7 7 0 1 0 5 17h12.5Z"></path><path d="M12 2v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="M2 12h2"></path><path d="m4.93 19.07 1.41-1.41"></path></svg>
+            <div className="flex flex-col">
+              <span className="text-[11px] font-semibold">72°F</span>
+              <span className="text-[10px] text-white/70">Mostly Clear</span>
+            </div>
+          </div>
+          <button className="text-white hover:bg-white/10 p-1.5 rounded-md transition-colors" onClick={() => setShowCredits(!showCredits)}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          </button>
+        </div>
         <div className="flex items-center gap-1.5 justify-center absolute left-1/2 -translate-x-1/2 h-full">
           {/* Windows Start Button */}
           <button 
@@ -194,34 +382,141 @@ export const Desktop = ({
           </button>
           
           <button onClick={() => { setStartOpen(false); setCurrentView('home'); }} className="w-10 h-10 flex items-center justify-center rounded-md hover:bg-white/10 transition-colors relative group">
-            {/* Guide Button using an Xbox style icon */}
-            <div className="w-7 h-7 rounded-full border-[1.5px] border-white flex items-center justify-center group-hover:bg-green-500 group-hover:border-green-500 transition-colors">
+            <div className="w-7 h-7 rounded-full border-[1.5px] border-white flex items-center justify-center group-hover:bg-green-500 group-hover:border-green-500 transition-colors"> 
                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"></path><path d="M12 8v8"></path><path d="M8 12h8"></path></svg>
             </div>
           </button>
 
-          <button onClick={() => { setStartOpen(false); setCurrentView('store'); }} className={`w-10 h-10 flex items-center justify-center rounded-md hover:bg-white/10 transition-colors ${currentView === 'store' ? 'bg-white/10 shadow-[0_0_10px_rgba(0,164,239,0.2)]' : ''}`}>
-            <Store size={22} className="text-[#00A4EF]" />
-          </button>
+          {/* Dynamic App Icons with Layout animation */}
+          <AnimatePresence mode="popLayout">
+            {(openViews || []).map(view => {
+              let Icon = Box;
+              if (view === 'store') Icon = Store;
+              if (view === 'profile') Icon = User;
+              if (view === 'settings') Icon = SettingsIcon;
+              if (view === 'friends' || view === 'chat') Icon = MessageSquare;
+              if (view === 'party') Icon = Users;
+              if (view === 'notifications') Icon = Bell;
+              if (view === 'activity') Icon = Activity;
+              
+              const isFocused = currentView === view;
+              return (
+                <motion.div 
+                  key={`sys-${view}`}
+                  layout
+                  initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                  className="relative group flex items-center h-full"
+                >
+                  <button 
+                    onClick={() => { setStartOpen(false); setCurrentView(view); }} 
+                    className={`w-10 h-10 flex items-center justify-center rounded-md hover:bg-white/10 transition-colors relative ${isFocused ? 'bg-white/10' : ''}`}
+                  >
+                    <Icon size={20} className={isFocused ? 'text-[#00A4EF]' : 'text-white'} />
+                    {/* Running indicator */}
+                    <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-1 bg-[#00A4EF] rounded-full transition-all ${isFocused ? 'w-4' : 'w-1.5'}`} />
+                  </button>
+                  
+                  {/* Hover Preview Window */}
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 z-[1000] drop-shadow-2xl flex flex-col items-center">
+                    <div className="bg-zinc-900 border border-white/20 p-2 rounded-lg shadow-xl mb-2 min-w-[120px] flex flex-col items-center gap-2">
+                      <span className="text-xs font-semibold text-white truncate max-w-[100px] capitalize">{view}</span>
+                      <div className="w-24 h-16 bg-black rounded flex items-center justify-center border border-white/10">
+                        <Icon size={24} className="text-white/30" />
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+            
+            {/* Suspended Games */}
+            {(suspendedGames || []).map((s: any) => (
+              <motion.div 
+                key={`game-${s.game.id}`}
+                layout
+                initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                className="relative group flex items-center h-full"
+              >
+                <button 
+                  onClick={() => { setStartOpen(false); onPlayGame(s.game); }} 
+                  className={`w-10 h-10 flex items-center justify-center rounded-md hover:bg-white/10 transition-colors relative`}
+                >
+                  <img src={s.game.image} alt={s.game.title} className="w-6 h-6 rounded object-cover" />
+                  <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-1 bg-[#00A4EF] rounded-full transition-all w-1.5`} />
+                </button>
+                
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 z-[1000] drop-shadow-2xl flex flex-col items-center">
+                  <div className="bg-zinc-900 border border-white/20 p-2 rounded-lg shadow-xl mb-2 min-w-[120px] flex flex-col items-center gap-2">
+                    <span className="text-xs font-semibold text-white truncate max-w-[120px]">{s.game.title}</span>
+                    <div className="w-24 h-16 bg-black rounded flex items-center justify-center border border-white/10 overflow-hidden relative">
+                       <img src={s.game.image} className="absolute inset-0 w-full h-full object-cover opacity-50 blur-sm" />
+                       <img src={s.game.image} className="w-8 h-8 rounded z-10" />
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+
+            {/* Active Game */}
+            {playingGame && (
+              <motion.div 
+                key={`game-${playingGame.id}`}
+                layout
+                initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                className="relative group flex items-center h-full"
+              >
+                <button 
+                  className={`w-10 h-10 flex items-center justify-center rounded-md hover:bg-white/10 transition-colors relative bg-white/10`}
+                >
+                  <img src={playingGame.image} alt={playingGame.title} className="w-6 h-6 rounded object-cover" />
+                  <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-1 bg-[#00A4EF] rounded-full transition-all w-4`} />
+                </button>
+                
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 z-[1000] drop-shadow-2xl flex flex-col items-center">
+                  <div className="bg-zinc-900 border border-white/20 p-2 rounded-lg shadow-xl mb-2 min-w-[120px] flex flex-col items-center gap-2">
+                    <span className="text-xs font-semibold text-white truncate max-w-[120px]">{playingGame.title}</span>
+                    <div className="w-24 h-16 bg-black rounded flex items-center justify-center border border-white/10 overflow-hidden relative">
+                       <img src={playingGame.image} className="absolute inset-0 w-full h-full object-cover opacity-80" />
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
         
-        <div className="flex-1 flex justify-end h-full">
-          <div className="flex items-center gap-1 hover:bg-white/10 px-2 rounded-md cursor-pointer transition-colors" onClick={() => setCurrentView('notifications')}>
+        <div className="flex-1 flex justify-end items-center h-full gap-1">
+          {/* Quick Settings Cluster */}
+          <div 
+            className="flex items-center gap-2 hover:bg-white/10 px-3 py-1 rounded-md cursor-pointer transition-colors"
+            onClick={() => setShowQuickSettings(!showQuickSettings)}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
             {batteryInfo.isSupported && (
-              <div className="flex items-center">
-                <div className="w-5 h-5 flex items-center justify-center">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><rect x="2" y="7" width="16" height="10" rx="2" ry="2"></rect><line x1="22" y1="11" x2="22" y2="13"></line></svg>
-                </div>
-              </div>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><rect x="2" y="7" width="16" height="10" rx="2" ry="2"></rect><line x1="22" y1="11" x2="22" y2="13"></line></svg>
             )}
+          </div>
+          
+          {/* Time and Notifications */}
+          <div className="flex items-center gap-1 hover:bg-white/10 px-2 rounded-md cursor-pointer transition-colors h-full" onClick={() => setCurrentView('notifications')}>
             <div className="flex flex-col items-end justify-center px-1">
               <span className="text-[11px] font-medium text-white">{time}</span>
               <span className="text-[11px] text-white/80">{new Date().toLocaleDateString()}</span>
             </div>
             {notificationCount > 0 && (
-              <div className="relative">
+              <div className="relative ml-1">
                 <Bell size={14} className="text-white" />
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full"></span>
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full border border-zinc-900"></span>
               </div>
             )}
           </div>

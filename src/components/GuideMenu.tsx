@@ -114,7 +114,7 @@ export function GuideMenu({ isOpen, onClose, recentGames, onNavigate, playingGam
                   className="flex items-center gap-3 p-3 rounded-md hover:bg-white/10 transition-colors text-white text-left focus:ring-2 focus:ring-green-500 focus:outline-none"
                 >
                   <Headphones size={20} className="text-zinc-400" />
-                  <span className="font-medium">Ebox Music</span>
+                  <span className="font-medium">Win Music</span>
                 </button>
               </div>
 
@@ -212,7 +212,7 @@ export function GuideMenu({ isOpen, onClose, recentGames, onNavigate, playingGam
                    </div>
                    <div className="flex flex-col flex-1">
                      <span className="text-white text-sm font-medium">Not Playing</span>
-                     <span className="text-zinc-500 text-xs">Ebox Music</span>
+                     <span className="text-zinc-500 text-xs">Win Music</span>
                    </div>
                 </div>
               )}

@@ -16,7 +16,7 @@ interface LocalAccount {
 
 export function AuthFlow({ onConfirm }: { onConfirm: () => void }) {
   const [accounts, setAccounts] = useState<LocalAccount[]>([]);
-  const [view, setView] = useState<'picker' | 'pin' | 'loading' | 'add_method' | 'manual_signin' | 'manual_signup'>('loading');
+  const [view, setView] = useState<'lockscreen' | 'picker' | 'pin' | 'loading' | 'add_method' | 'manual_signin' | 'manual_signup'>('lockscreen');
   const [selectedAccount, setSelectedAccount] = useState<LocalAccount | null>(null);
   const [pinInput, setPinInput] = useState('');
   const [error, setError] = useState('');
@@ -24,17 +24,12 @@ export function AuthFlow({ onConfirm }: { onConfirm: () => void }) {
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem('ebox_accounts') || '[]');
     setAccounts(saved);
-
     const autoAccount = saved.find((a: LocalAccount) => a.autoSignIn);
     if (autoAccount) {
       setSelectedAccount(autoAccount);
-      if (autoAccount.pin) {
-        setView('pin');
-      } else {
+      if (!autoAccount.pin) {
         authenticate(autoAccount);
       }
-    } else {
-      setView('picker');
     }
   }, []);
 
@@ -301,6 +296,26 @@ if (view === 'pin' && selectedAccount) {
              <button onClick={() => setPinInput(p => p.length < 4 ? p + '0' : p)} className="w-16 h-16 rounded-full bg-zinc-800/80 hover:bg-zinc-700 text-white text-2xl font-bold flex items-center justify-center transition-colors shadow-lg">0</button>
              <button onClick={() => setPinInput(p => p.slice(0, -1))} className="w-16 h-16 rounded-full bg-zinc-800/80 hover:bg-zinc-700 text-white text-sm font-bold flex items-center justify-center transition-colors shadow-lg">Del</button>
            </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (view === 'lockscreen') {
+    return (
+      <div 
+        className="min-h-screen flex flex-col items-center justify-start relative overflow-hidden bg-cover bg-center cursor-pointer transition-all duration-700 ease-in-out"
+        style={{ backgroundImage: `url(${localStorage.getItem('win11_lock_bg') || 'https://images.unsplash.com/photo-1622737133809-d95047b9e673?auto=format&fit=crop&w=2000&q=80'})` }}
+        onClick={() => setView('picker')}
+      >
+        <div className="absolute inset-0 bg-black/20" />
+        <div className="z-10 mt-32 flex flex-col items-center text-white drop-shadow-lg pointer-events-none">
+          <div className="text-[6rem] font-medium leading-none tracking-tight">
+            {new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+          </div>
+          <div className="text-xl font-medium mt-2">
+            {new Date().toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })}
+          </div>
         </div>
       </div>
     );

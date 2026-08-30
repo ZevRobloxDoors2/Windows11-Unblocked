@@ -32,6 +32,7 @@ import { Desktop } from './components/Desktop';
 import { Minus, Square, X } from 'lucide-react';
 import { Window } from './components/Window';
 import { WinStore } from './components/WinStore';
+import { GTAVModal } from './components/GTAVModal';
 
 type View = 'home' | 'store' | 'profile' | 'settings' | 'notifications' | 'friends' | 'chat' | 'party' | 'activity';
 
@@ -178,6 +179,31 @@ export default function App() {
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [currentView, setCurrentView] = useState<View>('home');
+  const [openViews, setOpenViews] = useState<View[]>([]);
+  const [minimizedViews, setMinimizedViews] = useState<View[]>([]);
+
+  const handleSetCurrentView = (view: View) => {
+    setCurrentView(view);
+    if (view !== 'home' && !openViews.includes(view)) {
+      setOpenViews([...openViews, view]);
+    }
+    if (minimizedViews.includes(view)) {
+      setMinimizedViews(minimizedViews.filter(v => v !== view));
+    }
+  };
+
+  const handleCloseView = (view: View) => {
+    setOpenViews(openViews.filter(v => v !== view));
+    setMinimizedViews(minimizedViews.filter(v => v !== view));
+    if (currentView === view) setCurrentView('home');
+  };
+
+  const handleMinimizeView = (view: View) => {
+    if (!minimizedViews.includes(view)) {
+      setMinimizedViews([...minimizedViews, view]);
+    }
+    if (currentView === view) setCurrentView('home');
+  };
   const [libraryTab, setLibraryTab] = useState<'games'|'apps'>('games');
   
   const [installedApps, setInstalledApps] = useState<string[]>(() => {
@@ -440,15 +466,17 @@ export default function App() {
     await actuallyPlayGame(game);
   };
 
-  const handleStopGame = () => {
-    if (playingGame && profile?.quickResumeEnabled) {
-      // Suspend it
+  const handleMinimizeGame = () => {
+    if (playingGame) {
       setSuspendedGames(prev => {
-        // If it's already there, replace it, though it shouldn't be
         const filtered = prev.filter(s => s.game.id !== playingGame.id);
         return [...filtered, { game: playingGame, minutes: playMinutes }];
       });
+      setPlayingGame(null);
     }
+  };
+
+  const handleStopGame = () => {
     setPlayingGame(null);
     setPlayMinutes(0);
   };
@@ -615,20 +643,24 @@ export default function App() {
     <>
       <style>{cursorCss}</style>
       <DMCAModal />
-      <GlobalNotifications profile={activeProfile} playingGame={!!playingGame} activeChatId={currentView === 'chat' && chatConfig ? (chatConfig.isGroup ? chatConfig.id : chatConfig.id) : null} onNavigateToChat={(id, isGroup, name) => { setChatConfig({id, name, isGroup}); setCurrentView('chat'); }} onNavigateToParty={(id) => { setActivePartyId(id); setCurrentView('party'); }} />
+      <GlobalNotifications profile={activeProfile} playingGame={!!playingGame} activeChatId={currentView === 'chat' && chatConfig ? (chatConfig.isGroup ? chatConfig.id : chatConfig.id) : null} onNavigateToChat={(id, isGroup, name) => { setChatConfig({id, name, isGroup}); handleSetCurrentView('chat'); }} onNavigateToParty={(id) => { setActivePartyId(id); handleSetCurrentView('party'); }} />
       <div className={`h-screen bg-black text-white font-sans overflow-hidden flex flex-col relative z-0`}>
       <div className={`flex-1 min-h-0 flex flex-col relative z-10`}>
         
         <Desktop 
           profile={activeProfile} 
           installedApps={installedApps} 
-          onOpenStore={() => setCurrentView('store')} 
+          onOpenStore={() => handleSetCurrentView('store')} 
           onOpenSearch={() => setIsSearchOpen(true)}
           onPlayGame={handlePlayGame}
           time={time}
           batteryInfo={batteryInfo}
           currentView={currentView}
-          setCurrentView={(v) => setCurrentView(v as View)}
+          setCurrentView={(v) => handleSetCurrentView(v as View)}
+          openViews={openViews}
+          minimizedViews={minimizedViews}
+          playingGame={playingGame}
+          suspendedGames={suspendedGames}
           notificationCount={notificationCount}
           onLogout={handleLogout}
         />
@@ -873,20 +905,32 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        <AnimatePresence>
-          {currentView !== 'home' && (
-            <Window title={currentView.charAt(0).toUpperCase() + currentView.slice(1)} onClose={() => setCurrentView('home')}>
-              {currentView === 'store' && <WinStore installedApps={installedApps} onInstall={handleInstallApp} onPlay={handlePlayGame} />}
-              {currentView === 'profile' && <Profile userProfile={activeProfile as any} onBack={() => setCurrentView('home')} />}
-              {currentView === 'settings' && <SettingsView profile={activeProfile as any} onBack={() => setCurrentView('home')} onLogout={handleLogout} isGuestMode={isGuestMode} />}
-              {currentView === 'friends' && <Friends userProfile={activeProfile as any} onBack={() => setCurrentView('home')} onChat={(id, name, isGroup) => { setChatConfig({id, name, isGroup: !!isGroup}); setCurrentView('chat'); }} />}
-              {currentView === 'chat' && (chatConfig ? <Chat userProfile={activeProfile as any} friendId={!chatConfig.isGroup ? chatConfig.id : undefined} friendGamertag={!chatConfig.isGroup ? chatConfig.name : undefined} chatId={chatConfig.isGroup ? chatConfig.id : undefined} isGroup={chatConfig.isGroup} chatName={chatConfig.isGroup ? chatConfig.name : undefined} onBack={() => setCurrentView('friends')} /> : <div className="flex h-full items-center justify-center text-zinc-400 flex-col gap-4"><div>Select a friend to start chatting</div><button onClick={() => setCurrentView('friends')} className="px-4 py-2 bg-blue-600 text-white rounded">Open Friends</button></div>)}
-              {currentView === 'party' && <Party profile={activeProfile as any} initialPartyId={activePartyId} onBack={() => { setActivePartyId(undefined); setCurrentView('home'); }} />}
-              {currentView === 'notifications' && <Notifications userProfile={activeProfile as any} onBack={() => setCurrentView('home')} />}
-              {currentView === 'activity' && <ActivityFeed profile={activeProfile as any} />}
-            </Window>
-          )}
-        </AnimatePresence>
+        {openViews.map(view => (
+          <div 
+            key={view} 
+            className={`absolute inset-0 pointer-events-none ${minimizedViews.includes(view) ? 'hidden' : 'block'}`}
+            style={{ zIndex: currentView === view ? 200 : 100 }}
+          >
+            <div className="pointer-events-auto w-full h-full">
+              <Window 
+                title={view.charAt(0).toUpperCase() + view.slice(1)} 
+                onClose={() => handleCloseView(view)} 
+                onMinimize={() => handleMinimizeView(view)}
+                isActive={currentView === view}
+                onFocus={() => { if (currentView !== view) setCurrentView(view); }}
+              >
+                {view === 'store' && <WinStore installedApps={installedApps} onInstall={handleInstallApp} onPlay={handlePlayGame} />}
+                {view === 'profile' && <Profile userProfile={activeProfile as any} onBack={() => handleSetCurrentView('home')} />}
+                {view === 'settings' && <SettingsView profile={activeProfile as any} onBack={() => handleSetCurrentView('home')} onLogout={handleLogout} isGuestMode={isGuestMode} />}
+                {view === 'friends' && <Friends userProfile={activeProfile as any} onBack={() => handleSetCurrentView('home')} onChat={(id, name, isGroup) => { setChatConfig({id, name, isGroup: !!isGroup}); handleSetCurrentView('chat'); }} />}
+                {view === 'chat' && (chatConfig ? <Chat userProfile={activeProfile as any} friendId={!chatConfig.isGroup ? chatConfig.id : undefined} friendGamertag={!chatConfig.isGroup ? chatConfig.name : undefined} chatId={chatConfig.isGroup ? chatConfig.id : undefined} isGroup={chatConfig.isGroup} chatName={chatConfig.isGroup ? chatConfig.name : undefined} onBack={() => handleSetCurrentView('friends')} /> : <div className="flex h-full items-center justify-center text-zinc-400 flex-col gap-4"><div>Select a friend to start chatting</div><button onClick={() => handleSetCurrentView('friends')} className="px-4 py-2 bg-[#00A4EF] text-white rounded">Open Friends</button></div>)}
+                {view === 'party' && <Party profile={activeProfile as any} initialPartyId={activePartyId} onBack={() => { setActivePartyId(undefined); handleSetCurrentView('home'); }} />}
+                {view === 'notifications' && <Notifications userProfile={activeProfile as any} onBack={() => handleSetCurrentView('home')} />}
+                {view === 'activity' && <ActivityFeed profile={activeProfile as any} />}
+              </Window>
+            </div>
+          </div>
+        ))}
 
         <AnimatePresence>
           {(playingGame || suspendedGames.length > 0) && (
@@ -898,7 +942,10 @@ export default function App() {
                 <div className="h-10 bg-[#181818] flex items-center justify-between select-none px-4 shrink-0 border-b border-white/5">
                   <div className="text-xs font-semibold text-zinc-300">{playingGame.title}</div>
                   <div className="flex items-center gap-4">
-                    <button className="text-zinc-400 hover:text-white transition-colors"><Minus size={16} /></button>
+                    <button className="text-zinc-400 hover:text-white transition-colors" title="Guide">
+                      <span className="font-bold text-sm">E</span>
+                    </button>
+                    <button onClick={handleMinimizeGame} className="text-zinc-400 hover:text-white transition-colors"><Minus size={16} /></button>
                     <button className="text-zinc-400 hover:text-white transition-colors"><Square size={14} /></button>
                     <button onClick={handleStopGame} className="text-zinc-400 hover:bg-red-500 hover:text-white transition-colors p-1 rounded-sm"><X size={18} /></button>
                   </div>
@@ -929,16 +976,7 @@ export default function App() {
                       <div className="absolute inset-0 pointer-events-none z-[105]" style={{ backgroundImage: 'url(https://upload.wikimedia.org/wikipedia/commons/c/c3/Google_Docs_logo_%282014-2020%29.svg)', backgroundRepeat: 'repeat', opacity: 0.1 }} />
                     )}
                     {g.id === 'GTA V' && playingGame?.id === g.id && !isLoadingGame && (
-                      <div className="absolute top-4 left-4 z-[200] bg-zinc-900 border-2 border-red-500 p-4 rounded-lg shadow-2xl max-w-sm pointer-events-auto">
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="text-red-400 font-bold">GTA V Launch Instructions:</h3>
-                        </div>
-                        <ol className="text-sm text-white list-decimal list-inside space-y-2 mb-2">
-                          <li>Open Win Store.</li>
-                          <li>Search up <strong>Grand</strong>.</li>
-                          <li>Click on <strong>GTA V</strong>.</li>
-                        </ol>
-                      </div>
+                      <GTAVModal />
                     )}
                     <iframe 
                       key={g.id}

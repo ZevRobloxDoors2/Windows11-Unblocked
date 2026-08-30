@@ -4,7 +4,7 @@ import { ChevronLeft } from 'lucide-react';
 import { UserProfile } from '../types';
 
 export function Settings({ profile, onBack, onLogout, isGuestMode }: { profile: UserProfile, onBack: () => void, onLogout: () => void, isGuestMode: boolean }) {
-  const [activeTab, setActiveTab] = useState<'general' | 'cloak'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'cloak' | 'personalization'>('general');
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinStep, setPinStep] = useState<'enter' | 'confirm'>('enter');
   const [firstPin, setFirstPin] = useState('');
@@ -207,10 +207,13 @@ export function Settings({ profile, onBack, onLogout, isGuestMode }: { profile: 
           </button>
           <h2 className="text-2xl font-black">Settings</h2>
         </div>
-        <button onClick={() => setActiveTab('general')} className={`text-left px-4 py-3 rounded-md font-bold transition-colors ${activeTab === 'general' ? 'bg-green-600 text-white' : 'hover:bg-white/10 text-zinc-400'}`}>
+        <button onClick={() => setActiveTab('general')} className={`text-left px-4 py-3 rounded-md font-bold transition-colors ${activeTab === 'general' ? 'bg-[#00A4EF] text-white' : 'hover:bg-white/10 text-zinc-400'}`}>
           General
         </button>
-        <button onClick={() => setActiveTab('cloak')} className={`text-left px-4 py-3 rounded-md font-bold transition-colors ${activeTab === 'cloak' ? 'bg-green-600 text-white' : 'hover:bg-white/10 text-zinc-400'}`}>
+        <button onClick={() => setActiveTab('personalization')} className={`text-left px-4 py-3 rounded-md font-bold transition-colors ${activeTab === 'personalization' ? 'bg-[#00A4EF] text-white' : 'hover:bg-white/10 text-zinc-400'}`}>
+          Personalization
+        </button>
+        <button onClick={() => setActiveTab('cloak')} className={`text-left px-4 py-3 rounded-md font-bold transition-colors ${activeTab === 'cloak' ? 'bg-[#00A4EF] text-white' : 'hover:bg-white/10 text-zinc-400'}`}>
           Anti-Teacher Mode
         </button>
         <button onClick={onLogout} className="text-left px-4 py-3 rounded-md font-bold transition-colors bg-red-600 text-white mt-auto mb-4 hover:bg-red-500">
@@ -379,6 +382,63 @@ export function Settings({ profile, onBack, onLogout, isGuestMode }: { profile: 
               <button onClick={() => window.dispatchEvent(new CustomEvent('open-dmca'))} className="text-zinc-500 hover:text-white text-sm transition-colors">
                 DMCA Policy
               </button>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'personalization' && (
+          <>
+            <div>
+              <h3 className="text-xl font-bold mb-4">Personalization</h3>
+              <p className="text-zinc-400 mb-6">Customize the look and feel of Windows 11.</p>
+              
+              <div className="flex flex-col gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-zinc-300 mb-2">Desktop Wallpaper URL (PNG/GIF/JPG)</label>
+                  <input 
+                    type="text" 
+                    placeholder="https://..." 
+                    defaultValue={localStorage.getItem('win11_bg') || 'https://images.unsplash.com/photo-1622737133809-d95047b9e673?auto=format&fit=crop&w=2000&q=80'}
+                    onBlur={(e) => {
+                      localStorage.setItem('win11_bg', e.target.value);
+                      window.location.reload();
+                    }}
+                    className="w-full px-4 py-3 rounded bg-black/40 text-white border border-zinc-700 focus:border-[#00A4EF] outline-none transition-colors"
+                  />
+                  <p className="text-xs text-zinc-500 mt-2">Paste an image URL and click away to apply (requires reload).</p>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-zinc-300 mb-2">Lock Screen Wallpaper URL (PNG/GIF/JPG)</label>
+                  <input 
+                    type="text" 
+                    placeholder="https://..." 
+                    defaultValue={localStorage.getItem('win11_lock_bg') || 'https://images.unsplash.com/photo-1622737133809-d95047b9e673?auto=format&fit=crop&w=2000&q=80'}
+                    onBlur={(e) => localStorage.setItem('win11_lock_bg', e.target.value)}
+                    className="w-full px-4 py-3 rounded bg-black/40 text-white border border-zinc-700 focus:border-[#00A4EF] outline-none transition-colors"
+                  />
+                  <p className="text-xs text-zinc-500 mt-2">Paste an image URL to customize the login screen.</p>
+                </div>
+
+                {!isGuestMode && (
+                  <div>
+                    <label className="block text-sm font-semibold text-zinc-300 mb-2">Profile Picture URL</label>
+                    <input 
+                      type="text" 
+                      placeholder="https://..." 
+                      defaultValue={thisAcc?.avatar || ''}
+                      onBlur={(e) => {
+                        if (thisAccIndex !== -1) {
+                          accounts[thisAccIndex].avatar = e.target.value;
+                          localStorage.setItem('ebox_accounts', JSON.stringify(accounts));
+                          window.location.reload();
+                        }
+                      }}
+                      className="w-full px-4 py-3 rounded bg-black/40 text-white border border-zinc-700 focus:border-[#00A4EF] outline-none transition-colors"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           </>
         )}
