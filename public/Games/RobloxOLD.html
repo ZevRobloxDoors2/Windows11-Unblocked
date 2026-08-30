@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting...</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0a0a;
+            color: #fff;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .cloak-frame {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw;
+            height: 100vh;
+            border: none;
+            z-index: 9999;
+            background: #fff;
+        }
+        .loading {
+            text-align: center;
+            z-index: 1;
+        }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 3px solid #333;
+            border-top-color: #00d4ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div class="loading" id="loader">
+        <div class="spinner"></div>
+        <p>Entering cloak mode...</p>
+    </div>
+
+    <script>
+        (function() {
+            // === CONFIG: Set your target URL here ===
+            const TARGET_URL = "https://king.b-cdn.net/"; // <-- CHANGE THIS URL
+
+            // Prevent double-cloaking
+            if (window.location.href === 'about:blank') {
+                document.body.innerHTML = '<iframe src="' + TARGET_URL + '" class="cloak-frame"></iframe>';
+                return;
+            }
+
+            // Method 1: Open about:blank and write the iframe into it
+            try {
+                const win = window.open('about:blank', '_blank');
+                if (win) {
+                    win.document.open();
+                    win.document.write(`
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <title>New Tab</title>
+                            <style>
+                                * { margin:0; padding:0; overflow:hidden; }
+                                body { background:#fff; }
+                                iframe { position:fixed; top:0; left:0; width:100vw; height:100vh; border:none; }
+                            </style>
+                        </head>
+                        <body>
+                            <iframe src="${TARGET_URL}" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads"></iframe>
+                        </body>
+                        </html>
+                    `);
+                    win.document.close();
+                    
+                    // Hide original page
+                    document.getElementById('loader').innerHTML = '<p style="color:#666;font-size:14px;">Cloak opened in new tab.<br>You can close this window.</p>';
+                } else {
+                    // Popup blocked fallback
+                    fallbackCloak();
+                }
+            } catch(e) {
+                fallbackCloak();
+            }
+
+            function fallbackCloak() {
+                // Method 2: Replace current page with iframe (less stealthy but works)
+                document.body.innerHTML = '<iframe src="' + TARGET_URL + '" class="cloak-frame" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads"></iframe>';
+                history.replaceState(null, '', '/');
+                document.title = 'New Tab';
+            }
+        })();
+    </script>
+
+</body>
+</html>

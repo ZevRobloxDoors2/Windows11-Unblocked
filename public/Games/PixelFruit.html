@@ -1,0 +1,1772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pixel Survival RPG V1.5</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; background-color: #2c3e50;
+            font-family: 'Press Start 2P', cursive;
+            touch-action: none; user-select: none;
+        }
+
+        canvas {
+            display: block; width: 100%; height: 100%;
+            image-rendering: pixelated;
+        }
+
+        #ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; color: white; text-shadow: 2px 2px 0 #000;
+        }
+
+        #island-banner {
+            position: absolute; top: -100px; left: 50%; transform: translateX(-50%);
+            font-size: 32px; color: white; opacity: 0;
+            transition: top 1.5s ease-out, opacity 1.5s ease-out;
+            text-shadow: 3px 3px 0 rgba(0,0,0,0.8); z-index: 10;
+        }
+        .banner-show { top: 60px !important; opacity: 1 !important; }
+
+        #save-indicator {
+            position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
+            background: rgba(46, 204, 113, 0.9); padding: 8px 15px;
+            border-radius: 5px; color: white; font-size: 12px;
+            display: none; z-index: 100; font-family: 'Press Start 2P', cursive;
+            border: 2px solid #27ae60;
+        }
+
+        /* --- RPG UI --- */
+        #player-stats-ui {
+            position: absolute; bottom: 15px; left: 15px;
+            font-family: 'VT323', monospace; text-shadow: 1px 1px 0 #000;
+            pointer-events: auto; display: none;
+        }
+        #menu-btn {
+            background: #d4e157; color: #333; border: 2px solid #9e9d24;
+            font-family: 'VT323', monospace; font-size: 22px;
+            padding: 2px 12px; cursor: pointer; box-shadow: 2px 2px 0 #000;
+            margin-bottom: 5px; text-shadow: none;
+        }
+        #menu-btn:active { transform: translate(2px, 2px); box-shadow: 0 0 0 #000; }
+        
+        #new-money-display { color: #55ff55; font-size: 36px; line-height: 1; }
+        #new-lvl-display { color: #ffffff; font-size: 28px; margin-bottom: 5px; line-height: 1; }
+        
+        .stat-bar {
+            width: 320px; height: 20px; background: rgba(0,0,0,0.7);
+            position: relative; margin-bottom: 2px; border: 2px solid #222;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .exp-bar .stat-fill { background: #9b59b6; }
+        .health-bar .stat-fill { background: #2ecc71; }
+        .energy-bar .stat-fill { background: #00d2d3; }
+        
+        .stat-fill { position: absolute; left: 0; top: 0; height: 100%; transition: width 0.2s; z-index: 1; }
+        .stat-text { position: relative; z-index: 2; font-size: 20px; color: #fff; }
+
+        /* --- MENU MODAL --- */
+        #main-menu-modal {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 600px; height: 400px; background: rgba(0,0,0,0.9);
+            border: 4px solid #f1c40f; border-radius: 8px; display: none;
+            pointer-events: auto; flex-direction: column; font-family: 'VT323', monospace; z-index: 50;
+        }
+        #menu-tabs { display: flex; border-bottom: 2px solid #555; background: #111; }
+        #menu-tabs button {
+            flex: 1; background: transparent; border: none; color: #fff;
+            padding: 10px; font-family: 'Press Start 2P', cursive; font-size: 10px;
+            cursor: pointer; border-right: 2px solid #555;
+        }
+        #menu-tabs button:hover { background: #333; }
+        #menu-tabs button.close-btn { background: #e74c3c; border-right: none; }
+        #menu-tabs button.close-btn:hover { background: #c0392b; }
+
+        .tab-content { padding: 20px; flex: 1; overflow-y: auto; font-size: 24px; color: #fff; }
+        .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid #333; }
+        .stat-add-btn { background: #f1c40f; color: #000; border: none; font-size: 20px; width: 30px; height: 30px; cursor: pointer; font-family: 'VT323', monospace; font-weight: bold; }
+        .stat-add-btn:disabled { background: #555; cursor: not-allowed; }
+
+        /* Compass UI */
+        #compass-container {
+            position: absolute; left: 20px; top: 20px;
+            display: block; pointer-events: auto; cursor: pointer; text-align: center;
+        }
+        #compass-icon {
+            width: 50px; height: 50px; background: rgba(0,0,0,0.7);
+            border: 3px solid #f1c40f; border-radius: 50%; display: flex;
+            justify-content: center; align-items: center; font-size: 24px;
+            transition: transform 0.2s;
+        }
+        #compass-icon:hover { transform: scale(1.1); }
+        #compass-arrow { margin-top: 10px; font-size: 30px; display: block; transition: transform 0.1s; }
+        
+        #compass-tutorial {
+            position: absolute; left: 80px; top: 35px; font-family: 'VT323', monospace;
+            font-size: 24px; color: #fff; background: rgba(0,0,0,0.8); padding: 5px 10px;
+            border: 2px solid #f1c40f; border-radius: 5px; display: none;
+            transition: opacity 1s ease-out; opacity: 1; z-index: 10;
+        }
+
+        #toolbar {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            display: none; gap: 10px; pointer-events: auto;
+        }
+        .slot {
+            width: 60px; height: 60px; background: rgba(0, 0, 0, 0.6);
+            border: 4px solid #555; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; font-size: 10px;
+            cursor: pointer; position: relative; transition: transform 0.1s; text-align:center;
+        }
+        .slot.active { border-color: #f1c40f; background: rgba(0, 0, 0, 0.8); transform: scale(1.1); }
+        .slot-number { position: absolute; top: 5px; left: 5px; color: #f1c40f; }
+
+        #mastery-container {
+            position: absolute; bottom: 90px; right: 20px; width: 300px;
+            text-align: right; display: none; font-family: 'Press Start 2P', cursive;
+        }
+        #mastery-text { font-size: 12px; color: #e67e22; margin-bottom: 5px; display: block; }
+        #mastery-bar-bg { width: 100%; height: 15px; background: rgba(0, 0, 0, 0.7); border: 2px solid #e67e22; }
+        #mastery-bar-fill { width: 0%; height: 100%; background: #d35400; transition: width 0.3s; }
+        #mastery-moves { margin-top: 10px; font-size: 10px; color: #ccc; text-align: right; line-height: 1.6; }
+        .locked-move { color: #e74c3c; }
+        .unlocked-move { color: #2ecc71; }
+
+        #quest-tracker {
+            position: absolute; left: 15px; bottom: 210px;
+            background: rgba(0, 0, 0, 0.7); padding: 15px; border: 2px solid #f1c40f;
+            border-radius: 5px; font-size: 12px; line-height: 1.8; display: none; opacity: 0; transition: opacity 1s;
+        }
+
+        #dialogue-box {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9); padding: 30px; border: 4px solid #f1c40f;
+            border-radius: 10px; display: none; pointer-events: auto; width: 600px;
+            box-sizing: border-box; flex-direction: row; justify-content: space-between; align-items: center; z-index: 40;
+        }
+        .dialogue-text { font-family: 'VT323', monospace; font-size: 24px; line-height: 1.4; color: #ecf0f1; width: 55%; text-align: left; text-shadow: none; }
+        .dialogue-options-container { width: 40%; display: flex; flex-direction: column; gap: 10px; }
+        .dialogue-btn {
+            width: 100%; background: #2c3e50; border: 2px solid #fff; color: white;
+            padding: 12px; font-family: 'VT323', monospace; font-size: 20px; cursor: pointer; text-align: center; transition: background 0.1s;
+        }
+        .dialogue-btn:hover { background: #34495e; }
+        .dialogue-btn:disabled { color: #555; border-color: #555; cursor: not-allowed; }
+
+        .screen {
+            background: rgba(0, 0, 0, 0.8); padding: 40px; border: 4px solid #fff;
+            border-radius: 10px; pointer-events: auto; position: absolute;
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+            text-align: center; display: flex; flex-direction: column; align-items: center; z-index: 60;
+        }
+        h1 { font-size: 32px; margin-bottom: 20px; color: #f1c40f; }
+        p { font-size: 14px; line-height: 1.5; margin-bottom: 30px; }
+        button.main-btn {
+            font-family: 'Press Start 2P', cursive; background-color: #e74c3c;
+            color: white; border: 4px solid #c0392b; padding: 15px 30px;
+            font-size: 16px; cursor: pointer; transition: transform 0.1s; margin-top: 20px;
+        }
+        button.main-btn:hover { transform: scale(1.05); }
+        button.main-btn:active { transform: scale(0.95); }
+
+        #loading-screen { display: flex; }
+        #game-over-screen { display: none; }
+        .loading-bar-border { width: 300px; height: 20px; border: 4px solid #fff; background: #111; margin-top: 20px; border-radius: 4px; overflow: hidden; }
+        .loading-bar-fill { width: 0%; height: 100%; background: #f1c40f; transition: width 0.1s; }
+    </style>
+</head>
+<body>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="ui-layer">
+        <div id="island-banner">Pirate Island</div>
+        <div id="save-indicator">Game Saved! 💾</div>
+
+        <!-- NEW RPG UI -->
+        <div id="player-stats-ui">
+            <button id="menu-btn" onclick="window.openMenu()">Menu</button>
+            <div id="new-money-display">$0</div>
+            <div id="new-lvl-display">Lv. 1</div>
+            <div class="stat-bar exp-bar">
+                <div class="stat-fill" id="exp-fill"></div>
+                <span class="stat-text" id="exp-text">0/50</span>
+            </div>
+            <div class="stat-bar health-bar">
+                <div class="stat-fill" id="health-fill"></div>
+                <span class="stat-text" id="health-text">100/100</span>
+            </div>
+            <div class="stat-bar energy-bar">
+                <div class="stat-fill" id="energy-fill"></div>
+                <span class="stat-text" id="energy-text">100/100</span>
+            </div>
+        </div>
+        
+        <div id="compass-container" onclick="window.toggleCompass()">
+            <div id="compass-icon">🧭</div>
+            <div id="compass-arrow">⬆️</div>
+        </div>
+        <div id="compass-tutorial">⬅ Click the compass to track your next Island!</div>
+
+        <div id="mastery-container">
+            <span id="mastery-text">Fist Mastery: Lv. 1</span>
+            <div id="mastery-bar-bg"><div id="mastery-bar-fill"></div></div>
+            <div id="mastery-moves">
+                Moves List:<br>
+                <span id="move-1" class="locked-move">Lv. 5: Raging Fist (E)<br>[LOCKED]</span><br><br>
+                <span id="move-2" class="locked-move">Lv. 20: Dash Punch (X)<br>[LOCKED]</span>
+            </div>
+        </div>
+
+        <div id="toolbar">
+            <!-- Dynamically populated by JS -->
+        </div>
+
+        <div id="quest-tracker"></div>
+
+        <div id="dialogue-box">
+            <div id="dialogue-content" class="dialogue-text"></div>
+            <div id="dialogue-options" class="dialogue-options-container"></div>
+        </div>
+
+        <!-- MENU MODAL -->
+        <div id="main-menu-modal">
+            <div id="menu-tabs">
+                <button onclick="window.switchTab('stats')">Stats</button>
+                <button onclick="window.switchTab('items')">Items</button>
+                <button onclick="window.switchTab('log')">Upd Log</button>
+                <button class="close-btn" onclick="window.closeMenu()">Close</button>
+            </div>
+            <div id="tab-stats" class="tab-content">
+                <h3 style="margin-top:0; color:#f1c40f;">Stat Points: <span id="avail-stats">0</span></h3>
+                <div class="stat-row"><span>Melee: Lv. <span id="stat-melee-lv">1</span></span> <button class="stat-add-btn" onclick="window.addStat('melee')">+</button></div>
+                <div class="stat-row"><span>Defense: Lv. <span id="stat-defense-lv">1</span></span> <button class="stat-add-btn" onclick="window.addStat('defense')">+</button></div>
+                <div class="stat-row"><span>Sword: Lv. <span id="stat-sword-lv">1</span></span> <button class="stat-add-btn" onclick="window.addStat('sword')">+</button></div>
+                <div class="stat-row"><span>Gun: Lv. <span id="stat-gun-lv">1</span></span> <button class="stat-add-btn" onclick="window.addStat('gun')">+</button></div>
+                <div class="stat-row"><span>Fruit: Lv. <span id="stat-fruit-lv">1</span></span> <button class="stat-add-btn" onclick="window.addStat('fruit')">+</button></div>
+                <div class="stat-row" style="border:none; margin-top: 15px; display: flex; justify-content: center;">
+                    <button class="main-btn" style="width: 100%; font-size: 16px; padding: 10px;" onclick="window.manualSave()">Save Game</button>
+                </div>
+            </div>
+            <div id="tab-items" class="tab-content" style="display:none;">
+                <h3 style="margin-top:0; color:#f1c40f;">Inventory</h3>
+                <ul id="inventory-list" style="list-style-type:square; padding-left:20px;">
+                    <li>Fist</li>
+                </ul>
+            </div>
+            <div id="tab-log" class="tab-content" style="display:none;">
+                <h3 style="margin-top:0; color:#f1c40f;">Update Log</h3>
+                <p><b>V1.5:</b> Desert Island, Docks everywhere!</p>
+                <p><b>V1.4:</b> Devil Fruits! Spin & Dragon Powers.</p>
+                <p><b>V1.3:</b> Energy, Stats, UI Overhaul.</p>
+                <p><b>V1.2:</b> Gorilla King Boss, Cloud Saves.</p>
+                <p><b>V1.1:</b> Jungle Island, Smart AI, Ships.</p>
+            </div>
+        </div>
+
+        <div id="loading-screen" class="screen">
+            <h1>LOADING...</h1>
+            <div class="loading-bar-border">
+                <div id="loading-bar-inner" class="loading-bar-fill"></div>
+            </div>
+            <p id="loading-text" style="margin-top: 15px; font-size: 10px; color: #aaa;">Generating World...</p>
+        </div>
+
+        <div id="game-over-screen" class="screen">
+            <h1 style="color: #e74c3c;">GAME OVER</h1>
+            <p style="font-size: 10px; color: #aaa;">You kept your Level, XP, Money, and Mastery!</p>
+            <button id="restart-btn" class="main-btn">RESPAWN</button>
+        </div>
+    </div>
+
+    <!-- Script Module for Firebase, IndexedDB, and Game Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- GAME STATE & GLOBALS ---
+        const WORLD_SIZE = 6000; 
+        const TILE_SIZE = 40;
+        let gameState = 'START'; 
+        let frameCount = 0;
+        let mapGrid = [];
+        let paths = [];
+        let windmills = [];
+        let decorations = [];
+        let craters = [];
+        let lasers = [];
+        let camera = { x: 0, y: 0 };
+        
+        const keys = { w: false, a: false, s: false, d: false, q: false, e: false, x: false };
+        const mouse = { x: 0, y: 0, worldX: 0, worldY: 0, down: false };
+
+        let player;
+        let npcs = [];
+        let entities = [];
+        let particles = [];
+        let activeShip = null; 
+        let quest = { active: false, name: "", target: 0, current: 0, entityName: "", reward: 0, xpReward: 0 };
+
+        // Persistent Stats across deaths
+        let globalMoney = 0;
+        let globalMastery = { level: 1, xp: 0, maxXp: 10, limit: 20 };
+        let globalLevel = 1;
+        let globalXp = 0;
+        let globalMaxXp = 50;
+        let globalSpawnX = 1000;
+        let globalSpawnY = 1000;
+        
+        // V1.3 & V1.4 Stats
+        let globalEnergy = 100;
+        let globalMaxEnergy = 100;
+        let globalStatPoints = 0;
+        let globalStats = { fruit: 1, melee: 1, defense: 1, gun: 1, sword: 1 };
+        let globalFruit = null;
+        let globalInventory = []; 
+        let tutorialShown_compass = false;
+        let showCompassArrow = true;
+
+        const PirateIslandCenter = { x: 1000, y: 1000 };
+        const JungleIslandCenter = { x: 3000, y: 3000 };
+        const GorillaIslandCenter = { x: 3800, y: 3000 };
+        const DesertIslandCenter = { x: 1000, y: 3000 }; // NEW: Desert Island
+
+        let gorillaKingSpawnTimer = 0;
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let animationFrameId = null;
+        let loadingFrameId = null;
+        let autoSaveInterval = null;
+
+        const ui = {
+            loading: document.getElementById('loading-screen'),
+            over: document.getElementById('game-over-screen'),
+            statsUI: document.getElementById('player-stats-ui'),
+            moneyTxt: document.getElementById('new-money-display'),
+            lvlTxt: document.getElementById('new-lvl-display'),
+            expFill: document.getElementById('exp-fill'),
+            expText: document.getElementById('exp-text'),
+            hpFill: document.getElementById('health-fill'),
+            hpText: document.getElementById('health-text'),
+            energyFill: document.getElementById('energy-fill'),
+            energyText: document.getElementById('energy-text'),
+            toolbar: document.getElementById('toolbar'),
+            masteryBox: document.getElementById('mastery-container'),
+            masteryText: document.getElementById('mastery-text'),
+            masteryFill: document.getElementById('mastery-bar-fill'),
+            masteryMoves: document.getElementById('mastery-moves'),
+            questTracker: document.getElementById('quest-tracker'),
+            dialogueBox: document.getElementById('dialogue-box'),
+            dialogueContent: document.getElementById('dialogue-content'),
+            dialogueOptions: document.getElementById('dialogue-options'),
+            islandBanner: document.getElementById('island-banner'),
+            compassContainer: document.getElementById('compass-container'),
+            compassArrow: document.getElementById('compass-arrow'),
+            compassTutorial: document.getElementById('compass-tutorial'),
+            menuModal: document.getElementById('main-menu-modal'),
+            availStats: document.getElementById('avail-stats'),
+            statBtns: document.querySelectorAll('.stat-add-btn')
+        };
+
+        let width, height;
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+
+        let db, auth, currentUser;
+        let isDataLoaded = false;
+        window.loadedWithShip = false;
+
+        // --- LOCAL INDEXEDDB FALLBACK (For GitHub Pages Export) ---
+        const dbName = "PixelSurvivalDB";
+        const storeName = "saveData";
+
+        function initLocalDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(dbName, 1);
+                request.onupgradeneeded = (e) => {
+                    const localDb = e.target.result;
+                    if (!localDb.objectStoreNames.contains(storeName)) {
+                        localDb.createObjectStore(storeName);
+                    }
+                };
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        async function saveLocalData(data) {
+            try {
+                const localDb = await initLocalDB();
+                return new Promise((resolve, reject) => {
+                    const tx = localDb.transaction(storeName, 'readwrite');
+                    const req = tx.objectStore(storeName).put(data, 'player1');
+                    req.onsuccess = () => resolve();
+                    req.onerror = () => reject(req.error);
+                });
+            } catch(e) { console.error("Local save error", e); }
+        }
+
+        async function loadLocalData() {
+            try {
+                const localDb = await initLocalDB();
+                return new Promise((resolve) => {
+                    const tx = localDb.transaction(storeName, 'readonly');
+                    const req = tx.objectStore(storeName).get('player1');
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => resolve(null);
+                });
+            } catch(e) { console.error("Local load error", e); return null; }
+        }
+
+        // Apply loaded data to global variables
+        function applyLoadedData(data) {
+            if (data.money !== undefined) globalMoney = data.money;
+            if (data.mastery !== undefined) globalMastery = data.mastery;
+            if (data.level !== undefined) globalLevel = data.level;
+            if (data.xp !== undefined) globalXp = data.xp;
+            if (data.maxXp !== undefined) globalMaxXp = data.maxXp;
+            if (data.spawnX !== undefined) globalSpawnX = data.spawnX;
+            if (data.spawnY !== undefined) globalSpawnY = data.spawnY;
+            if (data.hasShip) window.loadedWithShip = true;
+            
+            if (data.energy !== undefined) globalEnergy = data.energy;
+            if (data.maxEnergy !== undefined) globalMaxEnergy = data.maxEnergy;
+            if (data.statPoints !== undefined) globalStatPoints = data.statPoints;
+            if (data.stats !== undefined) globalStats = data.stats;
+            if (data.tutorialCompass !== undefined) tutorialShown_compass = data.tutorialCompass;
+            if (data.fruit !== undefined) globalFruit = data.fruit;
+            if (data.inventory !== undefined) globalInventory = data.inventory;
+        }
+
+        // Initialize Firebase OR Local DB
+        if (firebaseConfig) {
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                const initAuth = async () => {
+                    try {
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            await signInWithCustomToken(auth, __initial_auth_token);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    } catch (e) { console.error("Auth error", e); isDataLoaded = true; }
+                };
+                initAuth();
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        currentUser = user;
+                        try {
+                            const snap = await getDoc(doc(db, 'artifacts', appId, 'users', currentUser.uid, 'saveData', 'player1'));
+                            if (snap.exists()) applyLoadedData(snap.data());
+                        } catch(e) { console.error(e); }
+                    }
+                    isDataLoaded = true;
+                });
+            } catch (e) {
+                console.error("Firebase init error", e);
+                isDataLoaded = true;
+            }
+        } else {
+            // Fallback for GitHub Pages!
+            loadLocalData().then(data => {
+                if (data) applyLoadedData(data);
+                isDataLoaded = true;
+            });
+        }
+
+        async function saveGameData() {
+            const data = {
+                money: globalMoney,
+                mastery: globalMastery,
+                level: globalLevel,
+                xp: globalXp,
+                maxXp: globalMaxXp,
+                spawnX: globalSpawnX,
+                spawnY: globalSpawnY,
+                hasShip: !!activeShip,
+                energy: globalEnergy,
+                maxEnergy: globalMaxEnergy,
+                statPoints: globalStatPoints,
+                stats: globalStats,
+                tutorialCompass: tutorialShown_compass,
+                fruit: globalFruit,
+                inventory: globalInventory
+            };
+            try {
+                if (firebaseConfig && currentUser && db) {
+                    const saveRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'saveData', 'player1');
+                    await setDoc(saveRef, data);
+                } else {
+                    await saveLocalData(data);
+                }
+                showSaveIndicator();
+            } catch (e) {
+                console.error("Save failed", e);
+            }
+        }
+
+        function showSaveIndicator() {
+            const ind = document.getElementById('save-indicator');
+            if (ind) {
+                ind.style.display = 'block';
+                setTimeout(() => ind.style.display = 'none', 2500);
+            }
+        }
+
+        // Auto-save triggers when the user tries to refresh or close the page
+        window.addEventListener('beforeunload', () => { saveGameData(); });
+        window.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') saveGameData();
+        });
+
+        // Export globals for HTML UI
+        window.toggleCompass = () => {
+            showCompassArrow = !showCompassArrow;
+            ui.compassArrow.style.display = showCompassArrow ? 'block' : 'none';
+        };
+        window.equipWeapon = (index) => {
+            if (player.equipped === index) {
+                player.equipped = -1; 
+                document.querySelectorAll('.slot').forEach(el => el.classList.remove('active'));
+                ui.masteryBox.style.display = 'none';
+            } else {
+                player.equipped = index;
+                document.querySelectorAll('.slot').forEach((el, i) => {
+                    if (i === index) el.classList.add('active'); else el.classList.remove('active');
+                });
+                if (index === 0 || globalFruit) ui.masteryBox.style.display = 'block';
+                else ui.masteryBox.style.display = 'none';
+            }
+        };
+        
+        window.openMenu = () => {
+            keys.w = keys.a = keys.s = keys.d = keys.q = keys.x = keys.e = false; mouse.down = false;
+            ui.menuModal.style.display = 'flex';
+            window.switchTab('stats');
+        };
+        window.closeMenu = () => { ui.menuModal.style.display = 'none'; };
+        
+        window.switchTab = (tabId) => {
+            document.getElementById('tab-stats').style.display = 'none';
+            document.getElementById('tab-items').style.display = 'none';
+            document.getElementById('tab-log').style.display = 'none';
+            document.getElementById('tab-' + tabId).style.display = 'block';
+            if(tabId === 'stats' || tabId === 'items') updateMenuUI();
+        };
+        window.addStat = (statName) => {
+            if (globalStatPoints > 0) {
+                globalStatPoints--;
+                globalStats[statName]++;
+                
+                if (statName === 'defense') {
+                    player.maxHp = 100 + ((globalStats.defense - 1) * 20);
+                    player.hp += 20; 
+                }
+                
+                updateMenuUI(); updateHUD(); saveGameData();
+            }
+        };
+        window.manualSave = async () => {
+            await saveGameData();
+            setTimeout(() => updateMenuUI(), 1000);
+        };
+
+        function resizeCanvas() {
+            width = window.innerWidth; height = window.innerHeight;
+            canvas.width = width; canvas.height = height;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // --- AUDIO ENGINE ---
+        let audioCtx;
+        let activeTheme = null;
+        let oscs = [];
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        document.addEventListener('click', initAudio, { once: true });
+        document.addEventListener('keydown', initAudio, { once: true });
+
+        function playSound(type) {
+            if (!audioCtx || audioCtx.state === 'suspended') return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+
+            if (type === 'levelUp') {
+                osc.type = 'square'; osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.4);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.6);
+            } else if (type === 'dash') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+            } else if (type === 'punch') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'slam') {
+                osc.type = 'square'; osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 0.5);
+                gain.gain.setValueAtTime(0.5, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+            }
+        }
+
+        function playTheme(themeName) {
+            if (!audioCtx || audioCtx.state === 'suspended' || activeTheme === themeName) return;
+            
+            oscs.forEach(o => { try { o.osc.stop(); o.gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 1); } catch(e){} });
+            oscs = [];
+            activeTheme = themeName;
+
+            if (themeName === 'none') return;
+
+            const makeLoop = (freqs, type, speed, vol) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type; osc.connect(gain); gain.connect(audioCtx.destination);
+                gain.gain.value = vol;
+                
+                let time = audioCtx.currentTime;
+                for(let i=0; i<100; i++) { 
+                    freqs.forEach(f => { osc.frequency.setValueAtTime(f, time); time += speed; });
+                }
+                osc.start(); oscs.push({osc, gain});
+            };
+
+            if (themeName === 'pirate') {
+                makeLoop([392, 523, 659, 523], 'square', 0.3, 0.02);
+                makeLoop([196, 261, 196, 261], 'triangle', 0.6, 0.05);
+            } else if (themeName === 'jungle') {
+                makeLoop([100, 80, 100, 60], 'sine', 0.5, 0.05);
+                makeLoop([150, 150, 200, 150], 'triangle', 0.25, 0.03);
+            }
+        }
+
+        // --- PIXEL ART ENGINE ---
+        const PIXEL_SCALE = 5;
+        const PALETTE = {
+            '0': 'transparent', '1': '#111111', '2': '#ffccaa', '3': '#3498db',
+            '4': '#95a5a6', '5': '#2ecc71', '6': '#27ae60', '7': '#f1c40f',
+            '8': '#8e44ad', '9': '#e74c3c', 'A': '#8B4513', 'B': '#2980b9', 
+            'C': '#e67e22', 'D': '#d35400', 'E': '#bdc3c7', 'F': '#7f8c8d',
+            'G': '#1e5128', 'H': '#14361a', 'I': '#4b3621' 
+        };
+
+        const SPRITE_DEFS = {
+            player: ["011110","122221","121121","122221","013310","133331","1AA1AA"],
+            playerSwim: ["000000","011110","122221","121121","122221","013310","000000"],
+            playerHit: ["099990","999999","999999","999999","099990","999999","999999"],
+            burglar: ["011110","122221","199991","111111","011110","111111","1AA1AA"], 
+            burglarSwim: ["000000","011110","122221","199991","111111","011110","000000"],
+            gorilla: ["011110","111111","119911","111111","111111","110011","110011"],
+            gorillaKing: ["000777000","001111100","011111110","011999110","011111110","011111110","011000110","011000110"],
+            desertBandit: ["011110","122221","177771","111111","011110","111111","1AA1AA"],
+            npc1: ["011110","122221","121121","122221","01EE10","1EEEE1","1AA1AA"], 
+            npc2: ["011110","122221","121121","122221","01DD10","1DDDD1","1AA1AA"], 
+            npcJungle: ["011110","122221","121121","122221","016610","166661","1AA1AA"], 
+            fist: ["1111","1221","1221","1111"],
+            spinFruit: ["00E000","0EE000","4EE440","044000"],
+            dragonFruit: ["005000","099900","9CC990","099900"],
+            water: ["33333333","33B333B3","33333333","3B333B33","33333333","333B333B","33333333","3B333B33"],
+            grass: ["66666666","65666566","66666666","66666666","66666666","66656666","66666666","66666666"],
+            jungleGrass: ["GGGGGGGG","GHGGGHGG","GGGGGGGG","GGGGGGGG","GGGGGGGG","GGGHGGGG","GGGGGGGG","GGGGGGGG"],
+            sand: ["77777777","72777277","77777777","77777777","77777777","77727777","77777777","77777777"],
+            stoneDk: ["FFFFFFFF","F1F1F1F1","FFFFFFFF","1F1F1F1F","FFFFFFFF","F1F1F1F1","FFFFFFFF","FFFFFFFF"],
+            path: ["CCCCCC","CDDCCC","CCCCCC","CCCDDC","CCCCCC","CCCCCC"],
+            dock: ["AA1AA1AA","1AAAA1AA","AA1AAAA1","1AA1AA1A","AAAA1AAA","AA1AA1AA","1AAAA1AA","AA1AAAA1"],
+            stone: ["EEEEEEEE","EFEFEFEF","EEEEEEEE","FEFEFEFE","EEEEEEEE","EFEFEFEF","EEEEEEEE","EEEEEEEE"],
+            stairs: ["11111111","EFEFEFEF","11111111","FEFEFEFE","11111111","EFEFEFEF","11111111","FEFEFEFE"],
+            tree: ["00666600","06666660","66666666","66G6G666","00GIG000","00IIIG00","00III000","00III000"],
+            bush: ["00000000","00000000","00666600","06G66G60","666G6666","6G6666G6"],
+            building: ["00111111111100","01888888888810","18888888888881","14444444444441","14114444441141","14114444441141","14444411444441","14444412144441","11111111111111"],
+            windmillBase: ["001100","01AA10","01AA10","1AAAA1","1AAAA1","1AAAA1"],
+            shipWood: ["00000A000000","0001AAA10000","001AAAAA1000","01AAAAAAA100","01A1AAA1A100","1AA1AAA1AA10","1AAAAAAAAA10","1A1AAAAA1A10","011111111100"],
+            crater: ["00111100","01AAAA10","1AA11AA1","1A1AA1A1","1AA11AA1","01AAAA10","00111100"]
+        };
+
+        const sprites = {};
+        function preRenderSprites() {
+            for (const [key, matrix] of Object.entries(SPRITE_DEFS)) {
+                const spriteCanvas = document.createElement('canvas');
+                const rows = matrix.length;
+                const cols = matrix[0].length;
+                spriteCanvas.width = cols * PIXEL_SCALE;
+                spriteCanvas.height = rows * PIXEL_SCALE;
+                const sCtx = spriteCanvas.getContext('2d');
+                for (let y = 0; y < rows; y++) {
+                    for (let x = 0; x < cols; x++) {
+                        if (matrix[y][x] !== '0') {
+                            sCtx.fillStyle = PALETTE[matrix[y][x]];
+                            sCtx.fillRect(x * PIXEL_SCALE, y * PIXEL_SCALE, PIXEL_SCALE, PIXEL_SCALE);
+                        }
+                    }
+                }
+                sprites[key] = { img: spriteCanvas, w: spriteCanvas.width, h: spriteCanvas.height, centerW: spriteCanvas.width/2, centerH: spriteCanvas.height/2 };
+            }
+        }
+        preRenderSprites();
+
+        // Dynamic Toolbar Rendering
+        window.renderToolbar = () => {
+            let html = `
+                <div class="slot ${player && player.equipped === 0 ? 'active' : ''}" id="slot-0" onclick="window.equipWeapon(0)">
+                    <span class="slot-number">1</span>
+                    <span>Fist</span>
+                </div>
+            `;
+            globalInventory.forEach((item, index) => {
+                let display = item.includes('Spin') ? 'Spin F.' : (item.includes('Dragon') ? 'Dragon F.' : item);
+                html += `
+                    <div class="slot ${player && player.equipped === index + 1 ? 'active' : ''}" id="slot-${index+1}" onclick="window.equipWeapon(${index+1})">
+                        <span class="slot-number">${index + 2}</span>
+                        <span>${display}</span>
+                    </div>
+                `;
+            });
+            ui.toolbar.innerHTML = html;
+        };
+
+        // Input Setup
+        window.addEventListener('keydown', e => {
+            if (ui.menuModal.style.display === 'flex' || ui.dialogueBox.style.display === 'flex') return;
+            const k = e.key.toLowerCase();
+            if (keys.hasOwnProperty(k)) keys[k] = true;
+            
+            // Hotbar equip
+            if (k === '1') window.equipWeapon(0);
+            if (k === '2' && globalInventory.length >= 1) window.equipWeapon(1);
+            if (k === '3' && globalInventory.length >= 2) window.equipWeapon(2);
+            if (k === '4' && globalInventory.length >= 3) window.equipWeapon(3);
+            if (k === '5' && globalInventory.length >= 4) window.equipWeapon(4);
+            
+            if (e.key === ' ' && player && player.isStuck) {
+                player.stuckProgress++;
+            }
+        });
+        window.addEventListener('keyup', e => {
+            const k = e.key.toLowerCase();
+            if (keys.hasOwnProperty(k)) keys[k] = false;
+        });
+        window.addEventListener('mousemove', e => {
+            mouse.x = e.clientX; mouse.y = e.clientY;
+            mouse.worldX = mouse.x + camera.x; mouse.worldY = mouse.y + camera.y;
+        });
+        window.addEventListener('mousedown', e => { 
+            if (ui.menuModal.style.display === 'flex' || ui.dialogueBox.style.display === 'flex') return;
+            if (e.target.id === 'gameCanvas') mouse.down = true; 
+        });
+        window.addEventListener('mouseup', () => mouse.down = false);
+
+        // --- MAP GENERATION ---
+        function generateWorld() {
+            const gridCells = WORLD_SIZE / TILE_SIZE;
+            mapGrid = [];
+            for (let y = 0; y < gridCells; y++) {
+                mapGrid[y] = [];
+                for (let x = 0; x < gridCells; x++) {
+                    mapGrid[y][x] = 'water';
+                }
+            }
+
+            // 1. Pirate Island
+            let px = PirateIslandCenter.x / TILE_SIZE;
+            let py = PirateIslandCenter.y / TILE_SIZE;
+            let pRadius = 15;
+            for (let y = py - pRadius; y <= py + pRadius; y++) {
+                for (let x = px - pRadius; x <= px + pRadius; x++) {
+                    if (Math.hypot(x - px, y - py) < pRadius) {
+                        if(mapGrid[y] && mapGrid[y][x]) mapGrid[y][x] = 'grass';
+                    }
+                }
+            }
+            for (let y = py; y < py + pRadius; y++) {
+                if (mapGrid[y] && mapGrid[y][px]) mapGrid[y][px] = 'path';
+                if (mapGrid[y] && mapGrid[y][px+1]) mapGrid[y][px+1] = 'path';
+            }
+            for(let dy=0; dy<4; dy++) {
+                for(let dx=-2; dx<=3; dx++) {
+                    let dyPos = Math.floor(py + pRadius - 1 + dy);
+                    let dxPos = Math.floor(px + dx);
+                    if (mapGrid[dyPos] && mapGrid[dyPos][dxPos]) mapGrid[dyPos][dxPos] = 'dock';
+                }
+            }
+
+            // 2. Jungle Island
+            let jx = JungleIslandCenter.x / TILE_SIZE;
+            let jy = JungleIslandCenter.y / TILE_SIZE;
+            let jRadius = 18;
+            for (let y = jy - jRadius; y <= jy + jRadius; y++) {
+                for (let x = jx - jRadius; x <= jx + jRadius; x++) {
+                    const dist = Math.hypot(x - jx, y - jy);
+                    if (dist < jRadius) {
+                        if(mapGrid[y] && mapGrid[y][x]) {
+                            if (dist < 4) mapGrid[y][x] = 'water';
+                            else mapGrid[y][x] = 'jungleGrass';
+                        }
+                    }
+                }
+            }
+            let slabStartY = jy - 10;
+            let slabStartX = jx - 3;
+            for(let y=0; y<6; y++) {
+                for(let x=0; x<6; x++) {
+                    if (mapGrid[slabStartY+y] && mapGrid[slabStartY+y][slabStartX+x]) {
+                        if (y === 5) mapGrid[slabStartY+y][slabStartX+x] = 'stairs';
+                        else mapGrid[slabStartY+y][slabStartX+x] = 'stone';
+                    }
+                }
+            }
+            // Jungle Dock
+            let jDockY = jy + jRadius - 2;
+            for(let dy=0; dy<4; dy++) {
+                for(let dx=-2; dx<=3; dx++) {
+                    if (mapGrid[jDockY+dy] && mapGrid[jDockY+dy][jx+dx]) mapGrid[jDockY+dy][jx+dx] = 'dock';
+                }
+            }
+
+            // 3. Gorilla King Island
+            let gx = GorillaIslandCenter.x / TILE_SIZE;
+            let gy = GorillaIslandCenter.y / TILE_SIZE;
+            let gRadius = 8;
+            for (let y = gy - gRadius; y <= gy + gRadius; y++) {
+                for (let x = gx - gRadius; x <= gx + gRadius; x++) {
+                    if (Math.hypot(x - gx, y - gy) < gRadius) {
+                        if(mapGrid[y] && mapGrid[y][x]) mapGrid[y][x] = 'stoneDk';
+                    }
+                }
+            }
+
+            // 4. Desert Island (V1.5)
+            let dx_c = DesertIslandCenter.x / TILE_SIZE;
+            let dy_c = DesertIslandCenter.y / TILE_SIZE;
+            let dRadius = 16;
+            for (let y = dy_c - dRadius; y <= dy_c + dRadius; y++) {
+                for (let x = dx_c - dRadius; x <= dx_c + dRadius; x++) {
+                    if (Math.hypot(x - dx_c, y - dy_c) < dRadius) {
+                        if(mapGrid[y] && mapGrid[y][x]) mapGrid[y][x] = 'sand';
+                    }
+                }
+            }
+            for (let y = dy_c; y < dy_c + dRadius; y++) {
+                if (mapGrid[y] && mapGrid[y][dx_c]) mapGrid[y][dx_c] = 'path';
+                if (mapGrid[y] && mapGrid[y][dx_c+1]) mapGrid[y][dx_c+1] = 'path';
+            }
+            let dDockY = dy_c + dRadius - 1;
+            for(let dy=0; dy<4; dy++) {
+                for(let dx=-2; dx<=3; dx++) {
+                    if (mapGrid[dDockY+dy] && mapGrid[dDockY+dy][dx_c+dx]) mapGrid[dDockY+dy][dx_c+dx] = 'dock';
+                }
+            }
+
+            windmills = []; decorations = [];
+            for(let i=0; i<6; i++) {
+                let wx = PirateIslandCenter.x + (Math.random()-0.5)*1000;
+                let wy = PirateIslandCenter.y + (Math.random()-0.5)*1000;
+                if (Math.hypot(wx - PirateIslandCenter.x, wy - PirateIslandCenter.y) < pRadius * TILE_SIZE) {
+                    windmills.push({ x: wx, y: wy, angle: Math.random() * Math.PI });
+                }
+            }
+            
+            for(let i=0; i<50; i++) {
+                let tx = JungleIslandCenter.x + (Math.random()-0.5)*1200;
+                let ty = JungleIslandCenter.y + (Math.random()-0.5)*1200;
+                const dist = Math.hypot(tx - JungleIslandCenter.x, ty - JungleIslandCenter.y);
+                if (dist > 150 && dist < jRadius * TILE_SIZE) {
+                    decorations.push({ x: tx, y: ty, sprite: Math.random() > 0.3 ? sprites.tree : sprites.bush });
+                }
+            }
+
+            // Desert Houses
+            for(let i=0; i<8; i++) {
+                let bx = DesertIslandCenter.x + (Math.random()-0.5)*900;
+                let by = DesertIslandCenter.y + (Math.random()-0.5)*900;
+                if (Math.hypot(bx - DesertIslandCenter.x, by - DesertIslandCenter.y) < dRadius * TILE_SIZE && Math.hypot(bx - DesertIslandCenter.x, by - DesertIslandCenter.y) > 150) {
+                    decorations.push({ x: bx, y: by, sprite: sprites.building });
+                }
+            }
+        }
+
+        // --- CLASSES ---
+        class Laser {
+            constructor(startX, startY, endX, endY) {
+                this.startX = startX; this.startY = startY;
+                this.endX = endX; this.endY = endY;
+                this.life = 15;
+            }
+            update() { this.life--; if(this.life<=0) this.remove=true; }
+            draw(ctx) {
+                ctx.strokeStyle = `rgba(231, 76, 60, ${this.life/15})`;
+                ctx.lineWidth = 15; ctx.beginPath(); ctx.moveTo(this.startX, this.startY); ctx.lineTo(this.endX, this.endY); ctx.stroke();
+                ctx.strokeStyle = `rgba(241, 196, 15, ${this.life/15})`;
+                ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(this.startX, this.startY); ctx.lineTo(this.endX, this.endY); ctx.stroke();
+            }
+        }
+
+        class Player {
+            constructor() {
+                this.x = globalSpawnX;
+                this.y = globalSpawnY;
+                this.baseSpeed = 4;
+                
+                this.maxHp = 100 + ((globalStats.defense - 1) * 20);
+                this.hp = this.maxHp;
+                this.maxEnergy = globalMaxEnergy;
+                this.energy = globalEnergy;
+                this.money = globalMoney;
+                this.mastery = globalMastery;
+                this.xp = globalXp;
+                this.level = globalLevel;
+                this.maxXp = globalMaxXp;
+                
+                this.sprite = sprites.player;
+                this.radius = this.sprite.centerW;
+                this.hitTime = 0;
+
+                this.equipped = -1; 
+                this.attackCooldown = 0;
+                
+                this.isSwimming = false;
+                this.isRidingShip = false;
+                
+                this.dashTimer = 0;
+                this.dashCooldown = 0;
+                
+                this.isDashPunching = false;
+                this.dashPunchTimer = 0;
+                this.dashPunchCooldown = 0;
+                this.dashPunchAngle = 0;
+
+                this.isRagingFist = false;
+                this.ragingFistTimer = 0;
+                this.ragingFistCooldown = 0;
+                this.ragingFistAngle = 0;
+
+                // Fruit Abilities
+                this.fruitCooldown = 0;
+                this.isSpinning = false;
+                this.spinTimer = 0;
+                
+                this.isChargingDragon = false;
+                this.dragonCharge = 0;
+
+                this.isStuck = false;
+                this.stuckProgress = 0;
+            }
+
+            update() {
+                let gridX = Math.floor(this.x / TILE_SIZE);
+                let gridY = Math.floor(this.y / TILE_SIZE);
+                let tile = mapGrid[gridY] && mapGrid[gridY][gridX];
+                this.isSwimming = (tile === 'water');
+
+                if (activeShip && !this.isRidingShip && !this.isStuck) {
+                    const distToShip = Math.hypot(this.x - activeShip.x, this.y - activeShip.y);
+                    if (distToShip < 50 && mouse.down) {
+                        this.isRidingShip = true;
+                        mouse.down = false; 
+                    }
+                }
+
+                if (this.isRidingShip && tile && tile !== 'water' && tile !== 'dock') {
+                    this.isRidingShip = false;
+                    activeShip.x = this.x - Math.cos(Math.atan2(this.y - activeShip.y, this.x - activeShip.x)) * 40;
+                    activeShip.y = this.y - Math.sin(Math.atan2(this.y - activeShip.y, this.x - activeShip.x)) * 40;
+                }
+
+                let dx = 0; let dy = 0;
+                if (!this.isStuck) {
+                    if (keys.w) dy -= 1;
+                    if (keys.s) dy += 1;
+                    if (keys.a) dx -= 1;
+                    if (keys.d) dx += 1;
+                    if (dx !== 0 && dy !== 0) { const len = Math.sqrt(dx*dx + dy*dy); dx /= len; dy /= len; }
+                } else {
+                    if (this.stuckProgress >= 15) {
+                        this.isStuck = false; this.stuckProgress = 0;
+                        for(let i=0; i<10; i++) particles.push(new Particle(this.x, this.y, '#A0522D', 3, 0.05)); 
+                    }
+                }
+
+                let currentSpeed = this.baseSpeed;
+                if (this.isRidingShip) currentSpeed *= 2.5;
+                else if (this.isSwimming) currentSpeed *= (globalFruit ? 0.2 : 0.6); 
+                if (this.isStuck) currentSpeed = 0;
+
+                // --- ABILITIES ---
+
+                // Dash (Q) 
+                if (keys.q && this.dashCooldown <= 0 && this.dashTimer <= 0 && !this.isDashPunching && !this.isRidingShip && !this.isStuck && this.energy >= 15 && !this.isSpinning) {
+                    this.energy -= 15; globalEnergy = this.energy;
+                    this.dashTimer = 12; this.dashCooldown = 90; playSound('dash'); updateHUD();
+                }
+                if (this.dashTimer > 0) {
+                    currentSpeed *= 3; this.dashTimer--;
+                    if (frameCount % 2 === 0) particles.push(new Particle(this.x, this.y, '#E0E0E0', 1.5, 0.1));
+                }
+
+                // X Key Handler (Fruit overrides Dash Punch)
+                if (keys.x && !this.isRidingShip && !this.isStuck && !this.isRagingFist) {
+                    if (globalFruit) {
+                        if (globalFruit === 'spin' && this.energy >= 15 && this.fruitCooldown <= 0 && !this.isSpinning) {
+                            this.energy -= 15; this.isSpinning = true; this.spinTimer = 180; this.fruitCooldown = 300; playSound('dash'); updateHUD();
+                        } else if (globalFruit === 'dragon' && this.energy >= 30 && this.fruitCooldown <= 0) {
+                            this.isChargingDragon = true; this.dragonCharge = Math.min(this.dragonCharge + 1, 40);
+                            if(frameCount%3===0) particles.push(new Particle(this.x, this.y-10, '#f1c40f', 1, 0.05));
+                        }
+                    } else if (this.mastery.level >= 20 && this.dashPunchCooldown <= 0 && this.equipped === 0 && !this.isDashPunching && this.energy >= 30) {
+                        this.energy -= 30; this.isDashPunching = true; this.dashPunchTimer = 15; this.dashPunchCooldown = 300;
+                        this.dashPunchAngle = Math.atan2(mouse.worldY - this.y, mouse.worldX - this.x); playSound('dash'); updateHUD();
+                    }
+                }
+
+                // Dragon Release
+                if (!keys.x && this.isChargingDragon) {
+                    this.isChargingDragon = false; this.energy -= 30; this.fruitCooldown = 240;
+                    lasers.push(new Laser(this.x, this.y - 10, mouse.worldX, mouse.worldY)); playSound('slam');
+                    
+                    let finalDmg = 30 * (1 + (globalStats.fruit - 1) * 0.5);
+                    entities.push(new MeleeHitbox(mouse.worldX, mouse.worldY, 0, finalDmg, 20, true));
+                    craters.push({ x: mouse.worldX, y: mouse.worldY });
+                    for(let i=0; i<30; i++) particles.push(new Particle(mouse.worldX, mouse.worldY, '#e74c3c', 4, 0.05));
+                    updateHUD();
+                }
+
+                if (this.isSpinning) {
+                    this.spinTimer--;
+                    if (frameCount % 10 === 0) {
+                        let finalDmg = 5 * (1 + (globalStats.fruit - 1) * 0.5);
+                        entities.push(new MeleeHitbox(this.x, this.y, 0, finalDmg, 10, true));
+                    }
+                    if (this.spinTimer <= 0) this.isSpinning = false;
+                }
+
+                if (this.isDashPunching) {
+                    dx = Math.cos(this.dashPunchAngle); dy = Math.sin(this.dashPunchAngle);
+                    currentSpeed = this.baseSpeed * 4; this.dashPunchTimer--;
+                    particles.push(new Particle(this.x, this.y, '#f1c40f', 2.0, 0.1));
+                    if (this.dashPunchTimer <= 0) { this.executeDashPunch(); this.isDashPunching = false; }
+                }
+
+                // Raging Fist (E)
+                if (keys.e && this.mastery.level >= 5 && this.ragingFistCooldown <= 0 && this.equipped === 0 && !this.isDashPunching && !this.isRidingShip && !this.isStuck && !this.isRagingFist && this.energy >= 25 && !this.isSpinning) {
+                    this.energy -= 25; globalEnergy = this.energy;
+                    this.isRagingFist = true; this.ragingFistTimer = 30; this.ragingFistCooldown = 900; 
+                    this.ragingFistAngle = Math.atan2(mouse.worldY - this.y, mouse.worldX - this.x);
+                    updateHUD();
+                }
+                if (this.isRagingFist) {
+                    currentSpeed *= 0.2; 
+                    this.ragingFistTimer--;
+                    this.ragingFistAngle = Math.atan2(mouse.worldY - this.y, mouse.worldX - this.x);
+                    
+                    if (frameCount % 4 === 0) {
+                        playSound('punch');
+                        const spread = (Math.random() - 0.5) * 0.5;
+                        const punchAngle = this.ragingFistAngle + spread;
+                        const punchX = this.x + Math.cos(punchAngle) * (this.radius + 15 + Math.random()*10);
+                        const punchY = this.y + Math.sin(punchAngle) * (this.radius + 15 + Math.random()*10);
+                        
+                        const baseDmg = 2;
+                        const finalDmg = baseDmg + (globalStats.melee - 1) * 1.5;
+                        
+                        entities.push(new MeleeHitbox(punchX, punchY, punchAngle, finalDmg, 5));
+                        particles.push(new Particle(punchX, punchY, '#ffffff', 1.0, 0.1));
+                    }
+                    if (this.ragingFistTimer <= 0) { this.isRagingFist = false; }
+                }
+
+                // Move Player
+                this.x += dx * currentSpeed;
+                this.y += dy * currentSpeed;
+                this.x = Math.max(50, Math.min(WORLD_SIZE - 50, this.x));
+                this.y = Math.max(50, Math.min(WORLD_SIZE - 50, this.y));
+
+                if (this.isRidingShip && activeShip) { activeShip.x = this.x; activeShip.y = this.y; }
+
+                if ((this.isSwimming || this.isRidingShip) && (dx !== 0 || dy !== 0) && frameCount % 10 === 0) {
+                    particles.push(new Particle(this.x, this.y + 10, '#ffffff', this.isRidingShip ? 4.0 : 3.0, 0.05, true)); 
+                }
+
+                if (this.isSwimming && globalFruit && frameCount % 30 === 0) {
+                    this.takeDamage(2);
+                    particles.push(new Particle(this.x, this.y, '#8e44ad', 2, 0.05)); 
+                }
+
+                // Click Attacks & Interactions
+                if (mouse.down && this.attackCooldown <= 0 && gameState === 'PLAYING') {
+                    if (this.equipped > 0) { 
+                        let itemName = globalInventory[this.equipped - 1];
+                        if (itemName && itemName.includes("Fruit")) {
+                            mouse.down = false; 
+                            startDialogue();
+                            setDialogue(`What do you want to do with this ${itemName}?`, [
+                                { text: "Eat", action: () => {
+                                    globalFruit = itemName.includes('Dragon') ? 'dragon' : 'spin';
+                                    globalInventory.splice(this.equipped - 1, 1);
+                                    window.equipWeapon(-1); window.renderToolbar(); updateHUD(); saveGameData();
+                                    setDialogue("You ate the fruit! You feel a strange power...", [{text:"Close", action:closeDialogue}]);
+                                }},
+                                { text: "Store", action: () => { window.equipWeapon(-1); closeDialogue(); }}
+                            ]);
+                        }
+                    } else if (this.equipped === 0 && !this.isDashPunching && !this.isRidingShip && !this.isStuck && !this.isRagingFist && !this.isSpinning) {
+                        this.attack();
+                    }
+                }
+
+                // Tick cooldowns
+                if (this.attackCooldown > 0) this.attackCooldown--;
+                if (this.dashCooldown > 0) this.dashCooldown--;
+                if (this.dashPunchCooldown > 0) this.dashPunchCooldown--;
+                if (this.ragingFistCooldown > 0) this.ragingFistCooldown--;
+                if (this.fruitCooldown > 0) this.fruitCooldown--;
+                if (this.hitTime > 0) this.hitTime--;
+
+                // Regen
+                if (frameCount % 60 === 0) {
+                    let changed = false;
+                    if (this.hp < this.maxHp && !this.isStuck && !(this.isSwimming && globalFruit)) {
+                        this.hp = Math.min(this.maxHp, this.hp + 1); changed = true;
+                    }
+                    if (this.energy < this.maxEnergy) {
+                        this.energy = Math.min(this.maxEnergy, this.energy + 2); globalEnergy = this.energy; changed = true;
+                    }
+                    if(changed) updateHUD();
+                }
+            }
+
+            getStuck() {
+                if (this.isDashPunching || this.isRidingShip || this.isStuck || this.isRagingFist || this.isSpinning || this.isChargingDragon) return;
+                this.isStuck = true; this.stuckProgress = 0; this.hitTime = 10;
+            }
+
+            attack() {
+                const angle = Math.atan2(mouse.worldY - this.y, mouse.worldX - this.x);
+                const punchX = this.x + Math.cos(angle) * (this.radius + 15);
+                const punchY = this.y + Math.sin(angle) * (this.radius + 15);
+                const finalDmg = 3 + (globalStats.melee - 1) * 2;
+                entities.push(new MeleeHitbox(punchX, punchY, angle, finalDmg, 10)); 
+                this.attackCooldown = 25;
+            }
+
+            executeDashPunch() {
+                playSound('punch');
+                const punchX = this.x + Math.cos(this.dashPunchAngle) * (this.radius + 20);
+                const punchY = this.y + Math.sin(this.dashPunchAngle) * (this.radius + 20);
+                const finalDmg = 15 + (globalStats.melee - 1) * 5;
+                entities.push(new MeleeHitbox(punchX, punchY, this.dashPunchAngle, finalDmg, 30, true)); 
+                craters.push({ x: punchX, y: punchY });
+                for(let i=0; i<30; i++) particles.push(new Particle(punchX, punchY, '#e67e22', 4, 0.05));
+            }
+
+            gainXp(amount) {
+                this.xp += amount;
+                if (this.xp >= this.maxXp) {
+                    this.xp -= this.maxXp; this.level++; this.maxXp = Math.floor(this.maxXp * 1.5);
+                    this.hp = this.maxHp; playSound('levelUp');
+                    for(let i=0; i<40; i++) {
+                        let p = new Particle(this.x, this.y, ['#f1c40f', '#3498db', '#e74c3c'][i%3], 3, 0.02); p.vy -= 2; particles.push(p);
+                    }
+                    if (this.level >= 10 && !tutorialShown_compass) {
+                        tutorialShown_compass = true; ui.compassTutorial.style.display = 'block';
+                        setTimeout(() => { ui.compassTutorial.style.opacity = 0; }, 10000);
+                        setTimeout(() => { ui.compassTutorial.style.display = 'none'; }, 11000);
+                    }
+                }
+                globalXp = this.xp; globalLevel = this.level; globalMaxXp = this.maxXp;
+                saveGameData(); updateHUD();
+            }
+
+            gainMastery(amount) {
+                if (this.mastery.level >= this.mastery.limit) return;
+                this.mastery.xp += amount;
+                if (this.mastery.xp >= this.mastery.maxXp) {
+                    this.mastery.xp -= this.mastery.maxXp; this.mastery.level++;
+                    this.mastery.maxXp = Math.floor(this.mastery.maxXp * 1.3); playSound('levelUp');
+                }
+                globalMastery = this.mastery; saveGameData(); updateHUD();
+            }
+
+            addMoney(amount) { this.money += amount; globalMoney = this.money; saveGameData(); updateHUD(); }
+
+            takeDamage(amount) {
+                if (this.hitTime > 0) return;
+                this.hp -= amount; this.hitTime = 20; updateHUD();
+                for(let i=0; i<10; i++) particles.push(new Particle(this.x, this.y, '#e74c3c'));
+                if (this.hp <= 0) endGame();
+            }
+
+            draw(ctx) {
+                if (this.isRidingShip) return; 
+
+                if (this.isSpinning) {
+                    ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(frameCount * 0.5);
+                    ctx.fillStyle = '#ffccaa'; ctx.fillRect(-15, -15, 10, 10); ctx.fillRect(10, 10, 10, 10);
+                    ctx.fillStyle = '#3498db'; ctx.fillRect(-10, 5, 15, 15); ctx.restore();
+                    return; 
+                }
+
+                let spr = this.sprite;
+                if (this.hitTime > 0 && Math.floor(frameCount / 4) % 2 === 0) spr = sprites.playerHit;
+                else if (this.isSwimming) spr = sprites.playerSwim;
+                
+                if (this.isStuck) {
+                    ctx.save(); ctx.beginPath(); ctx.rect(this.x - 25, this.y - 25, 50, 25); ctx.clip();
+                    ctx.drawImage(spr.img, this.x - spr.centerW, this.y - spr.centerH + 10); ctx.restore();
+
+                    ctx.fillStyle = '#e74c3c'; ctx.font = "10px 'Press Start 2P'"; ctx.textAlign = "center";
+                    ctx.fillText("SPAM SPACE!", this.x, this.y - 25);
+                    ctx.fillStyle = '#000'; ctx.fillRect(this.x - 15, this.y - 40, 30, 5);
+                    ctx.fillStyle = '#f1c40f'; ctx.fillRect(this.x - 15, this.y - 40, (this.stuckProgress/15)*30, 5);
+                } else {
+                    ctx.drawImage(spr.img, this.x - spr.centerW, this.y - spr.centerH);
+                }
+                
+                // Draw Held Item
+                if (this.equipped > 0) {
+                    let item = globalInventory[this.equipped - 1];
+                    let itemSpr = item.includes('Dragon') ? sprites.dragonFruit : (item.includes('Spin') ? sprites.spinFruit : null);
+                    if (itemSpr) ctx.drawImage(itemSpr.img, this.x + 5, this.y - 5);
+                }
+                
+                if (this.isDashPunching || this.dashPunchCooldown > 280) {
+                    ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.dashPunchAngle);
+                    ctx.drawImage(sprites.fist.img, 10, -sprites.fist.centerH); ctx.restore();
+                }
+
+                if (this.isRagingFist) {
+                    ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.ragingFistAngle);
+                    ctx.globalAlpha = 0.6;
+                    ctx.drawImage(sprites.fist.img, 15 + Math.random()*10, -sprites.fist.centerH + (Math.random()*10-5));
+                    ctx.drawImage(sprites.fist.img, 10 + Math.random()*10, -sprites.fist.centerH + (Math.random()*10-5));
+                    ctx.globalAlpha = 1.0;
+                    ctx.restore();
+                }
+
+                if (this.isChargingDragon) {
+                    ctx.fillStyle = '#e74c3c'; ctx.beginPath();
+                    ctx.arc(this.x + (Math.random()*4-2), this.y - 10 + (Math.random()*4-2), this.dragonCharge/3, 0, Math.PI*2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        class Shockwave {
+            constructor(x, y) {
+                this.x = x; this.y = y; this.radius = 10; this.maxRadius = 150; this.speed = 4; this.type = 'shockwave';
+            }
+            update() {
+                this.radius += this.speed; if (this.radius >= this.maxRadius) this.remove = true;
+                if (!player.isStuck && !player.isRidingShip && Math.abs(Math.hypot(player.x - this.x, player.y - this.y) - this.radius) < 15) {
+                    player.getStuck(); player.takeDamage(15);
+                }
+            }
+            draw(ctx) {
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(230, 126, 34, ${1 - this.radius/this.maxRadius})`; ctx.lineWidth = 5; ctx.stroke();
+            }
+        }
+
+        class Ship {
+            constructor(x, y) {
+                this.x = x; this.y = y; this.sprite = sprites.shipWood; this.angle = 0;
+            }
+            draw(ctx) {
+                ctx.save(); ctx.translate(this.x, this.y); 
+                if (player.isRidingShip) this.angle = Math.atan2(mouse.worldY - this.y, mouse.worldX - this.x);
+                ctx.rotate(this.angle + Math.PI/2); ctx.drawImage(this.sprite.img, -this.sprite.centerW, -this.sprite.centerH); ctx.restore();
+                if (!player.isRidingShip && Math.hypot(player.x - this.x, player.y - this.y) < 50) {
+                    ctx.fillStyle = `rgba(255, 255, 255, 0.8)`; ctx.font = "10px 'Press Start 2P'"; ctx.textAlign = "center";
+                    ctx.fillText("Click to board", this.x, this.y - 40);
+                }
+            }
+        }
+
+        class MeleeHitbox {
+            constructor(x, y, angle, damage, knockback, isGiant = false) {
+                this.x = x; this.y = y; this.angle = angle; this.life = isGiant ? 15 : 10; this.radius = isGiant ? 30 : 15;
+                this.type = 'melee'; this.damage = damage; this.knockback = knockback; this.isGiant = isGiant; this.hitEnemies = [];
+            }
+            update() {
+                this.life--; if (this.life <= 0) this.remove = true;
+                entities.forEach(ent => {
+                    if ((ent.type === 'burglar' || ent.type === 'gorilla' || ent.type === 'gorilla king' || ent.type === 'desert bandit') && !ent.remove && !this.hitEnemies.includes(ent)) {
+                        if (Math.hypot(ent.x - this.x, ent.y - this.y) < this.radius + ent.radius) {
+                            ent.takeDamage(this.damage, 'fist'); this.hitEnemies.push(ent);
+                            ent.x += Math.cos(this.angle) * this.knockback; ent.y += Math.sin(this.angle) * this.knockback;
+                        }
+                    }
+                });
+            }
+            draw(ctx) {
+                ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.angle);
+                const extension = Math.sin((this.life / (this.isGiant?15:10)) * Math.PI) * (this.isGiant ? 20 : 10);
+                if (this.isGiant) ctx.scale(2, 2); 
+                ctx.drawImage(sprites.fist.img, extension - sprites.fist.centerW, -sprites.fist.centerH); ctx.restore();
+            }
+        }
+
+        class Enemy {
+            constructor(type, spawnX, spawnY) {
+                this.type = type; this.x = spawnX; this.y = spawnY; this.spawnX = spawnX; this.spawnY = spawnY;
+                if (type === 'burglar') { this.sprite = sprites.burglar; this.speed = 2.0; this.hp = 6; }
+                else if (type === 'desert bandit') { this.sprite = sprites.desertBandit; this.speed = 2.2; this.hp = 30; }
+                else if (type === 'gorilla') { this.sprite = sprites.gorilla; this.speed = 2.5; this.hp = 15; } 
+                else if (type === 'gorilla king') { this.sprite = sprites.gorillaKing; this.speed = 1.8; this.hp = 150; this.slamCooldown = 100; }
+                
+                this.isSwimming = false; this.radius = this.sprite.centerW * (type==='gorilla king' ? 2 : 1);
+                this.wobble = Math.random() * Math.PI * 2; this.hitTime = 0;
+            }
+
+            update() {
+                let gridX = Math.floor(this.x / TILE_SIZE); let gridY = Math.floor(this.y / TILE_SIZE);
+                let currentTile = mapGrid[gridY] && mapGrid[gridY][gridX];
+                this.isSwimming = (currentTile === 'water');
+                let currentSpeed = this.isSwimming ? this.speed * 0.5 : this.speed;
+
+                if (this.type === 'gorilla king' && this.slamCooldown > 0) this.slamCooldown--;
+
+                if (this.hitTime > 0) {
+                    this.hitTime--;
+                } else {
+                    let targetX = player.x; let targetY = player.y; let isAggro = true;
+                    if (this.type === 'gorilla' || this.type === 'gorilla king') {
+                        let pTile = mapGrid[Math.floor(player.y/TILE_SIZE)] && mapGrid[Math.floor(player.y/TILE_SIZE)][Math.floor(player.x/TILE_SIZE)];
+                        if ((pTile === 'stone' || pTile === 'stairs') && currentTile !== 'stone' && currentTile !== 'stairs') {
+                            targetX = Math.floor(JungleIslandCenter.x / TILE_SIZE) * TILE_SIZE; 
+                            targetY = (Math.floor(JungleIslandCenter.y / TILE_SIZE) - 5) * TILE_SIZE;
+                        }
+                    }
+
+                    if (this.type === 'gorilla king') {
+                        if (Math.hypot(player.x - this.spawnX, player.y - this.spawnY) > 450) { 
+                            isAggro = false; currentSpeed = 0;
+                            if (Math.hypot(this.x - this.spawnX, this.y - this.spawnY) > 10) { this.x = this.spawnX; this.y = this.spawnY; }
+                        } else {
+                            if (Math.hypot(player.x - this.x, player.y - this.y) < 120 && this.slamCooldown <= 0 && !player.isStuck && !player.isRidingShip) {
+                                this.slamCooldown = 300; playSound('slam'); entities.push(new Shockwave(this.x, this.y));
+                                for(let i=0; i<20; i++) particles.push(new Particle(this.x, this.y, '#e67e22', 3, 0.05));
+                                this.hitTime = 30;
+                            }
+                        }
+                    }
+
+                    if (this.hitTime <= 0 && isAggro) {
+                        const angle = Math.atan2(targetY - this.y, targetX - this.x);
+                        this.x += Math.cos(angle) * currentSpeed; this.y += Math.sin(angle) * currentSpeed;
+                    }
+                }
+                
+                this.wobble += 0.1;
+                if (this.isSwimming && frameCount % 15 === 0) particles.push(new Particle(this.x, this.y + 10, '#ffffff', 2.0, 0.05, true)); 
+                if (Math.hypot(player.x - this.x, player.y - this.y) < this.radius + player.radius && !player.isRidingShip && !player.isStuck) {
+                    player.takeDamage(this.type === 'gorilla king' ? 25 : 10);
+                    this.x -= Math.cos(Math.atan2(player.y - this.y, player.x - this.x)) * 20; this.y -= Math.sin(Math.atan2(player.y - this.y, player.x - this.x)) * 20;
+                }
+            }
+
+            takeDamage(amount, source) {
+                this.hp -= amount; this.hitTime = 5;
+                for(let i=0; i<3; i++) particles.push(new Particle(this.x, this.y, '#e74c3c'));
+                if (this.hp <= 0) this.die(source);
+            }
+
+            die(source) {
+                this.remove = true;
+                if (source === 'fist') player.gainMastery(5); 
+                if (this.type === 'gorilla king') gorillaKingSpawnTimer = 60 * 60 * 5; 
+                
+                // Normal monster XP
+                if (!quest.active || quest.entityName.toLowerCase() !== this.type) {
+                    if (this.type === 'burglar') player.gainXp(15);
+                    else if (this.type === 'desert bandit') player.gainXp(50);
+                    else if (this.type === 'gorilla') player.gainXp(30);
+                    else if (this.type === 'gorilla king') player.gainXp(500);
+                }
+
+                if (quest.active && quest.entityName.toLowerCase() === this.type) {
+                    quest.current++; updateQuestUI();
+                    if (quest.current >= quest.target) {
+                        quest.active = false; 
+                        player.gainXp(quest.xpReward || 100); 
+                        player.addMoney(quest.reward);
+                        let earnedStats = Math.floor(Math.random() * 3) + 1; globalStatPoints += earnedStats;
+                        ui.questTracker.innerHTML = `<span style="color:#2ecc71">Quest Complete!</span><br>+${quest.xpReward || 100} XP<br>+$${quest.reward}<br>+${earnedStats} Stat Points!`;
+                        setTimeout(() => ui.questTracker.style.opacity = 0, 4000); saveGameData(); window.switchTab('stats'); 
+                    }
+                }
+                for(let i=0; i< (this.type === 'gorilla king' ? 40 : 15); i++) particles.push(new Particle(this.x, this.y, '#e74c3c'));
+            }
+
+            draw(ctx) {
+                ctx.save(); ctx.translate(this.x, this.y);
+                if (this.hitTime > 0 && this.hitTime < 20) ctx.globalAlpha = 0.5; 
+                let spr = this.isSwimming ? (this.type==='burglar'?sprites.burglarSwim:this.sprite) : this.sprite;
+                if (this.type === 'gorilla' || this.type === 'gorilla king') ctx.scale(this.type === 'gorilla king' ? 2 : 1, (this.type === 'gorilla king' ? 2 : 1) * (1 + Math.sin(this.wobble) * 0.1));
+                ctx.drawImage(spr.img, -spr.centerW, -spr.centerH); ctx.restore();
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color, sizeMultiplier = 1, decayRate = 0) {
+                this.x = x; this.y = y; this.isRipple = decayRate === 0.05 && color === '#ffffff';
+                const angle = Math.random() * Math.PI * 2; const speed = this.isRipple ? 0 : Math.random() * 5;
+                this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed;
+                this.life = 1.0; this.decay = decayRate || (Math.random() * 0.05 + 0.02);
+                this.color = color; this.size = (Math.random() * 4 + 2) * sizeMultiplier;
+            }
+            update() { this.x += this.vx; this.y += this.vy; if (this.isRipple) this.size += 0.2; this.life -= this.decay; if (this.life <= 0) this.remove = true; }
+            draw(ctx) {
+                ctx.globalAlpha = Math.max(0, this.life);
+                if (this.isRipple) { ctx.strokeStyle = this.color; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.stroke(); } 
+                else { ctx.fillStyle = this.color; ctx.fillRect(this.x, this.y, this.size, this.size); }
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
+        class NPC {
+            constructor(name, x, y, spriteType, interactCallback) {
+                this.name = name; this.x = x; this.y = y;
+                this.sprite = sprites[spriteType]; this.interactCallback = interactCallback; this.pulseTime = 0;
+            }
+            update() { 
+                if (ui.dialogueBox.style.display === 'flex' || ui.menuModal.style.display === 'flex') return;
+                if (Math.hypot(player.x - this.x, player.y - this.y) < 100 && mouse.down) { mouse.down = false; this.interactCallback(); } 
+            }
+            draw(ctx) {
+                ctx.drawImage(this.sprite.img, this.x - this.sprite.centerW, this.y - this.sprite.centerH);
+                ctx.fillStyle = '#ffffff'; ctx.font = "10px 'Press Start 2P'"; ctx.textAlign = "center"; ctx.fillText(this.name, this.x, this.y + this.sprite.centerH + 15);
+                if (Math.hypot(player.x - this.x, player.y - this.y) < 100 && ui.dialogueBox.style.display !== 'flex') {
+                    this.pulseTime += 0.05; ctx.fillStyle = `rgba(255, 255, 255, ${0.5 + Math.sin(this.pulseTime) * 0.5})`; ctx.fillText("Click to interact", this.x, this.y - 40);
+                }
+            }
+        }
+
+        // --- UI & LOGIC ---
+        function updateHUD() {
+            ui.moneyTxt.innerText = `$${player.money.toLocaleString()}`;
+            ui.lvlTxt.innerText = `Lv. ${player.level} ${player.level >= 2550 ? '(MAX)' : ''}`;
+            ui.expFill.style.width = `${Math.min(100, (player.xp / player.maxXp) * 100)}%`; ui.expText.innerText = `${player.xp}/${player.maxXp}`;
+            ui.hpFill.style.width = `${Math.min(100, (player.hp / player.maxHp) * 100)}%`; ui.hpText.innerText = `Health ${player.hp}/${player.maxHp}`;
+            ui.energyFill.style.width = `${Math.min(100, (player.energy / player.maxEnergy) * 100)}%`; ui.energyText.innerText = `Energy ${player.energy}/${player.maxEnergy}`;
+
+            ui.masteryText.innerText = `Fist Mastery: Lv. ${player.mastery.level}${player.mastery.level >= 20 ? ' (MAX)' : ''}`;
+            ui.masteryFill.style.width = `${player.mastery.level >= 20 ? 100 : Math.min(100, (player.mastery.xp / player.mastery.maxXp) * 100)}%`;
+
+            let fruitMovesHtml = "";
+            if (globalFruit === 'spin') fruitMovesHtml = `<br><br><span class="unlocked-move">Fruit (X): Jumble Mess</span>`;
+            else if (globalFruit === 'dragon') fruitMovesHtml = `<br><br><span class="unlocked-move">Fruit (Hold X): Heatwave Cannon</span>`;
+
+            ui.masteryMoves.innerHTML = `Moves List:<br>
+                <span id="move-1" class="${player.mastery.level >= 5 ? 'unlocked-move' : 'locked-move'}">Lv. 5: Raging Fist (E)<br>[${player.mastery.level >= 5 ? 'UNLOCKED' : 'LOCKED'}]</span><br><br>
+                <span id="move-2" class="${player.mastery.level >= 20 ? 'unlocked-move' : 'locked-move'}">Lv. 20: Dash Punch (X)<br>[${player.mastery.level >= 20 ? 'UNLOCKED' : 'LOCKED'}]</span>
+                ${fruitMovesHtml}`;
+        }
+
+        function updateMenuUI() {
+            ui.availStats.innerText = globalStatPoints;
+            document.getElementById('stat-melee-lv').innerText = globalStats.melee;
+            document.getElementById('stat-defense-lv').innerText = globalStats.defense;
+            document.getElementById('stat-sword-lv').innerText = globalStats.sword;
+            document.getElementById('stat-gun-lv').innerText = globalStats.gun;
+            document.getElementById('stat-fruit-lv').innerText = globalStats.fruit;
+            ui.statBtns.forEach(btn => { btn.disabled = globalStatPoints <= 0; });
+            
+            const invList = document.getElementById('inventory-list');
+            invList.innerHTML = '<li>Fist</li>';
+            if (window.loadedWithShip || activeShip) invList.innerHTML += '<li>Wooden Ship</li>';
+            globalInventory.forEach(item => { invList.innerHTML += `<li>${item}</li>`; });
+            if (globalFruit) invList.innerHTML += `<li>Eaten: ${globalFruit === 'dragon' ? 'Dragon' : 'Spin'} Fruit</li>`;
+        }
+
+        function updateQuestUI() {
+            if (quest.active) {
+                ui.questTracker.style.display = 'block'; ui.questTracker.style.opacity = 1;
+                ui.questTracker.innerHTML = `<span style="color:#f1c40f">${quest.name}</span><br>Kill ${quest.target} ${quest.entityName}s<br>Progress: ${quest.current}/${quest.target}<br><span style="color:#2ecc71">Reward: $${quest.reward} | ${quest.xpReward} XP</span>`;
+            }
+        }
+
+        function startDialogue() { keys.w = keys.a = keys.s = keys.d = keys.q = keys.x = keys.e = false; mouse.down = false; ui.dialogueBox.style.display = 'flex'; }
+        function closeDialogue() { ui.dialogueBox.style.display = 'none'; }
+        function setDialogue(text, options) {
+            ui.dialogueContent.innerHTML = text; ui.dialogueOptions.innerHTML = '';
+            options.forEach(opt => {
+                let btn = document.createElement('button'); btn.className = 'dialogue-btn'; btn.innerText = opt.text;
+                if (opt.disabled) btn.disabled = true; if (opt.action) btn.onclick = opt.action; ui.dialogueOptions.appendChild(btn);
+            });
+        }
+
+        function showPirateMenu() {
+            startDialogue();
+            setDialogue("Welcome! What quest do you want to choose?", [
+                { text: "1: Pirate Burglar", action: () => setDialogue("Pirate Burglar<br><br>Target: 7 Burglars<br>Reward: $20 | 100 XP<br>Req: Lv. 1<br><br>Do you accept?", [
+                    { text: "Yes", action: () => { quest = { active: true, name: "Pirate Burglar", target: 7, current: 0, entityName: "Burglar", reward: 20, xpReward: 100 }; updateQuestUI(); closeDialogue(); } }, { text: "No", action: showPirateMenu }
+                ]) }, { text: "2: Back", action: closeDialogue }
+            ]);
+        }
+
+        function showShipwright() {
+            startDialogue();
+            setDialogue("Ahoy there! Buy a ship to cross the seas fast!", [
+                { text: "$100 Wooden Ship", action: () => {
+                    if (player.money >= 100 && !activeShip) {
+                        player.money -= 100; globalMoney = player.money; updateHUD(); 
+                        activeShip = new Ship(player.x, player.y + 100); 
+                        setDialogue("She's all yours! Walk over to board her.", [{ text: "Leave", action: closeDialogue }]); saveGameData(); window.switchTab('items');
+                    } else if (activeShip) setDialogue("Ye already own a fine vessel!", [{ text: "Leave", action: closeDialogue }]);
+                    else setDialogue("Yer pockets are lookin' a little light.", [{ text: "Leave", action: closeDialogue }]);
+                }}, { text: "LOCKED (Medium Ship)", disabled: true }, { text: "Back", action: closeDialogue }
+            ]);
+        }
+
+        function showJungleMenu() {
+            startDialogue();
+            setDialogue("Ooga booga! Hunt beasts?", [
+                { text: "1: Hunt Gorillas", action: () => {
+                    let reqMet = player.level >= 10;
+                    setDialogue(`Hunt Gorillas<br><br>Target: 7 Gorillas<br>Reward: $40 | 500 XP<br>Req: Lv. 10<br><br>${reqMet ? "Accept?" : "<span style='color:red'>Level too low!</span>"}`, [
+                        { text: "Yes", disabled: !reqMet, action: () => { quest = { active: true, name: "Gorilla Hunt", target: 7, current: 0, entityName: "Gorilla", reward: 40, xpReward: 500 }; updateQuestUI(); closeDialogue(); } }, { text: "No", action: showJungleMenu }
+                    ]);
+                }},
+                { text: "2: Gorilla King", action: () => {
+                    let reqMet = player.level >= 15;
+                    setDialogue(`Gorilla King<br><br>Target: 1 Gorilla King<br>Reward: $100 | 1020 XP<br>Req: Lv. 15<br><br>${reqMet ? "Accept?" : "<span style='color:red'>Level too low!</span>"}`, [
+                        { text: "Yes", disabled: !reqMet, action: () => { quest = { active: true, name: "Gorilla King", target: 1, current: 0, entityName: "Gorilla King", reward: 100, xpReward: 1020 }; updateQuestUI(); closeDialogue(); } }, { text: "No", action: showJungleMenu }
+                    ]);
+                }}, { text: "3: Back", action: closeDialogue }
+            ]);
+        }
+
+        function showDesertMenu() {
+            startDialogue();
+            setDialogue("Howdy partner. Ready to clean up this town?", [
+                { text: "1: Desert Bandits", action: () => {
+                    let reqMet = player.level >= 25;
+                    setDialogue(`Desert Bandits<br><br>Target: 10 Desert Bandits<br>Reward: $60 | 1500 XP<br>Req: Lv. 25<br><br>${reqMet ? "Accept?" : "<span style='color:red'>Level too low!</span>"}`, [
+                        { text: "Yes", disabled: !reqMet, action: () => { quest = { active: true, name: "Desert Bandit", target: 10, current: 0, entityName: "Desert Bandit", reward: 60, xpReward: 1500 }; updateQuestUI(); closeDialogue(); } }, { text: "No", action: showDesertMenu }
+                    ]);
+                }}, { text: "2: Back", action: closeDialogue }
+            ]);
+        }
+
+        function showFruitDealer() {
+            startDialogue();
+            let cost = 400 + (player.level > 20 ? (player.level - 20) * 20 : 0);
+            setDialogue(`Mysterious Fruits... Roll one for $${cost}?`, [
+                { text: "Roll Fruit", action: () => {
+                    if (player.level < 20) {
+                        setDialogue("You must be Lv. 20 to handle these!", [{text:"Back", action:closeDialogue}]);
+                    } else if (player.money >= cost) {
+                        player.money -= cost; globalMoney = player.money;
+                        let rolledFruit = (Math.random() * 100) < 10 ? 'Dragon Fruit' : 'Spin Fruit';
+                        globalInventory.push(rolledFruit);
+                        window.renderToolbar(); updateHUD(); saveGameData(); window.switchTab('items');
+                        setDialogue(`You got a ${rolledFruit}! It's in your toolbar.`, [{text:"Awesome!", action:closeDialogue}]);
+                    } else {
+                        setDialogue("Not enough money...", [{text:"Back", action:closeDialogue}]);
+                    }
+                }}, { text: "Leave", action: closeDialogue }
+            ]);
+        }
+
+        // --- MAIN LOOP ---
+        let loadProgress = 0;
+
+        function simulateLoading() {
+            if (loadProgress < 100) {
+                loadProgress += Math.random() * 2 + 0.5; document.getElementById('loading-bar-inner').style.width = Math.min(loadProgress, 100) + '%';
+                loadingFrameId = requestAnimationFrame(simulateLoading);
+            } else if (!isDataLoaded) {
+                loadingFrameId = requestAnimationFrame(simulateLoading);
+            } else { setTimeout(startGame, 500); }
+        }
+
+        function startGame() {
+            if (loadingFrameId) cancelAnimationFrame(loadingFrameId);
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+
+            gameState = 'PLAYING'; frameCount = 0; player = new Player();
+            generateWorld();
+            if (window.loadedWithShip && !activeShip) activeShip = new Ship(player.x, player.y + 100); 
+
+            npcs = [];
+            // Pirate NPCs
+            let px = Math.floor(PirateIslandCenter.x / TILE_SIZE); let py = Math.floor(PirateIslandCenter.y / TILE_SIZE);
+            npcs.push(new NPC("Guild Master", px * TILE_SIZE, (py-2) * TILE_SIZE, 'npc1', showPirateMenu));
+            npcs.push(new NPC("Shipwright", px * TILE_SIZE, (py+13) * TILE_SIZE, 'npc2', showShipwright));
+            
+            // Jungle NPCs
+            let jx = Math.floor(JungleIslandCenter.x / TILE_SIZE); let jy = Math.floor(JungleIslandCenter.y / TILE_SIZE);
+            npcs.push(new NPC("Jungle Chief", jx * TILE_SIZE, (jy-8) * TILE_SIZE, 'npcJungle', showJungleMenu));
+            npcs.push(new NPC("Shipwright", jx * TILE_SIZE, (jy+14) * TILE_SIZE, 'npc2', showShipwright));
+            npcs.push(new NPC("Fruit Dealer", (jx+10) * TILE_SIZE, (jy+10) * TILE_SIZE, 'npc2', showFruitDealer));
+            
+            // Desert NPCs
+            let dx_c = Math.floor(DesertIslandCenter.x / TILE_SIZE); let dy_c = Math.floor(DesertIslandCenter.y / TILE_SIZE);
+            npcs.push(new NPC("Desert Mayor", dx_c * TILE_SIZE, (dy_c-2) * TILE_SIZE, 'npc1', showDesertMenu));
+            npcs.push(new NPC("Shipwright", dx_c * TILE_SIZE, (dy_c+14) * TILE_SIZE, 'npc2', showShipwright));
+
+            entities = []; particles = []; craters = []; lasers = []; quest.active = false; gorillaKingSpawnTimer = 0; 
+            
+            ui.loading.style.display = 'none'; ui.over.style.display = 'none';
+            ui.toolbar.style.display = 'flex'; ui.questTracker.style.display = 'none';
+            ui.statsUI.style.display = 'block'; 
+            ui.compassContainer.style.display = player.level >= 10 ? 'block' : 'none';
+            
+            window.renderToolbar(); window.equipWeapon(-1); updateHUD(); window.switchTab('stats');
+
+            ui.islandBanner.innerText = "Pirate Island"; ui.islandBanner.classList.add('banner-show');
+            setTimeout(() => { ui.islandBanner.classList.remove('banner-show'); }, 4000);
+
+            if (autoSaveInterval) clearInterval(autoSaveInterval);
+            autoSaveInterval = setInterval(saveGameData, 30000);
+            gameLoop();
+        }
+
+        function endGame() {
+            gameState = 'GAMEOVER';
+            if (animationFrameId) cancelAnimationFrame(animationFrameId); animationFrameId = null;
+            if (autoSaveInterval) clearInterval(autoSaveInterval);
+
+            let distPirate = Math.hypot(player.x - PirateIslandCenter.x, player.y - PirateIslandCenter.y);
+            let distJungle = Math.hypot(player.x - JungleIslandCenter.x, player.y - JungleIslandCenter.y);
+            let distGorilla = Math.hypot(player.x - GorillaIslandCenter.x, player.y - GorillaIslandCenter.y);
+            let distDesert = Math.hypot(player.x - DesertIslandCenter.x, player.y - DesertIslandCenter.y);
+            
+            let minDist = Math.min(distPirate, distJungle, distGorilla, distDesert);
+            if (minDist === distJungle) { globalSpawnX = JungleIslandCenter.x; globalSpawnY = JungleIslandCenter.y; }
+            else if (minDist === distGorilla) { globalSpawnX = GorillaIslandCenter.x; globalSpawnY = GorillaIslandCenter.y; }
+            else if (minDist === distDesert) { globalSpawnX = DesertIslandCenter.x; globalSpawnY = DesertIslandCenter.y; }
+            else { globalSpawnX = PirateIslandCenter.x; globalSpawnY = PirateIslandCenter.y; }
+
+            globalXp = player.xp; globalLevel = player.level; globalMaxXp = player.maxXp;
+            globalMoney = player.money; globalMastery = player.mastery; globalEnergy = player.energy;
+            
+            saveGameData(); 
+            ui.statsUI.style.display = 'none'; ui.toolbar.style.display = 'none'; 
+            ui.masteryBox.style.display = 'none'; ui.questTracker.style.display = 'none';
+            ui.compassContainer.style.display = 'none'; ui.over.style.display = 'flex';
+        }
+
+        function drawMap() {
+            const startCol = Math.floor(camera.x / TILE_SIZE); const endCol = startCol + (width / TILE_SIZE) + 1;
+            const startRow = Math.floor(camera.y / TILE_SIZE); const endRow = startRow + (height / TILE_SIZE) + 1;
+            const gridCells = WORLD_SIZE / TILE_SIZE;
+
+            for (let y = startRow; y <= endRow; y++) {
+                for (let x = startCol; x <= endCol; x++) {
+                    if (y < 0 || x < 0 || y >= gridCells || x >= gridCells) { ctx.drawImage(sprites.water.img, x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE); continue; }
+                    const type = mapGrid[y][x]; let img = sprites[type] ? sprites[type].img : sprites.water.img;
+                    if (type === 'water' && (frameCount % 60 > 30)) img = sprites.water.img; 
+                    ctx.drawImage(img, x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                }
+            }
+        }
+
+        function spawnEnemies() {
+            if (gorillaKingSpawnTimer <= 0) {
+                if (!entities.find(e => e.type === 'gorilla king')) entities.push(new Enemy('gorilla king', GorillaIslandCenter.x, GorillaIslandCenter.y));
+            } else gorillaKingSpawnTimer--;
+
+            if (!quest.active) return;
+            if (frameCount % Math.max(40, 100 - Math.floor(frameCount / 300)) !== 0) return;
+            let eType = quest.entityName.toLowerCase(); if (eType === 'gorilla king') return; 
+            if (entities.filter(e => e.type === eType).length >= 10) return;
+
+            const angle = Math.random() * Math.PI * 2; const dist = Math.max(width, height) / 2 + 50;
+            entities.push(new Enemy(eType, player.x + Math.cos(angle) * dist, player.y + Math.sin(angle) * dist));
+        }
+
+        function manageAudioAndThemes() {
+            let distToPirate = Math.hypot(player.x - PirateIslandCenter.x, player.y - PirateIslandCenter.y);
+            let distToJungle = Math.hypot(player.x - JungleIslandCenter.x, player.y - JungleIslandCenter.y);
+            let distToDesert = Math.hypot(player.x - DesertIslandCenter.x, player.y - DesertIslandCenter.y);
+            
+            if (distToPirate < 800) playTheme('pirate'); 
+            else if (distToJungle < 800) playTheme('jungle'); 
+            else if (distToDesert < 800) playTheme('jungle'); // Reuse theme
+            else playTheme('none');
+        }
+
+        function drawCompass() {
+            if (!showCompassArrow) return;
+            let targetX = PirateIslandCenter.x; let targetY = PirateIslandCenter.y;
+            
+            if (player.level >= 25) { targetX = DesertIslandCenter.x; targetY = DesertIslandCenter.y; }
+            else if (player.level >= 10) { targetX = JungleIslandCenter.x; targetY = JungleIslandCenter.y; }
+            
+            ui.compassArrow.style.transform = `rotate(${Math.atan2(targetY - player.y, targetX - player.x) + Math.PI/2}rad)`;
+        }
+
+        function gameLoop() {
+            if (gameState === 'GAMEOVER') return;
+
+            if (gameState === 'PLAYING') {
+                frameCount++; player.update(); npcs.forEach(n => n.update()); spawnEnemies();
+                entities.forEach(ent => ent.update()); particles.forEach(p => p.update()); lasers.forEach(l => l.update());
+                entities = entities.filter(ent => !ent.remove); particles = particles.filter(p => !p.remove); lasers = lasers.filter(l => !l.remove);
+                manageAudioAndThemes(); drawCompass();
+            }
+
+            camera.x += (player.x - width / 2 - camera.x) * 0.1; camera.y += (player.y - height / 2 - camera.y) * 0.1;
+
+            ctx.fillStyle = '#2980b9'; ctx.fillRect(0, 0, width, height);
+            ctx.save(); ctx.translate(-Math.floor(camera.x), -Math.floor(camera.y));
+
+            drawMap();
+            craters.forEach(c => ctx.drawImage(sprites.crater.img, c.x - sprites.crater.centerW*2, c.y - sprites.crater.centerH*2, sprites.crater.w*2, sprites.crater.h*2));
+
+            windmills.forEach(wm => {
+                ctx.drawImage(sprites.windmillBase.img, wm.x - 15, wm.y - 15, 30, 30);
+                if (gameState === 'PLAYING') wm.angle += 0.02;
+                ctx.save(); ctx.translate(wm.x, wm.y - 10); ctx.rotate(wm.angle);
+                ctx.fillStyle = '#ecf0f1'; ctx.fillRect(-2, -20, 4, 40); ctx.fillRect(-20, -2, 40, 4); ctx.restore();
+            });
+
+            let renderList = [player, ...npcs, ...entities, ...decorations];
+            if (activeShip) renderList.push(activeShip);
+            renderList.sort((a, b) => a.y - b.y);
+            
+            renderList.forEach(ent => {
+                if(ent.sprite && !ent.draw) ctx.drawImage(ent.sprite.img, ent.x - ent.sprite.centerW, ent.y - ent.sprite.centerH);
+                else if(ent.draw) ent.draw(ctx);
+            });
+            lasers.forEach(l => l.draw(ctx));
+            particles.forEach(p => p.draw(ctx));
+
+            ctx.restore();
+            if (gameState === 'PLAYING') {
+                animationFrameId = requestAnimationFrame(gameLoop);
+            }
+        }
+
+        document.getElementById('restart-btn').addEventListener('click', () => {
+            ui.over.style.display = 'none'; ui.loading.style.display = 'flex';
+            loadProgress = 0; simulateLoading();
+        });
+
+        simulateLoading();
+    </script>
+</body>
+</html>

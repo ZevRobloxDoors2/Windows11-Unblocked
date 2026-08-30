@@ -1,0 +1,108 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} { allow read, write: if false; }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(uid) { return isSignedIn() && request.auth.uid == uid; }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'gamertag', 'gamertagLower', 'avatar', 'status', 'score', 'lastTrophyAt'])
+        && data.keys().size() >= 7
+        && data.uid is string && data.uid.size() <= 128 && data.uid == request.auth.uid
+        && data.gamertag is string && data.gamertag.size() <= 30
+        && data.gamertagLower is string && data.gamertagLower.size() <= 30
+        && data.avatar is string && data.avatar.size() <= 500
+        && data.status in ['Online', 'Appear offline', 'Do not disturb']
+        && data.score is number
+        && data.lastTrophyAt is timestamp
+        && (data.keys().hasAny(['recentGames']) ? data.recentGames is list && data.recentGames.size() <= 10 : true)
+        && (data.keys().hasAny(['vibrationEnabled']) ? data.vibrationEnabled is bool : true)
+        && (data.keys().hasAny(['homeTheme']) ? data.homeTheme is string && data.homeTheme.size() <= 50 : true)
+        && (data.keys().hasAny(['quickResumeEnabled']) ? data.quickResumeEnabled is bool : true);
+    }
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(userId)
+        && isValidId(userId)
+        && incoming().score == 0
+        && incoming().lastTrophyAt == request.time;
+      allow update: if isOwner(userId);
+    }
+
+    function isValidFriendRequest(data) {
+      return data.keys().hasAll(['fromUid', 'fromGamertag', 'toUid', 'status', 'createdAt'])
+        && data.keys().size() == 5
+        && data.fromUid is string && data.fromUid == request.auth.uid
+        && data.fromGamertag is string && data.fromGamertag.size() <= 30
+        && data.toUid is string && data.toUid.size() <= 128
+        && data.status in ['pending', 'accepted', 'rejected']
+        && data.createdAt is timestamp;
+    }
+
+    match /friendRequests/{requestId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && incoming().status == 'pending'
+        && incoming().createdAt == request.time;
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
+    }
+
+    function isValidMessage(data) {
+      return data.keys().hasAll(['senderId', 'text', 'createdAt'])
+        && data.senderId is string && data.senderId == request.auth.uid
+        && data.text is string && data.text.size() <= 1000
+        && (data.text.size() > 0 || data.keys().hasAny(['imageUrl']))
+        && (data.keys().hasAny(['imageUrl']) ? data.imageUrl is string && data.imageUrl.size() < 1048576 : true)
+        && data.createdAt is timestamp;
+    }
+
+    match /chats/{chatId}/messages/{messageId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && isValidMessage(incoming())
+        && incoming().createdAt == request.time;
+      allow update: if isSignedIn() && existing().senderId == request.auth.uid;
+      allow delete: if isSignedIn() && existing().senderId == request.auth.uid;
+    }
+
+    match /groupChats/{chatId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid in incoming().members;
+      allow update: if isSignedIn();
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && incoming().fromUid == request.auth.uid;
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
+    }
+
+    match /systemAlerts/{alertId} {
+      allow read: if isSignedIn();
+      allow update: if isSignedIn();
+    }
+    match /parties/{partyId}/members/{memberId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isSignedIn() && request.auth.uid == memberId;
+      
+      match /signals/{signalId} {
+        allow read: if isSignedIn() && request.auth.uid == memberId;
+        allow create, update, delete: if isSignedIn();
+      }
+    }
+
+    match /activities/{activityId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && incoming().uid == request.auth.uid;
+      allow update, delete: if false;
+    }
+  }
+}

@@ -1,0 +1,8 @@
+                  </div>
+
+
+                    <Store size={48} className="text-zinc-800 mb-2 group-hover:scale-105 transition-transform" />
+                    <span className="font-semibold text-sm text-zinc-900">Store</span>
+                  </div>
+                </div>
+

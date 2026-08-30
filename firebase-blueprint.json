@@ -1,0 +1,60 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "gamertag": { "type": "string", "maxLength": 30 },
+        "gamertagLower": { "type": "string", "maxLength": 30 },
+        "avatar": { "type": "string", "maxLength": 500 },
+        "status": { "type": "string", "enum": ["Online", "Appear offline", "Do not disturb"] },
+        "score": { "type": "number" },
+        "lastTrophyAt": { "type": "string", "format": "date-time" },
+        "recentGames": { "type": "array" },
+        "vibrationEnabled": { "type": "boolean" },
+        "homeTheme": { "type": "string" }
+      },
+      "required": ["uid", "gamertag", "gamertagLower", "avatar", "status", "score", "lastTrophyAt"]
+    },
+    "FriendRequest": {
+      "title": "Friend Request",
+      "description": "Friend request from one user to another.",
+      "type": "object",
+      "properties": {
+        "fromUid": { "type": "string" },
+        "fromGamertag": { "type": "string", "maxLength": 30 },
+        "toUid": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "accepted", "rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["fromUid", "fromGamertag", "toUid", "status", "createdAt"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "A chat message.",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string" },
+        "text": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["senderId", "text", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "Stores user profiles."
+    },
+    "friendRequests/{requestId}": {
+      "schema": "FriendRequest",
+      "description": "Stores friend requests and relationships."
+    },
+    "chats/{chatId}/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Stores direct messages between two users. chatId is constructed as uid1_uid2."
+    }
+  }
+}

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.1/shaka-player.compiled.js"></script>
+</head>
+<body>
+  <video id="video" autoplay muted loop crossorigin="anonymous"></video>
+  <script>
+    shaka.polyfill.installAll();
+    var video = document.getElementById('video');
+    var player = new shaka.Player(video);
+    player.configure({
+      drm: {
+        servers: {
+          'com.widevine.alpha': 'https://cwip-shaka-proxy.appspot.com/no_auth'
+        }
+      }
+    });
+    player.load('https://storage.googleapis.com/shaka-demo-assets/sintel-widevine/dash.mpd').then(function() {
+      console.log('The video has now been loaded!');
+    }).catch(function(e) {
+      console.error('Error loading video', e);
+    });
+  </script>
+</body>
+</html>
