@@ -17,7 +17,7 @@ export function GlobalNotifications({ profile, playingGame, activeChatId, onNavi
   const [activeToasts, setActiveToasts] = useState<any[]>([]);
 
   useEffect(() => {
-    if (!profile) return;
+    if (!profile || profile.uid === 'guest') return;
     const q = query(collection(db, 'notifications'), where('toUid', '==', profile.uid), where('read', '==', false));
     const unsub = onSnapshot(q, (snap) => {
       snap.docChanges().forEach(change => {

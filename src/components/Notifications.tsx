@@ -16,6 +16,8 @@ export function Notifications({ userProfile, onBack }: NotificationsProps) {
   const [alerts, setAlerts] = useState<any[]>([]);
 
   useEffect(() => {
+    if (!userProfile || userProfile.uid === 'guest') return;
+    
     // Listen to friend requests
     const qReqs = query(
       collection(db, 'friendRequests'),

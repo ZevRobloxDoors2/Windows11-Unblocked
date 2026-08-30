@@ -33,6 +33,8 @@ export function Chat({ userProfile, friendId, friendGamertag, chatId: propChatId
   const displayTitle = isGroup ? chatName : (friendGamertag === 'Friend' ? friendId?.substring(0,8) : friendGamertag);
 
   useEffect(() => {
+    if (userProfile.uid === 'guest') return;
+
     const qTyping = query(collection(db, `chats/${computedChatId}/typing`));
     const unsubTyping = onSnapshot(qTyping, (snap) => {
       const now = Date.now();

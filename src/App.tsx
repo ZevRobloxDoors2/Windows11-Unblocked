@@ -454,7 +454,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (!profile) return;
+    if (!profile || profile.uid === 'guest') return;
     const qReqs = query(collection(db, 'friendRequests'), where('toUid', '==', activeProfile.uid), where('status', '==', 'pending'));
     const qAlerts = query(collection(db, 'systemAlerts'), where('toUid', '==', activeProfile.uid), where('read', '==', false));
     

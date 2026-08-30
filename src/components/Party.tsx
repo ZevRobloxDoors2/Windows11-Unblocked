@@ -69,6 +69,8 @@ export const Party: React.FC<{ profile: any, onBack: () => void, initialPartyId?
   }, []);
 
   useEffect(() => {
+    if (!profile || profile.uid === 'guest') return;
+
     // Always listen to party members
     const membersQuery = collection(db, 'parties', partyId, 'members');
     const unsub = onSnapshot(membersQuery, (snap) => {
@@ -89,7 +91,7 @@ export const Party: React.FC<{ profile: any, onBack: () => void, initialPartyId?
   }, [inParty, profile.uid]);
 
   useEffect(() => {
-    if (!inParty) return;
+    if (!inParty || !profile || profile.uid === 'guest') return;
 
     let unsubs: (() => void)[] = [];
     const init = async () => {
@@ -365,7 +367,7 @@ export const Party: React.FC<{ profile: any, onBack: () => void, initialPartyId?
   };
 
   useEffect(() => {
-    if (!showInviteModal) return;
+    if (!showInviteModal || !profile || profile.uid === 'guest') return;
     const q = query(
       collection(db, 'friendRequests'),
       or(
