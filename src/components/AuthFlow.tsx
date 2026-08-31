@@ -40,17 +40,24 @@ export function AuthFlow({ onConfirm }: { onConfirm: () => void }) {
   }, []);
 
   const checkAndCreateProfile = async (user: any, role: string = 'user') => {
-    const profileRef = doc(db, 'profiles', user.uid);
+    const profileRef = doc(db, 'users', user.uid);
     const snap = await getDoc(profileRef);
     if (!snap.exists()) {
-      const generatedGamertag = user.email ? user.email.split('@')[0] : 'Player' + Math.floor(Math.random() * 10000);
+      let generatedGamertag = user.email ? user.email.split('@')[0] : 'Player' + Math.floor(Math.random() * 10000);
+      if (generatedGamertag.length > 30) {
+        generatedGamertag = generatedGamertag.substring(0, 30);
+      }
       await setDoc(profileRef, {
+        uid: user.uid,
         gamertag: generatedGamertag,
+        gamertagLower: generatedGamertag.toLowerCase(),
         bio: "I'm new here!",
         avatar: user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`,
         createdAt: serverTimestamp(),
         friends: [],
-        presence: 'online',
+        status: 'Online',
+        score: 0,
+        lastTrophyAt: serverTimestamp(),
         recentGames: [],
         role: role
       });
@@ -124,6 +131,9 @@ export function AuthFlow({ onConfirm }: { onConfirm: () => void }) {
       emailToUse = 'jascen67@ebox.tester';
     } else if (testerUser === 'Sebastianthegoat61' && testerPass === 'Masonisabum61!') {
       emailToUse = 'sebastianthegoat61@ebox.tester';
+    } else if (testerUser === 'ownertest' && testerPass === 'nohorse') {
+      emailToUse = 'ownertest@ebox.owner';
+      role = 'owner';
     } else {
       setError('Invalid Tester credentials.');
       setView('tester_login');
@@ -163,7 +173,8 @@ export function AuthFlow({ onConfirm }: { onConfirm: () => void }) {
   };
 
   const handleGuestPlay = () => {
-    onConfirm();
+    sessionStorage.setItem('ebox_guest_mode', 'true');
+    window.location.reload();
   };
 
   if (view === 'loading') {
@@ -190,7 +201,7 @@ export function AuthFlow({ onConfirm }: { onConfirm: () => void }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -50 }}
             transition={{ duration: 0.4 }}
-            className="z-10 mt-32 flex flex-col items-center text-white drop-shadow-lg cursor-pointer w-full h-full"
+            className="z-10 absolute inset-0 pt-32 flex flex-col items-center text-white drop-shadow-lg cursor-pointer"
             onClick={() => setView('login')}
           >
             <div className="text-[6rem] font-medium leading-none tracking-tight">
@@ -201,8 +212,8 @@ export function AuthFlow({ onConfirm }: { onConfirm: () => void }) {
             </div>
             
             <div className="absolute bottom-12 flex flex-col items-center animate-bounce opacity-70">
-              <span className="text-sm mb-2">Click or swipe up to unlock</span>
-              <div className="w-6 h-6 border-b-2 border-r-2 border-white transform rotate-45" />
+              <div className="w-6 h-6 border-t-2 border-l-2 border-white transform rotate-45 mb-2 mt-2" />
+              <span className="text-sm">Click or swipe up to unlock</span>
             </div>
           </motion.div>
         )}
@@ -214,7 +225,7 @@ export function AuthFlow({ onConfirm }: { onConfirm: () => void }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.4 }}
-            className="z-10 w-full h-full flex flex-col items-center justify-center"
+            className="z-10 absolute inset-0 flex flex-col items-center justify-center"
           >
             {accounts.length > 0 && selectedAccount ? (
               <div className="flex flex-col items-center">

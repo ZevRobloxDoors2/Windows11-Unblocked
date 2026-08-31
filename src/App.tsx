@@ -445,7 +445,7 @@ export default function App() {
           createdAt: serverTimestamp()
         });
       } catch (err) {
-        console.error("Failed to update recent games", err);
+        console.warn("Failed to update recent games", err);
       }
     }
     setTimeout(() => {
@@ -492,12 +492,12 @@ export default function App() {
     const unsubReqs = onSnapshot(qReqs, (snap) => {
       reqsCount = snap.docs.length;
       setNotificationCount(reqsCount + alertsCount);
-    }, (err) => console.error(err));
+    }, (err) => console.warn("Snapshot:", err.message));
     
     const unsubAlerts = onSnapshot(qAlerts, (snap) => {
       alertsCount = snap.docs.length;
       setNotificationCount(reqsCount + alertsCount);
-    }, (err) => console.error(err));
+    }, (err) => console.warn("Snapshot:", err.message));
     
     return () => { unsubReqs(); unsubAlerts(); };
   }, [profile]);
@@ -523,7 +523,7 @@ export default function App() {
       }
       setProfileLoaded(true);
     }, (error) => {
-      console.error(error);
+      console.warn(error);
       setProfileLoaded(true);
     });
     return () => unsub();
@@ -580,7 +580,7 @@ export default function App() {
 
               setTimeout(() => setShowTrophyToast(false), 4000);
             } catch(e) {
-              console.error("Trophy error:", e);
+              console.warn("Trophy error:", e);
             }
           };
           award();
