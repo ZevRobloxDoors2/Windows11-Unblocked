@@ -48,7 +48,7 @@ export function Chat({ userProfile, friendId, friendGamertag, chatId: propChatId
         }
       });
       setTypingUsers(typing);
-    });
+    }, () => {});
 
     const q = query(collection(db, `chats/${computedChatId}/messages`), orderBy('createdAt', 'asc'));
     const unsubscribe = onSnapshot(q, (snap) => {
@@ -68,7 +68,7 @@ export function Chat({ userProfile, friendId, friendGamertag, chatId: propChatId
            });
         }
       });
-    });
+    }, () => {});
     return () => { unsubscribe(); unsubTyping(); };
   }, [computedChatId, userProfile.uid]);
 

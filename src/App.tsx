@@ -492,12 +492,12 @@ export default function App() {
     const unsubReqs = onSnapshot(qReqs, (snap) => {
       reqsCount = snap.docs.length;
       setNotificationCount(reqsCount + alertsCount);
-    }, (err) => console.warn("Snapshot:", err.message));
+    }, () => {});
     
     const unsubAlerts = onSnapshot(qAlerts, (snap) => {
       alertsCount = snap.docs.length;
       setNotificationCount(reqsCount + alertsCount);
-    }, (err) => console.warn("Snapshot:", err.message));
+    }, () => {});
     
     return () => { unsubReqs(); unsubAlerts(); };
   }, [profile]);
@@ -522,8 +522,7 @@ export default function App() {
         setProfile(null);
       }
       setProfileLoaded(true);
-    }, (error) => {
-      console.warn(error);
+    }, () => {
       setProfileLoaded(true);
     });
     return () => unsub();

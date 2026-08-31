@@ -159,7 +159,7 @@ export const Party: React.FC<{ profile: any, onBack: () => void, initialPartyId?
             handleSignal(change.doc.id, data);
           }
         });
-      }));
+      }, () => {}));
     };
 
     init();
@@ -389,7 +389,7 @@ export const Party: React.FC<{ profile: any, onBack: () => void, initialPartyId?
         }
       }
       setFriendsList(list.filter((v,i,a)=>a.findIndex(t=>(t.uid === v.uid))===i));
-    });
+    }, () => {});
     return () => unsub();
   }, [showInviteModal, profile.uid]);
 

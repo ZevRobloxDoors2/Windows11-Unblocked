@@ -82,7 +82,7 @@ export function Friends({ userProfile, onBack, onChat }: FriendsProps) {
     const q = query(collection(db, 'groupChats'), where('members', 'array-contains', auth.currentUser.uid));
     const unsub = onSnapshot(q, (snap) => {
       setGroupChats(snap.docs.map(d => ({ id: d.id, name: d.data().name })));
-    });
+    }, () => {});
     return () => unsub();
   }, []);
 

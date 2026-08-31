@@ -48,6 +48,9 @@ export function Settings({ profile, onBack, onLogout, isGuestMode }: { profile: 
         accounts[thisAccIndex].autoSignIn = false;
         accounts[thisAccIndex].pin = null;
         localStorage.setItem('ebox_accounts', JSON.stringify(accounts));
+        import('firebase/firestore').then(({ updateDoc, doc, deleteField }) => {
+          updateDoc(doc(db, 'users', profile.uid), { pin: deleteField() }).catch(()=> {});
+        });
       }
       setIsAutoSignIn(false);
     } else {
@@ -72,6 +75,9 @@ export function Settings({ profile, onBack, onLogout, isGuestMode }: { profile: 
             accounts[thisAccIndex].pin = pinInput;
             localStorage.setItem('ebox_accounts', JSON.stringify(accounts));
             setIsAutoSignIn(true);
+            import('firebase/firestore').then(({ updateDoc, doc }) => {
+              updateDoc(doc(db, 'users', profile.uid), { pin: pinInput }).catch(()=> {});
+            });
           }
           setShowPinModal(false);
         } else {

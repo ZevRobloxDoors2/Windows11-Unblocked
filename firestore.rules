@@ -24,7 +24,8 @@ service cloud.firestore {
         && (data.keys().hasAny(['recentGames']) ? data.recentGames is list && data.recentGames.size() <= 10 : true)
         && (data.keys().hasAny(['vibrationEnabled']) ? data.vibrationEnabled is bool : true)
         && (data.keys().hasAny(['homeTheme']) ? data.homeTheme is string && data.homeTheme.size() <= 50 : true)
-        && (data.keys().hasAny(['quickResumeEnabled']) ? data.quickResumeEnabled is bool : true);
+        && (data.keys().hasAny(['quickResumeEnabled']) ? data.quickResumeEnabled is bool : true)
+        && (data.keys().hasAny(['pin']) ? data.pin is string && data.pin.size() <= 10 : true);
     }
     match /users/{userId} {
       allow read: if isSignedIn();
