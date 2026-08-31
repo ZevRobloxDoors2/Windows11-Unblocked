@@ -7,25 +7,18 @@ export const ALL_GAMES = [
     "file": "Games/1v1 LOL.html"
   },
   {
-    "id": "aceattorney",
-    "title": "aceattorney",
-    "image": "https://ui-avatars.com/api/?name=aceattorney&background=random&color=fff&size=256&font-size=0.33",
+    "id": "Backrooms",
+    "title": "Backrooms",
+    "image": "https://ui-avatars.com/api/?name=Backrooms&background=random&color=fff&size=256&font-size=0.33",
     "type": "game",
-    "file": "Games/aceattorney.html"
+    "file": "Games/Backrooms.html"
   },
   {
-    "id": "Basketball Legend",
-    "title": "Basketball Legend",
-    "image": "https://ui-avatars.com/api/?name=Basketball%20Legend&background=random&color=fff&size=256&font-size=0.33",
+    "id": "Bendy and the Ink Machine",
+    "title": "Bendy and the Ink Machine",
+    "image": "https://ui-avatars.com/api/?name=Bendy%20and%20the%20Ink%20Machine&background=random&color=fff&size=256&font-size=0.33",
     "type": "game",
-    "file": "Games/Basketball Legend.html"
-  },
-  {
-    "id": "bitlife",
-    "title": "bitlife",
-    "image": "https://ui-avatars.com/api/?name=bitlife&background=random&color=fff&size=256&font-size=0.33",
-    "type": "game",
-    "file": "Games/bitlife.html"
+    "file": "Games/Bendy and the Ink Machine.html"
   },
   {
     "id": "DoodleJump",
@@ -56,13 +49,6 @@ export const ALL_GAMES = [
     "file": "Games/Eaglercraft.html"
   },
   {
-    "id": "effing zombies",
-    "title": "effing zombies",
-    "image": "https://ui-avatars.com/api/?name=effing%20zombies&background=random&color=fff&size=256&font-size=0.33",
-    "type": "game",
-    "file": "Games/effing zombies.html"
-  },
-  {
     "id": "Escape Road 2",
     "title": "Escape Road 2",
     "image": "https://ui-avatars.com/api/?name=Escape%20Road%202&background=random&color=fff&size=256&font-size=0.33",
@@ -84,46 +70,11 @@ export const ALL_GAMES = [
     "file": "Games/Five Nights at Epstein's.html"
   },
   {
-    "id": "football-bros",
-    "title": "football-bros",
-    "image": "https://ui-avatars.com/api/?name=football-bros&background=random&color=fff&size=256&font-size=0.33",
-    "type": "game",
-    "file": "Games/football-bros.html"
-  },
-  {
     "id": "FridayNightFunk",
     "title": "FridayNightFunk",
     "image": "https://ui-avatars.com/api/?name=FridayNightFunk&background=random&color=fff&size=256&font-size=0.33",
     "type": "game",
     "file": "Games/FridayNightFunk.html"
-  },
-  {
-    "id": "Geo-Dash",
-    "title": "Geo-Dash",
-    "image": "https://ui-avatars.com/api/?name=Geo-Dash&background=random&color=fff&size=256&font-size=0.33",
-    "type": "game",
-    "file": "Games/Geo-Dash.html"
-  },
-  {
-    "id": "granny2",
-    "title": "granny2",
-    "image": "https://ui-avatars.com/api/?name=granny2&background=random&color=fff&size=256&font-size=0.33",
-    "type": "game",
-    "file": "Games/granny2.html"
-  },
-  {
-    "id": "granny3",
-    "title": "granny3",
-    "image": "https://ui-avatars.com/api/?name=granny3&background=random&color=fff&size=256&font-size=0.33",
-    "type": "game",
-    "file": "Games/granny3.html"
-  },
-  {
-    "id": "Granny",
-    "title": "Granny",
-    "image": "https://ui-avatars.com/api/?name=Granny&background=random&color=fff&size=256&font-size=0.33",
-    "type": "game",
-    "file": "Games/Granny.html"
   },
   {
     "id": "GTA-Vice",
@@ -133,6 +84,27 @@ export const ALL_GAMES = [
     "file": "Games/GTA-Vice.html"
   },
   {
+    "id": "Geo-Dash",
+    "title": "Geo-Dash",
+    "image": "https://ui-avatars.com/api/?name=Geo-Dash&background=random&color=fff&size=256&font-size=0.33",
+    "type": "game",
+    "file": "Games/Geo-Dash.html"
+  },
+  {
+    "id": "Grand Theft Auto 3",
+    "title": "Grand Theft Auto 3",
+    "image": "https://ui-avatars.com/api/?name=Grand%20Theft%20Auto%203&background=random&color=fff&size=256&font-size=0.33",
+    "type": "game",
+    "file": "Games/Grand Theft Auto 3.html"
+  },
+  {
+    "id": "Granny",
+    "title": "Granny",
+    "image": "https://ui-avatars.com/api/?name=Granny&background=random&color=fff&size=256&font-size=0.33",
+    "type": "game",
+    "file": "Games/Granny.html"
+  },
+  {
     "id": "HypperSand",
     "title": "HypperSand",
     "image": "https://ui-avatars.com/api/?name=HypperSand&background=random&color=fff&size=256&font-size=0.33",
@@ -140,25 +112,11 @@ export const ALL_GAMES = [
     "file": "Games/HypperSand.html"
   },
   {
-    "id": "miside",
-    "title": "miside",
-    "image": "https://ui-avatars.com/api/?name=miside&background=random&color=fff&size=256&font-size=0.33",
+    "id": "Kindergarten",
+    "title": "Kindergarten",
+    "image": "https://ui-avatars.com/api/?name=Kindergarten&background=random&color=fff&size=256&font-size=0.33",
     "type": "game",
-    "file": "Games/miside.html"
-  },
-  {
-    "id": "not-my-neigh",
-    "title": "not-my-neigh",
-    "image": "https://ui-avatars.com/api/?name=not-my-neigh&background=random&color=fff&size=256&font-size=0.33",
-    "type": "game",
-    "file": "Games/not-my-neigh.html"
-  },
-  {
-    "id": "parkingfury",
-    "title": "parkingfury",
-    "image": "https://ui-avatars.com/api/?name=parkingfury&background=random&color=fff&size=256&font-size=0.33",
-    "type": "game",
-    "file": "Games/parkingfury.html"
+    "file": "Games/Kindergarten.html"
   },
   {
     "id": "ParkingGTV",
@@ -186,7 +144,7 @@ export const ALL_GAMES = [
     "title": "Roblox",
     "image": "https://upload.wikimedia.org/wikipedia/commons/3/3a/Roblox_player_icon_black.svg",
     "type": "game",
-    "file": "https://nhjkdbiondnnd.dila.cl/frog/default/ixl/hvtrs8%2F-71.kp%2Cnmweg%2Cfwn-arpq%2Fc%2F39%3B02%2F%60.jtol"
+    "file": "Games/Roblox.html"
   },
   {
     "id": "RobloxOLD",
@@ -203,13 +161,6 @@ export const ALL_GAMES = [
     "file": "Games/Rocket League.html"
   },
   {
-    "id": "smash carts",
-    "title": "smash carts",
-    "image": "https://ui-avatars.com/api/?name=smash%20carts&background=random&color=fff&size=256&font-size=0.33",
-    "type": "game",
-    "file": "Games/smash carts.html"
-  },
-  {
     "id": "Solar Smash",
     "title": "Solar Smash",
     "image": "https://ui-avatars.com/api/?name=Solar%20Smash&background=random&color=fff&size=256&font-size=0.33",
@@ -224,150 +175,87 @@ export const ALL_GAMES = [
     "file": "Games/Steal a Brainrot.html"
   },
   {
-    "id": "undertaleyellow",
-    "title": "undertaleyellow",
-    "image": "https://ui-avatars.com/api/?name=undertaleyellow&background=random&color=fff&size=256&font-size=0.33",
-    "type": "game",
-    "file": "Games/undertaleyellow.html"
-  },
-  {
-    "id": "Discord",
-    "title": "Discord",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/9/90/Discord_logo_2021.svg",
-    "type": "app",
-    "file": "Apps/Discord.html"
-  },
-  {
-    "id": "EboxChat",
-    "title": "EboxChat",
-    "image": "https://ui-avatars.com/api/?name=EboxChat&background=222222&color=10b981&size=256&font-size=0.33&bold=true",
-    "type": "app",
-    "file": "Apps/EboxChat.html"
-  },
-  {
-    "id": "EboxFlix",
-    "title": "EboxFlix",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg",
-    "type": "app",
-    "file": "Apps/EboxFlix.html"
-  },
-  {
-    "id": "Win Music",
-    "title": "Win Music",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg",
-    "type": "app",
-    "file": "Apps/Ebox Music.html"
-  },
-  {
-    "id": "Roblox Animator",
-    "title": "Roblox Animator",
-    "image": "https://ui-avatars.com/api/?name=Roblox%20Animator&background=222222&color=10b981&size=256&font-size=0.33&bold=true",
-    "type": "app",
-    "file": "Apps/Roblox Animator.html"
-  },
-  {
-    "id": "SoundBoard",
-    "title": "SoundBoard",
-    "image": "https://ui-avatars.com/api/?name=SoundBoard&background=222222&color=10b981&size=256&font-size=0.33&bold=true",
-    "type": "app",
-    "file": "Apps/SoundBoard.html"
-  },
-  {
-    "id": "TikTok",
-    "title": "TikTok",
-    "image": "https://upload.wikimedia.org/wikipedia/en/a/a9/TikTok_logo.svg",
-    "type": "app",
-    "file": "https://opium.best/~/7dm8ml54/hudiigjq/https%3A%2F%2Fwww.tiktok.com%2Fforyou"
-  },
-  {
-    "id": "GTA V",
-    "title": "GTA V",
-    "image": "https://ui-avatars.com/api/?name=GTA+V&background=random&color=fff&size=256&font-size=0.33",
-    "type": "game",
-    "file": "https://opium.best/"
-  },
-  {
-    "id": "GTA San Andreas",
-    "title": "GTA San Andreas",
-    "image": "https://ui-avatars.com/api/?name=GTA+SA&background=random&color=fff&size=256&font-size=0.33",
-    "type": "game",
-    "file": "https://truffled.lol/games/gtasan/"
-  },
-  {
-    "id": "Instagram",
-    "title": "Instagram",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg",
-    "type": "app",
-    "file": "https://opium.best/~/7dm8ml54/hudiigjq/https%3A%2F%2Fwww.instagram.com%2F"
-  },
-  {
-    "id": "Snapchat",
-    "title": "Snapchat",
-    "image": "https://upload.wikimedia.org/wikipedia/en/c/c4/Snapchat_logo.svg",
-    "type": "app",
-    "file": "https://nhjkdbiondnnd.dila.cl/embed.html#https://snapchat.com/spotlight"
-  },
-  {
-    "id": "ChatGPT",
-    "title": "ChatGPT",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg",
-    "type": "app",
-    "file": "https://nhjkdbiondnnd.dila.cl/embed.html#https://toolbaz.com/writer/chat-gpt-alternative"
-  },
-  {
-    "id": "YouTube",
-    "title": "YouTube",
-    "image": "https://upload.wikimedia.org/wikipedia/commons/0/09/YouTube_full-color_icon_%282017%29.svg",
-    "type": "app",
-    "file": "https://nhjkdbiondnnd.dila.cl/embed.html#https://youtube.com/"
-  },
-  {
-    "id": "Backrooms",
-    "title": "Backrooms",
-    "image": "https://ui-avatars.com/api/?name=Backrooms&background=random&color=fff&size=256&font-size=0.33",
-    "type": "game",
-    "file": "Games/Backrooms.html"
-  },
-  {
-    "id": "Bendy and the Ink Machine",
-    "title": "Bendy and the Ink Machine",
-    "image": "https://ui-avatars.com/api/?name=Bendy%20and%20the%20Ink%20Machine&background=random&color=fff&size=256&font-size=0.33",
-    "type": "game",
-    "file": "Games/Bendy and the Ink Machine.html"
-  },
-  {
-    "id": "Grand Theft Auto 3",
-    "title": "Grand Theft Auto 3",
-    "image": "https://ui-avatars.com/api/?name=Grand%20Theft%20Auto%203&background=random&color=fff&size=256&font-size=0.33",
-    "type": "game",
-    "file": "Games/Grand Theft Auto 3.html"
-  },
-  {
-    "id": "Kindergarten",
-    "title": "Kindergarten",
-    "image": "https://ui-avatars.com/api/?name=Kindergarten&background=random&color=fff&size=256&font-size=0.33",
-    "type": "game",
-    "file": "Games/Kindergarten.html"
-  },
-  {
-    "id": "Phoenix_Wright",
-    "title": "Phoenix_Wright",
-    "image": "https://ui-avatars.com/api/?name=Phoenix_Wright&background=random&color=fff&size=256&font-size=0.33",
-    "type": "game",
-    "file": "Games/Phoenix_Wright.zip"
-  },
-  {
-    "id": "Roblox_Local",
-    "title": "Roblox",
-    "image": "https://ui-avatars.com/api/?name=Roblox&background=random&color=fff&size=256&font-size=0.33",
-    "type": "game",
-    "file": "Games/Roblox.html"
-  },
-  {
     "id": "Totally Accurate Battle Simulator (TABS)",
     "title": "Totally Accurate Battle Simulator (TABS)",
     "image": "https://ui-avatars.com/api/?name=Totally%20Accurate%20Battle%20Simulator%20(TABS)&background=random&color=fff&size=256&font-size=0.33",
     "type": "game",
     "file": "Games/Totally Accurate Battle Simulator (TABS).html"
+  },
+  {
+    "id": "aceattorney",
+    "title": "aceattorney",
+    "image": "https://ui-avatars.com/api/?name=aceattorney&background=random&color=fff&size=256&font-size=0.33",
+    "type": "game",
+    "file": "Games/aceattorney.html"
+  },
+  {
+    "id": "bitlife",
+    "title": "bitlife",
+    "image": "https://ui-avatars.com/api/?name=bitlife&background=random&color=fff&size=256&font-size=0.33",
+    "type": "game",
+    "file": "Games/bitlife.html"
+  },
+  {
+    "id": "effing zombies",
+    "title": "effing zombies",
+    "image": "https://ui-avatars.com/api/?name=effing%20zombies&background=random&color=fff&size=256&font-size=0.33",
+    "type": "game",
+    "file": "Games/effing zombies.html"
+  },
+  {
+    "id": "football-bros",
+    "title": "football-bros",
+    "image": "https://ui-avatars.com/api/?name=football-bros&background=random&color=fff&size=256&font-size=0.33",
+    "type": "game",
+    "file": "Games/football-bros.html"
+  },
+  {
+    "id": "granny2",
+    "title": "granny2",
+    "image": "https://ui-avatars.com/api/?name=granny2&background=random&color=fff&size=256&font-size=0.33",
+    "type": "game",
+    "file": "Games/granny2.html"
+  },
+  {
+    "id": "granny3",
+    "title": "granny3",
+    "image": "https://ui-avatars.com/api/?name=granny3&background=random&color=fff&size=256&font-size=0.33",
+    "type": "game",
+    "file": "Games/granny3.html"
+  },
+  {
+    "id": "miside",
+    "title": "miside",
+    "image": "https://ui-avatars.com/api/?name=miside&background=random&color=fff&size=256&font-size=0.33",
+    "type": "game",
+    "file": "Games/miside.html"
+  },
+  {
+    "id": "not-my-neigh",
+    "title": "not-my-neigh",
+    "image": "https://ui-avatars.com/api/?name=not-my-neigh&background=random&color=fff&size=256&font-size=0.33",
+    "type": "game",
+    "file": "Games/not-my-neigh.html"
+  },
+  {
+    "id": "parkingfury",
+    "title": "parkingfury",
+    "image": "https://ui-avatars.com/api/?name=parkingfury&background=random&color=fff&size=256&font-size=0.33",
+    "type": "game",
+    "file": "Games/parkingfury.html"
+  },
+  {
+    "id": "smash carts",
+    "title": "smash carts",
+    "image": "https://ui-avatars.com/api/?name=smash%20carts&background=random&color=fff&size=256&font-size=0.33",
+    "type": "game",
+    "file": "Games/smash carts.html"
+  },
+  {
+    "id": "undertaleyellow",
+    "title": "undertaleyellow",
+    "image": "https://ui-avatars.com/api/?name=undertaleyellow&background=random&color=fff&size=256&font-size=0.33",
+    "type": "game",
+    "file": "Games/undertaleyellow.html"
   }
 ];

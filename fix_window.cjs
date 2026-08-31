@@ -1,4 +1,6 @@
-import React, { ReactNode, useState, useRef } from 'react';
+const fs = require('fs');
+
+const code = `import React, { ReactNode, useState, useRef } from 'react';
 import { motion, useDragControls } from 'motion/react';
 import { X, Minus, Square, Copy } from 'lucide-react';
 
@@ -76,27 +78,27 @@ export const Window = ({ title, onClose, onMinimize, onGuide, isActive = true, o
       animate={{ opacity: 1, scale: 1, ...getAnimationProps() }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
-      className={`absolute bg-[#202020] border border-white/10 rounded-lg shadow-2xl flex flex-col overflow-hidden ${isActive ? 'z-[100]' : 'z-[50] opacity-90 shadow-none'} ${className} ${windowState !== 'floating' ? 'rounded-none border-0' : ''}`}
+      className={\`absolute bg-[#202020] border border-white/10 rounded-lg shadow-2xl flex flex-col overflow-hidden \${isActive ? 'z-[100]' : 'z-[50] opacity-90 shadow-none'} \${className} \${windowState !== 'floating' ? 'rounded-none border-0' : ''}\`}
     >
       <div 
-        className={`h-10 ${isActive ? 'bg-[#181818]' : 'bg-[#121212]'} flex items-center justify-between select-none px-4 shrink-0 border-b border-white/5 cursor-grab active:cursor-grabbing transition-colors`}
+        className={\`h-10 \${isActive ? 'bg-[#181818]' : 'bg-[#121212]'} flex items-center justify-between select-none px-4 shrink-0 border-b border-white/5 cursor-grab active:cursor-grabbing transition-colors\`}
         onDoubleClick={toggleMaximize}
         onPointerDown={startDrag}
         style={{ touchAction: 'none' }}
       >
-        <div className={`text-xs font-semibold ${isActive ? 'text-zinc-300' : 'text-zinc-500'} pointer-events-none z-10 relative`}>{title}</div>
+        <div className={\`text-xs font-semibold \${isActive ? 'text-zinc-300' : 'text-zinc-500'} pointer-events-none z-10 relative\`}>{title}</div>
         <div className="flex items-center gap-1 z-10 relative">
-          <button onClick={onGuide} onPointerDown={e => e.stopPropagation()} className="text-zinc-400 hover:bg-white/10 hover:text-white transition-colors p-1.5 rounded-sm" title="Guide">
+          <button onClick={onGuide} className="text-zinc-400 hover:bg-white/10 hover:text-white transition-colors p-1.5 rounded-sm" title="Guide">
             <span className="font-bold text-sm">E</span>
           </button>
-          <button onClick={onMinimize} onPointerDown={e => e.stopPropagation()} className="text-zinc-400 hover:bg-white/10 hover:text-white transition-colors p-1.5 rounded-sm"><Minus size={16} /></button>
-          <button onClick={toggleMaximize} onPointerDown={e => e.stopPropagation()} className="text-zinc-400 hover:bg-white/10 hover:text-white transition-colors p-1.5 rounded-sm">
+          <button onClick={onMinimize} className="text-zinc-400 hover:bg-white/10 hover:text-white transition-colors p-1.5 rounded-sm"><Minus size={16} /></button>
+          <button onClick={toggleMaximize} className="text-zinc-400 hover:bg-white/10 hover:text-white transition-colors p-1.5 rounded-sm">
             {windowState === 'maximized' ? <Copy size={14} /> : <Square size={14} />}
           </button>
           <button onClick={onClose} className="text-zinc-400 hover:bg-red-500 hover:text-white transition-colors p-1.5 rounded-sm" onPointerDown={e => e.stopPropagation()}><X size={16} /></button>
         </div>
       </div>
-      <div className={`flex-1 overflow-auto bg-[#202020] relative z-10 ${!isActive && 'pointer-events-none'}`}>
+      <div className={\`flex-1 overflow-auto bg-[#202020] relative z-10 \${!isActive && 'pointer-events-none'}\`}>
         {isActive && !isDragging ? children : (
            <div className="w-full h-full relative">
               <div className="absolute inset-0 z-50 bg-transparent" />
@@ -107,3 +109,6 @@ export const Window = ({ title, onClose, onMinimize, onGuide, isActive = true, o
     </motion.div>
   );
 };
+`;
+
+fs.writeFileSync('src/components/Window.tsx', code);
