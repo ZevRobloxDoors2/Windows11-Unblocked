@@ -3,6 +3,7 @@ import { motion, useMotionValue, useVelocity, useTransform, useSpring, PanInfo }
 import { X, Minus, Square, Copy } from 'lucide-react';
 
 export const Window = ({ title, onClose, onMinimize, onGuide, isActive = true, onFocus, children, className = '' }: { title: string, onClose: () => void, onMinimize?: () => void, onGuide?: () => void, isActive?: boolean, onFocus?: () => void, children: ReactNode, className?: string }) => {
+  const [isDragging, setIsDragging] = useState(false);
   const [windowState, setWindowState] = useState<'floating' | 'maximized' | 'left' | 'right'>('floating');
   const windowRef = useRef<HTMLDivElement>(null);
   
@@ -99,7 +100,8 @@ export const Window = ({ title, onClose, onMinimize, onGuide, isActive = true, o
           className="absolute inset-0 right-32" 
           drag 
           dragMomentum={false}
-          onDragEnd={handleDragEnd}
+          onDragStart={() => setIsDragging(true)}
+          onDragEnd={(e, info) => { setIsDragging(false); handleDragEnd(e, info); }}
           onDrag={(e, info) => {
             if (windowState !== 'floating') {
               setWindowState('floating');
@@ -125,7 +127,7 @@ export const Window = ({ title, onClose, onMinimize, onGuide, isActive = true, o
         </div>
       </div>
       <div className={`flex-1 overflow-auto bg-[#202020] relative z-10 ${!isActive && 'pointer-events-none'}`}>
-        {isActive ? children : (
+        {isActive && !isDragging ? children : (
            <div className="w-full h-full relative">
               <div className="absolute inset-0 z-50 bg-transparent" />
               {children}
