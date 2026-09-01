@@ -2,7 +2,7 @@ import React, { ReactNode, useState, useRef } from 'react';
 import { motion, useDragControls, useMotionValue, useVelocity, useSpring, useTransform } from 'motion/react';
 import { X, Minus, Square, Copy } from 'lucide-react';
 
-export const Window = ({ title, onClose, onMinimize, onGuide, isActive = true, onFocus, children, className = '' }: { title: string, onClose: () => void, onMinimize?: () => void, onGuide?: () => void, isActive?: boolean, onFocus?: () => void, children: ReactNode, className?: string }) => {
+export const Window = ({ title, onClose, onMinimize, onGuide, isActive = true, onFocus, children, className = '' }: { title: string, onClose: () => void, onMinimize?: () => void, onGuide?: () => void, isActive?: boolean, onFocus?: () => void, children: ReactNode, className?: string, key?: string | number }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [windowState, setWindowState] = useState<'floating' | 'maximized' | 'left' | 'right'>('floating');
   const windowRef = useRef<HTMLDivElement>(null);

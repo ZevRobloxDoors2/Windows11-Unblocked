@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Monitor, Paintbrush, User, ShieldAlert, MonitorPlay, History, Upload } from 'lucide-react';
 import { UserProfile } from '../types';
+import { db } from "../firebase";
 
 export function Settings({ profile, onBack, onLogout, isGuestMode }: { profile: UserProfile, onBack: () => void, onLogout: () => void, isGuestMode: boolean }) {
   const [activeTab, setActiveTab] = useState<'system' | 'personalization' | 'accounts' | 'privacy' | 'gaming'>('system');

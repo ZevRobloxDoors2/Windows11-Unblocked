@@ -1,5 +1,7 @@
 export interface UserProfile {
   uid: string;
+  email?: string;
+  role?: string;
   gamertag: string;
   gamertagLower: string;
   avatar: string;
