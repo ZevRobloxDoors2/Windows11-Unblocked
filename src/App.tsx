@@ -266,11 +266,11 @@ export default function App() {
   const [notificationCount, setNotificationCount] = useState(0);
   const [showGreetingToast, setShowGreetingToast] = useState(false);
   const [showTrophyToast, setShowTrophyToast] = useState(false);
-  const [playingGame, setPlayingGame] = useState<{ id: string, title: string, file: string } | null>(null);
+  const [playingGame, setPlayingGame] = useState<{ id: string, title: string, file: string, instanceId?: string } | null>(null);
   const [playMinutes, setPlayMinutes] = useState(0);
-  const [suspendedGames, setSuspendedGames] = useState<{game: {id: string, title: string, file: string}, minutes: number}[]>([]);
-  const [pendingGameToPlay, setPendingGameToPlay] = useState<{id: string, title: string, file: string} | null>(null);
-  const [warningGame, setWarningGame] = useState<{id: string, title: string, file: string} | null>(null);
+  const [suspendedGames, setSuspendedGames] = useState<{game: {id: string, title: string, file: string, instanceId?: string}, minutes: number}[]>([]);
+  const [pendingGameToPlay, setPendingGameToPlay] = useState<{id: string, title: string, file: string, instanceId?: string} | null>(null);
+  const [warningGame, setWarningGame] = useState<{id: string, title: string, file: string, instanceId?: string} | null>(null);
   const [showDropboxPrompt, setShowDropboxPrompt] = useState(true);
   const [dropboxToast, setDropboxToast] = useState(false);
   const [dropboxSelection, setDropboxSelection] = useState<string>('');
@@ -415,20 +415,21 @@ export default function App() {
     return file.startsWith('/') ? `.${file}` : `./${file}`;
   };
 
-  const actuallyPlayGame = async (game: {id: string, title: string, file: string}) => {
-    const isAlreadyActive = playingGame?.id === game.id || suspendedGames.some(s => s.game.id === game.id);
-    if (!isAlreadyActive) {
-      setIsLoadingGame(true);
-    }
-    setPlayingGame(game);
-    setMinimizedWindows(prev => prev.filter(id => id !== game.id));
+  const actuallyPlayGame = async (game: {id: string, title: string, file: string, instanceId?: string}) => {
+    const isNewLaunch = !game.instanceId;
+    const gameInstance = isNewLaunch ? { ...game, instanceId: `${game.id}-${Date.now()}-${Math.floor(Math.random()*1000)}` } : game;
+
+    setIsLoadingGame(true);
+    setPlayingGame(gameInstance);
+    setMinimizedWindows(prev => prev.filter(id => id !== gameInstance.instanceId));
     
     // Restore minutes if resuming
-    const suspended = suspendedGames.find(s => s.game.id === game.id);
-    if (suspended) {
-      setPlayMinutes(suspended.minutes);
-      // Remove from suspended when actively playing
-      setSuspendedGames(prev => prev.filter(s => s.game.id !== game.id));
+    if (!isNewLaunch) {
+      const suspended = suspendedGames.find(s => s.game.instanceId === gameInstance.instanceId);
+      if (suspended) {
+        setPlayMinutes(suspended.minutes);
+        setSuspendedGames(prev => prev.filter(s => s.game.instanceId !== gameInstance.instanceId));
+      }
     } else {
       setPlayMinutes(0);
     }
@@ -455,33 +456,50 @@ export default function App() {
     }, 2000);
   };
 
-  const handlePlayGame = async (game: {id: string, title: string, file: string}) => {
+  const handlePlayGame = async (game: {id: string, title: string, file: string, instanceId?: string}) => {
     if (game.id === 'Roblox' || game.id === 'TikTok') {
       setWarningGame(game);
       return;
     }
 
-    if (profile?.quickResumeEnabled && suspendedGames.length >= 6 && !suspendedGames.find(s => s.game.id === game.id)) {
+    if (playingGame) {
+      setSuspendedGames(prev => {
+        const filtered = prev.filter(s => s.game.instanceId !== playingGame.instanceId);
+        return [...filtered, { game: playingGame, minutes: playMinutes }];
+      });
+    }
+
+    const isNewLaunch = !game.instanceId;
+    if (isNewLaunch && profile?.quickResumeEnabled && suspendedGames.length >= 6) {
       setPendingGameToPlay(game);
       return;
     }
     await actuallyPlayGame(game);
   };
 
-  const handleMinimizeGame = (gameId: string) => {
-    setMinimizedWindows(prev => [...prev, gameId]);
-    if (playingGame?.id === gameId) {
+  const handleMinimizeGame = (instanceId: string) => {
+    setMinimizedWindows(prev => [...prev, instanceId]);
+    if (playingGame?.instanceId === instanceId) {
       setSuspendedGames(prev => {
-        const filtered = prev.filter(s => s.game.id !== playingGame.id);
+        const filtered = prev.filter(s => s.game.instanceId !== playingGame.instanceId);
         return [...filtered, { game: playingGame, minutes: playMinutes }];
       });
       setPlayingGame(null);
     }
   };
 
-  const handleStopGame = () => {
-    setPlayingGame(null);
-    setPlayMinutes(0);
+  const handleStopGame = (instanceId?: string) => {
+    if (instanceId) {
+      if (playingGame?.instanceId === instanceId) {
+        setPlayingGame(null);
+        setPlayMinutes(0);
+      } else {
+        setSuspendedGames(prev => prev.filter(s => s.game.instanceId !== instanceId));
+      }
+    } else {
+      setPlayingGame(null);
+      setPlayMinutes(0);
+    }
   };
 
   useEffect(() => {
@@ -840,6 +858,7 @@ export default function App() {
                       const newSuspended = suspendedGames.slice(1);
                       setSuspendedGames(newSuspended);
                       const game = pendingGameToPlay;
+                      setSuspendedGames(prev => prev.slice(1));
                       setPendingGameToPlay(null);
                       actuallyPlayGame(game);
                     }}
@@ -930,41 +949,38 @@ export default function App() {
 
         {(() => {
           const allActive = [...suspendedGames.map(s => s.game)];
-          if (playingGame && !allActive.find(g => g.id === playingGame.id)) {
+          if (playingGame && !allActive.find(g => g.instanceId === playingGame.instanceId)) {
             allActive.push(playingGame);
           }
           return (
             <AnimatePresence>
               {allActive.map((g, idx) => {
-                const isActive = playingGame?.id === g.id;
-                const isMinimized = minimizedWindows.includes(g.id);
+                const isActive = playingGame?.instanceId === g.instanceId;
+                const isMinimized = minimizedWindows.includes(g.instanceId || '');
                 // The user asked to "Allow to run multiple apps at once", meaning we should have multiple windows open at once.
                 return (
                   <Window
-                    key={g.id}
+                    key={g.instanceId || g.id}
                     title={g.title}
-                    onClose={() => {
-                      if (isActive) handleStopGame();
-                      else setSuspendedGames(prev => prev.filter(s => s.game.id !== g.id));
-                    }}
-                    onMinimize={() => handleMinimizeGame(g.id)}
+                    onClose={() => handleStopGame(g.instanceId)}
+                    onMinimize={() => handleMinimizeGame(g.instanceId || '')}
                     onGuide={() => setIsGuideOpen(true)}
                     isActive={isActive}
                     onFocus={() => {
                       if (!isActive) {
                         if (playingGame) {
                           setSuspendedGames(prev => {
-                            const filtered = prev.filter(s => s.game.id !== playingGame.id);
+                            const filtered = prev.filter(s => s.game.instanceId !== playingGame.instanceId);
                             return [...filtered, { game: playingGame, minutes: playMinutes }];
                           });
                         }
-                        const suspended = suspendedGames.find(s => s.game.id === g.id);
+                        const suspended = suspendedGames.find(s => s.game.instanceId === g.instanceId);
                         if (suspended) {
                           setPlayMinutes(suspended.minutes);
-                          setSuspendedGames(prev => prev.filter(s => s.game.id !== g.id));
+                          setSuspendedGames(prev => prev.filter(s => s.game.instanceId !== g.instanceId));
                         }
                         setPlayingGame(g);
-                        setMinimizedWindows(prev => prev.filter(id => id !== g.id));
+                        setMinimizedWindows(prev => prev.filter(id => id !== g.instanceId));
                       }
                     }}
                     className={`transition-opacity duration-300 ${isActive ? 'z-[150]' : 'z-[140]'} ${isMinimized ? 'opacity-0 pointer-events-none translate-y-24 scale-95' : 'opacity-100'}`}

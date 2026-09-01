@@ -579,7 +579,7 @@ export const Desktop = ({
             {/* Suspended Games */}
             {(suspendedGames || []).map((s: any) => (
               <motion.div 
-                key={`game-${s.game.id}`}
+                key={`game-${s.game.instanceId || s.game.id}`}
                 layout
                 initial={{ opacity: 0, y: 10, scale: 0.8 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -610,7 +610,7 @@ export const Desktop = ({
             {/* Active Game */}
             {playingGame && (
               <motion.div 
-                key={`game-${playingGame.id}`}
+                key={`game-${playingGame.instanceId || playingGame.id}`}
                 layout
                 initial={{ opacity: 0, y: 10, scale: 0.8 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -619,6 +619,7 @@ export const Desktop = ({
                 className="relative group flex items-center h-full"
               >
                 <button 
+                  onClick={() => { setStartOpen(false); if (onMinimizeGame) onMinimizeGame(playingGame.instanceId || playingGame.id); }}
                   className={`w-10 h-10 flex items-center justify-center rounded-md hover:bg-white/10 transition-colors relative bg-white/10`}
                 >
                   <img src={playingGame.image} alt={playingGame.title} className="w-6 h-6 rounded object-cover" />
