@@ -55,6 +55,13 @@ export const WinStore = ({ installedApps, onInstall, onPlay }: { installedApps: 
             />
             <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
           </div>
+          
+          <button 
+            onClick={() => onPlay({ id: 'suggestion-box', title: 'Suggestion Box', file: 'https://forms.gle/JdsKeea21ZT94edXA', type: 'app', image: '' })}
+            className="ml-4 px-4 py-2.5 bg-[#005fb8] hover:bg-[#0078d4] text-white rounded-md text-sm font-semibold whitespace-nowrap transition-colors shadow-sm"
+          >
+            Suggestion Box
+          </button>
         </div>
         
         <div className="flex-1 overflow-y-auto p-6 lg:p-8">

@@ -18,6 +18,7 @@ export const Desktop = ({
   minimizedViews,
   playingGame,
   suspendedGames,
+  onMinimizeGame,
   notificationCount,
   onLogout
 }: { 
@@ -26,6 +27,7 @@ export const Desktop = ({
   onOpenStore: () => void,
   onOpenSearch: () => void,
   onPlayGame: (game: any) => void,
+  onMinimizeGame?: (gameId: string) => void,
   time: string,
   batteryInfo: any,
   currentView: string,

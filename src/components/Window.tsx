@@ -1,5 +1,5 @@
 import React, { ReactNode, useState, useRef } from 'react';
-import { motion, useDragControls } from 'motion/react';
+import { motion, useDragControls, useMotionValue, useVelocity, useSpring, useTransform } from 'motion/react';
 import { X, Minus, Square, Copy } from 'lucide-react';
 
 export const Window = ({ title, onClose, onMinimize, onGuide, isActive = true, onFocus, children, className = '' }: { title: string, onClose: () => void, onMinimize?: () => void, onGuide?: () => void, isActive?: boolean, onFocus?: () => void, children: ReactNode, className?: string }) => {
@@ -8,12 +8,24 @@ export const Window = ({ title, onClose, onMinimize, onGuide, isActive = true, o
   const windowRef = useRef<HTMLDivElement>(null);
   
   const dragControls = useDragControls();
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  
+  const xVelocity = useVelocity(x);
+  const yVelocity = useVelocity(y);
+  
+  const smoothVelocityX = useSpring(xVelocity, { damping: 50, stiffness: 400 });
+  const smoothVelocityY = useSpring(yVelocity, { damping: 50, stiffness: 400 });
+  
+  const skewX = useTransform(smoothVelocityX, [-1000, 1000], [5, -5]);
+  const skewY = useTransform(smoothVelocityY, [-1000, 1000], [-5, 5]);
 
   const toggleMaximize = () => {
     if (windowState === 'maximized') {
       setWindowState('floating');
     } else {
       setWindowState('maximized');
+      x.set(0); y.set(0);
     }
   };
 
@@ -26,16 +38,21 @@ export const Window = ({ title, onClose, onMinimize, onGuide, isActive = true, o
     // Snapping logic
     if (point.y < 20) {
       setWindowState('maximized');
+      x.set(0); y.set(0);
     } else if (point.x < 20) {
       setWindowState('left');
+      x.set(0); y.set(0);
     } else if (point.x > screenWidth - 20) {
       setWindowState('right');
+      x.set(0); y.set(0);
     }
   };
 
   const startDrag = (e: any) => {
     if (windowState !== 'floating') {
        setWindowState('floating');
+       x.set(0);
+       y.set(0);
     }
     setIsDragging(true);
     dragControls.start(e);
@@ -66,6 +83,10 @@ export const Window = ({ title, onClose, onMinimize, onGuide, isActive = true, o
       onDragEnd={handleDragEnd}
       onMouseDownCapture={onFocus}
       style={{
+        x,
+        y,
+        skewX: windowState === 'floating' ? skewX : 0,
+        skewY: windowState === 'floating' ? skewY : 0,
         resize: windowState === 'floating' ? 'both' : 'none',
         minWidth: 300,
         minHeight: 200,
