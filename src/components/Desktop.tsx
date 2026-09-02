@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Bell, Settings as SettingsIcon, MessageSquare, Users, Store, Box, User, Activity, Image as ImageIcon, Mic } from 'lucide-react';
+import { Search, Bell, Settings as SettingsIcon, MessageSquare, Users, Store, Box, User, Activity, Image as ImageIcon, Mic, GraduationCap } from 'lucide-react';
 import { ALL_GAMES } from '../games';
 import { UserProfile } from '../types';
 
@@ -20,7 +20,8 @@ export const Desktop = ({
   suspendedGames,
   onMinimizeGame,
   notificationCount,
-  onLogout
+  onLogout,
+  onActivateDeadComputer
 }: { 
   profile: UserProfile, 
   installedApps: string[],
@@ -37,7 +38,8 @@ export const Desktop = ({
   playingGame?: any,
   suspendedGames?: any[],
   notificationCount: number,
-  onLogout: () => void
+  onLogout: () => void,
+  onActivateDeadComputer?: () => void
 }) => {
   const [startOpen, setStartOpen] = useState(false);
   const [weather, setWeather] = useState<{ temp: number, condition: string } | null>(null);
@@ -640,6 +642,16 @@ export const Desktop = ({
         </div>
         
         <div className="flex-1 flex justify-end items-center h-full gap-1">
+          
+          {/* Teacher Icon for Dead Computer */}
+          <button
+            onClick={onActivateDeadComputer}
+            className="flex items-center gap-2 hover:bg-white/10 px-2 h-full rounded-md cursor-pointer transition-colors"
+            title="School Mode"
+          >
+            <GraduationCap size={16} className="text-white" />
+          </button>
+          
           {/* Microphone Icon for Party */}
           <button
             onClick={() => setCurrentView('party')}

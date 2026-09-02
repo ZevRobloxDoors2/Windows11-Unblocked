@@ -36,6 +36,7 @@ import { GTAVModal } from './components/GTAVModal';
 import { LocalShare } from './components/LocalShare';
 import { Classroom } from './components/Classroom';
 import { FakeUpdate } from './components/FakeUpdate';
+import { FakeDeadComputer } from './components/FakeDeadComputer';
 
 type View = 'home' | 'store' | 'profile' | 'settings' | 'notifications' | 'friends' | 'chat' | 'party' | 'activity' | 'local-share' | 'classroom';
 
@@ -270,6 +271,7 @@ export default function App() {
   const [notificationCount, setNotificationCount] = useState(0);
   const [showGreetingToast, setShowGreetingToast] = useState(false);
   const [showFakeUpdate, setShowFakeUpdate] = useState(false);
+  const [showDeadComputer, setShowDeadComputer] = useState(false);
   const [showTrophyToast, setShowTrophyToast] = useState(false);
   const [playingGame, setPlayingGame] = useState<{ id: string, title: string, file: string, instanceId?: string } | null>(null);
   const [playMinutes, setPlayMinutes] = useState(0);
@@ -695,6 +697,7 @@ export default function App() {
           currentView={currentView}
           setCurrentView={(v) => handleSetCurrentView(v as View)}
           openViews={openViews}
+          onActivateDeadComputer={() => setShowDeadComputer(true)}
           minimizedViews={minimizedViews}
           playingGame={playingGame}
           suspendedGames={suspendedGames}
@@ -937,6 +940,7 @@ export default function App() {
         </AnimatePresence>
 
         {showFakeUpdate && <FakeUpdate onClose={() => setShowFakeUpdate(false)} />}
+        {showDeadComputer && <FakeDeadComputer batteryInfo={batteryInfo} />}
 
         {openViews.map(view => (
           <div 
