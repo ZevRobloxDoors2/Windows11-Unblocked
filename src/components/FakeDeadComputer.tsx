@@ -60,7 +60,7 @@ export function FakeDeadComputer({ batteryInfo }: { batteryInfo: any }) {
           }
           return p + 1;
         });
-      }, 3000); // Increment every 3 seconds
+      }, 60000); // Increment every 60 seconds (4 minutes total to reach 5%)
     }
     
     return () => {
