@@ -1,5 +1,24 @@
 export const ALL_GAMES = [
   {
+    "id": "app-local-share",
+    "title": "Local Share",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/e/e4/Google_Drive_Logo_%282014-2020%29.svg",
+    "type": "app"
+  },
+  {
+    "id": "app-classroom",
+    "title": "Google Classroom",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/5/59/Google_Classroom_Logo.png",
+    "type": "app"
+  },
+  {
+    "id": "app-fake-update",
+    "title": "System Update",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/e/e4/Windows_11_logo.svg",
+    "type": "app"
+  },
+
+  {
     "id": "1v1 LOL",
     "title": "1v1 LOL",
     "image": "https://ui-avatars.com/api/?name=1v1%20LOL&background=random&color=fff&size=256&font-size=0.33",

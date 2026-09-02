@@ -33,8 +33,11 @@ import { Minus, Square, X } from 'lucide-react';
 import { Window } from './components/Window';
 import { WinStore } from './components/WinStore';
 import { GTAVModal } from './components/GTAVModal';
+import { LocalShare } from './components/LocalShare';
+import { Classroom } from './components/Classroom';
+import { FakeUpdate } from './components/FakeUpdate';
 
-type View = 'home' | 'store' | 'profile' | 'settings' | 'notifications' | 'friends' | 'chat' | 'party' | 'activity';
+type View = 'home' | 'store' | 'profile' | 'settings' | 'notifications' | 'friends' | 'chat' | 'party' | 'activity' | 'local-share' | 'classroom';
 
 const getThemeClasses = (themeId?: string) => {
   switch (themeId) {
@@ -207,11 +210,12 @@ export default function App() {
   };
   const [libraryTab, setLibraryTab] = useState<'games'|'apps'>('games');
   
+  const builtInApps = ['app-local-share', 'app-classroom', 'app-fake-update'];
   const [installedApps, setInstalledApps] = useState<string[]>(() => {
     try {
       return JSON.parse(localStorage.getItem('installed_apps') || '[]');
     } catch(e) {
-      return [];
+      return [...builtInApps];
     }
   });
 
@@ -265,6 +269,7 @@ export default function App() {
   const [isLoadingGame, setIsLoadingGame] = useState(false);
   const [notificationCount, setNotificationCount] = useState(0);
   const [showGreetingToast, setShowGreetingToast] = useState(false);
+  const [showFakeUpdate, setShowFakeUpdate] = useState(false);
   const [showTrophyToast, setShowTrophyToast] = useState(false);
   const [playingGame, setPlayingGame] = useState<{ id: string, title: string, file: string, instanceId?: string } | null>(null);
   const [playMinutes, setPlayMinutes] = useState(0);
@@ -456,7 +461,19 @@ export default function App() {
     }, 2000);
   };
 
-  const handlePlayGame = async (game: {id: string, title: string, file: string, instanceId?: string}) => {
+  const handlePlayGame = async (game: {id: string, title: string, file: string, instanceId?: string, type?: string}) => {
+    if (game.id === 'app-local-share') {
+      handleSetCurrentView('local-share');
+      return;
+    }
+    if (game.id === 'app-classroom') {
+      handleSetCurrentView('classroom');
+      return;
+    }
+    if (game.id === 'app-fake-update') {
+      setShowFakeUpdate(true);
+      return;
+    }
     if (game.id === 'Roblox' || game.id === 'TikTok') {
       setWarningGame(game);
       return;
@@ -919,6 +936,8 @@ export default function App() {
           )}
         </AnimatePresence>
 
+        {showFakeUpdate && <FakeUpdate onClose={() => setShowFakeUpdate(false)} />}
+
         {openViews.map(view => (
           <div 
             key={view} 
@@ -942,6 +961,8 @@ export default function App() {
                 {view === 'party' && <Party profile={activeProfile as any} initialPartyId={activePartyId} onBack={() => { setActivePartyId(undefined); handleSetCurrentView('home'); }} />}
                 {view === 'notifications' && <Notifications userProfile={activeProfile as any} onBack={() => handleSetCurrentView('home')} />}
                 {view === 'activity' && <ActivityFeed profile={activeProfile as any} />}
+                {view === 'local-share' && <LocalShare profile={activeProfile as any} />}
+                {view === 'classroom' && <Classroom />}
               </Window>
             </div>
           </div>

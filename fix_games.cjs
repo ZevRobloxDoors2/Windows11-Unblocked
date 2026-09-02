@@ -1,42 +1,30 @@
 const fs = require('fs');
-const gamesDir = 'public/Games';
-const games = fs.readdirSync(gamesDir).filter(f => f.endsWith('.html'));
+let code = fs.readFileSync('src/games.ts', 'utf8');
 
-let gamesArray = [];
-for (let gameFile of games) {
-  let title = gameFile.replace('.html', '');
-  gamesArray.push({
-    id: title,
-    title: title,
-    image: `https://ui-avatars.com/api/?name=${encodeURIComponent(title)}&background=random&color=fff&size=256&font-size=0.33`,
-    type: 'game',
-    file: `Games/${gameFile}`
-  });
-}
+const newApps = `
+  {
+    "id": "app-local-share",
+    "title": "Local Share",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/e/e4/Google_Drive_Logo_%282014-2020%29.svg",
+    "type": "app"
+  },
+  {
+    "id": "app-classroom",
+    "title": "Google Classroom",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/5/59/Google_Classroom_Logo.png",
+    "type": "app"
+  },
+  {
+    "id": "app-fake-update",
+    "title": "System Update",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/e/e4/Windows_11_logo.svg",
+    "type": "app"
+  },
+`;
 
-// Now we need to update src/games.ts
-// We'll preserve any existing images if they had custom ones
-let existingGamesTs = fs.readFileSync('src/games.ts', 'utf8');
-// Parse the existing ALL_GAMES array
-let existingGames = [];
-try {
-  let match = existingGamesTs.match(/export const ALL_GAMES = (\[[\s\S]*\]);/);
-  if (match) {
-    existingGames = JSON.parse(match[1]);
-  }
-} catch (e) {
-  console.log('could not parse existing', e.message);
-}
+code = code.replace(
+  "export const ALL_GAMES = [",
+  "export const ALL_GAMES = [" + newApps
+);
 
-// merge
-for (let g of gamesArray) {
-  let existing = existingGames.find(x => x.id === g.id);
-  if (existing) {
-    g.image = existing.image;
-  }
-}
-
-// We should also keep games that might not be HTML files? Or maybe just rewrite it.
-let newGamesTs = `export const ALL_GAMES = ${JSON.stringify(gamesArray, null, 2)};\n`;
-fs.writeFileSync('src/games.ts', newGamesTs);
-console.log('done updating games.ts');
+fs.writeFileSync('src/games.ts', code);

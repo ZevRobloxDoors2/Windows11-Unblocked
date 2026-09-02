@@ -24,6 +24,18 @@ export const Party: React.FC<{ profile: any, onBack: () => void, initialPartyId?
   const [friendsList, setFriendsList] = useState<any[]>([]);
   const [micError, setMicError] = useState('');
   const [speakingPeers, setSpeakingPeers] = useState<Record<string, boolean>>({});
+  
+  useEffect(() => {
+    partyMembers.forEach(m => {
+      if (m.id !== profile.uid) {
+        const audio = document.getElementById(`audio-${m.id}`) as HTMLAudioElement;
+        if (audio) {
+          audio.muted = isDeafened || !!peerMutes[m.id];
+        }
+      }
+    });
+  }, [peerMutes, isDeafened, partyMembers]);
+
   const audioContexts = useRef<Record<string, AudioContext>>({});
   const analyzers = useRef<Record<string, AnalyserNode>>({});
   const localStream = useRef<MediaStream | null>(null);
@@ -199,6 +211,7 @@ export const Party: React.FC<{ profile: any, onBack: () => void, initialPartyId?
   const connectToPeer = async (peerId: string) => {
     const pc = new RTCPeerConnection(servers);
     peers.current[peerId] = pc;
+    (pc as any).addedCandidates = new Set();
     
     if (localStream.current) {
       localStream.current.getTracks().forEach(track => pc.addTrack(track, localStream.current!));
@@ -223,11 +236,15 @@ export const Party: React.FC<{ profile: any, onBack: () => void, initialPartyId?
     await setDoc(sigRef, { type: 'offer', offer: { type: offer.type, sdp: offer.sdp }, candidates: [] }, { merge: true });
   };
 
-  const handleSignal = async (peerId: string, data: any) => {
+    const handleSignal = async (peerId: string, data: any) => {
     let pc = peers.current[peerId];
     if (!pc) {
       pc = new RTCPeerConnection(servers);
       peers.current[peerId] = pc;
+      
+      // Keep track of added candidates to avoid duplicates
+      (pc as any).addedCandidates = new Set();
+      
       if (localStream.current) {
         localStream.current.getTracks().forEach(track => pc.addTrack(track, localStream.current!));
       }
@@ -242,7 +259,7 @@ export const Party: React.FC<{ profile: any, onBack: () => void, initialPartyId?
         }
       };
     }
-
+    
     if (data.type === 'offer' && data.offer && !(pc as any).hasSetRemote) {
       (pc as any).hasSetRemote = true;
       try {
@@ -253,7 +270,7 @@ export const Party: React.FC<{ profile: any, onBack: () => void, initialPartyId?
         await setDoc(sigRef, { type: 'answer', answer: { type: answer.type, sdp: answer.sdp } }, { merge: true });
       } catch(e) { console.error("Error handling offer", e); }
     }
-
+    
     if (data.type === 'answer' && data.answer && !(pc as any).hasSetRemote) {
       (pc as any).hasSetRemote = true;
       try {
@@ -262,12 +279,18 @@ export const Party: React.FC<{ profile: any, onBack: () => void, initialPartyId?
         }
       } catch(e) { console.error("Error handling answer", e); }
     }
-
+    
     if (data.candidates && pc.remoteDescription) {
       for (const cand of data.candidates) {
-        try {
-          await pc.addIceCandidate(new RTCIceCandidate(cand));
-        } catch(e){}
+        // avoid adding the same candidate twice
+        const candStr = JSON.stringify(cand);
+        if (!(pc as any).addedCandidates) (pc as any).addedCandidates = new Set();
+        if (!(pc as any).addedCandidates.has(candStr)) {
+          try {
+            await pc.addIceCandidate(new RTCIceCandidate(cand));
+            (pc as any).addedCandidates.add(candStr);
+          } catch(e){ console.error("Error adding ICE candidate", e); }
+        }
       }
     }
   };
