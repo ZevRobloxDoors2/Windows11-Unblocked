@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { ChevronLeft, Bell, UserPlus, Info } from 'lucide-react';
 import { UserProfile, FriendRequest } from '../types';
 import { db } from '../firebase';

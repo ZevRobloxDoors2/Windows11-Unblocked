@@ -952,6 +952,12 @@ export default function App() {
           if (playingGame && !allActive.find(g => g.instanceId === playingGame.instanceId)) {
             allActive.push(playingGame);
           }
+          // Sort instances by their ID to ensure stable DOM ordering so iframes don't reload
+          allActive.sort((a, b) => {
+            const idA = a.instanceId || a.id;
+            const idB = b.instanceId || b.id;
+            return idA.localeCompare(idB);
+          });
           return (
             <AnimatePresence>
               {allActive.map((g, idx) => {
@@ -966,6 +972,7 @@ export default function App() {
                     onMinimize={() => handleMinimizeGame(g.instanceId || '')}
                     onGuide={() => setIsGuideOpen(true)}
                     isActive={isActive}
+                    isMinimized={isMinimized}
                     onFocus={() => {
                       if (!isActive) {
                         if (playingGame) {

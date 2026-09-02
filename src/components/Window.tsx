@@ -2,7 +2,7 @@ import React, { ReactNode, useState, useRef } from 'react';
 import { motion, useDragControls, useMotionValue, useVelocity, useSpring, useTransform } from 'motion/react';
 import { X, Minus, Square, Copy } from 'lucide-react';
 
-export const Window = ({ title, onClose, onMinimize, onGuide, isActive = true, onFocus, children, className = '' }: { title: string, onClose: () => void, onMinimize?: () => void, onGuide?: () => void, isActive?: boolean, onFocus?: () => void, children: ReactNode, className?: string, key?: string | number }) => {
+export const Window = ({ title, onClose, onMinimize, onGuide, isActive = true, isMinimized = false, onFocus, children, className = '' }: { title: string, onClose: () => void, onMinimize?: () => void, onGuide?: () => void, isActive?: boolean, isMinimized?: boolean, onFocus?: () => void, children: ReactNode, className?: string, key?: string | number }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [windowState, setWindowState] = useState<'floating' | 'maximized' | 'left' | 'right'>('floating');
   const windowRef = useRef<HTMLDivElement>(null);
@@ -59,17 +59,19 @@ export const Window = ({ title, onClose, onMinimize, onGuide, isActive = true, o
   };
 
   const getAnimationProps = () => {
+    if (isMinimized) return { opacity: 0, scale: 0.8, pointerEvents: 'none', y: 50 };
+    const base = { opacity: 1, scale: 1, pointerEvents: 'auto' };
     switch (windowState) {
       case 'maximized':
-        return { top: 0, left: 0, width: '100%', height: 'calc(100% - 48px)', x: 0, y: 0 };
+        return { ...base, top: 0, left: 0, width: '100%', height: 'calc(100% - 48px)', x: 0, y: 0 };
       case 'left':
-        return { top: 0, left: 0, width: '50%', height: 'calc(100% - 48px)', x: 0, y: 0 };
+        return { ...base, top: 0, left: 0, width: '50%', height: 'calc(100% - 48px)', x: 0, y: 0 };
       case 'right':
-        return { top: 0, left: '50%', width: '50%', height: 'calc(100% - 48px)', x: 0, y: 0 };
+        return { ...base, top: 0, left: '50%', width: '50%', height: 'calc(100% - 48px)', x: 0, y: 0 };
       case 'floating':
       default:
         // When floating, let drag control the x/y, but give it a default centered start
-        return { width: '80%', height: '75%' };
+        return { ...base, width: '80%', height: '75%' };
     }
   };
 
@@ -94,7 +96,7 @@ export const Window = ({ title, onClose, onMinimize, onGuide, isActive = true, o
         left: windowState === 'floating' ? '10%' : undefined,
       }}
       initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1, ...getAnimationProps() }}
+      animate={getAnimationProps()}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
       className={`absolute bg-[#202020] border border-white/10 rounded-lg shadow-2xl flex flex-col overflow-hidden ${isActive ? 'z-[100]' : 'z-[50] opacity-90 shadow-none'} ${className} ${windowState !== 'floating' ? 'rounded-none border-0' : ''}`}
@@ -118,12 +120,10 @@ export const Window = ({ title, onClose, onMinimize, onGuide, isActive = true, o
         </div>
       </div>
       <div className={`flex-1 overflow-auto bg-[#202020] relative z-10 ${!isActive && 'pointer-events-none'}`}>
-        {isActive && !isDragging ? children : (
-           <div className="w-full h-full relative">
-              <div className="absolute inset-0 z-50 bg-transparent" />
-              {children}
-           </div>
-        )}
+        <div className="w-full h-full relative">
+          {(!isActive || isDragging) && <div className="absolute inset-0 z-50 bg-transparent" />}
+          {children}
+        </div>
       </div>
     </motion.div>
   );
