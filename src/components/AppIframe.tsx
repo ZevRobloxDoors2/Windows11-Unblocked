@@ -14,7 +14,21 @@ export const AppIframe: React.FC<AppIframeProps> = ({ src, isActive, onLoadStart
   const [currentSrc, setCurrentSrc] = useState(src);
   const [showError, setShowError] = useState(false);
   const [hasUsedFallback, setHasUsedFallback] = useState(false);
+  
+  const isProxied = src.includes('/service/') || src.includes('error404.n43.pw');
+  const [showProxyWarning, setShowProxyWarning] = useState(isProxied);
+  const [showContinue, setShowContinue] = useState(false);
+  
   const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    if (showProxyWarning) {
+      const timer = setTimeout(() => {
+        setShowContinue(true);
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [showProxyWarning]);
 
   useEffect(() => {
     if (reloadTrigger > 0) {
@@ -68,7 +82,37 @@ export const AppIframe: React.FC<AppIframeProps> = ({ src, isActive, onLoadStart
   return (
     <div className="w-full h-full relative bg-white block">
       <AnimatePresence>
-        {showError && (
+        {showProxyWarning && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-[60] flex items-center justify-center bg-black/90 backdrop-blur-sm text-white p-6 text-center"
+          >
+            <div className="max-w-md">
+              <div className="w-12 h-12 border-4 border-zinc-700 border-t-[#00A4EF] rounded-full animate-spin mx-auto mb-6" />
+              <p className="text-lg font-medium mb-2 leading-relaxed">
+                Wait for 10 secs, if it doesn't load, go to Google Chrome in this website then search up the app you're in.
+              </p>
+              <p className="text-zinc-400 mb-8 text-sm">
+                The Darden team is trying to fix this.
+              </p>
+              
+              {showContinue && (
+                <motion.button
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  onClick={() => setShowProxyWarning(false)}
+                  className="px-6 py-2.5 bg-[#00A4EF] hover:bg-[#008AC9] text-white font-bold rounded-lg transition-colors"
+                >
+                  Continue
+                </motion.button>
+              )}
+            </div>
+          </motion.div>
+        )}
+      
+        {showError && !showProxyWarning && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
