@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>My Documents</title>
+<style>
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #fafafa; display: flex; height: 100vh; }
+  .sidebar { width: 200px; background: #e0e0e0; border-right: 1px solid #ccc; display: flex; flex-direction: column; }
+  .sidebar-item { padding: 12px 16px; cursor: pointer; color: #333; display: flex; align-items: center; gap: 8px; }
+  .sidebar-item:hover { background: #d0d0d0; }
+  .sidebar-item.active { background: #c0c0c0; font-weight: bold; }
+  .main { flex: 1; display: flex; flex-direction: column; }
+  .header { padding: 16px; background: #fff; border-bottom: 1px solid #eaeaea; font-size: 1.2rem; font-weight: 500; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 16px; padding: 16px; flex: 1; align-content: start; overflow-y: auto; }
+  .file-card { background: #fff; border: 1px solid #eaeaea; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: transform 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+  .file-card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+  .file-icon { font-size: 32px; margin-bottom: 8px; }
+  .file-name { font-size: 12px; text-align: center; word-break: break-all; }
+  .preview-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; flex-direction: column; }
+  .preview-modal.active { display: flex; }
+  .preview-content { max-width: 80%; max-height: 80%; background: #fff; padding: 20px; border-radius: 8px; overflow: auto; }
+  .preview-content img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .preview-content pre { margin: 0; white-space: pre-wrap; font-family: monospace; }
+  .close-btn { margin-top: 16px; padding: 8px 16px; cursor: pointer; }
+  .set-bg-btn { margin-top: 8px; padding: 8px 16px; cursor: pointer; background: #0078d4; color: white; border: none; border-radius: 4px; display: none; }
+  .delete-btn { margin-top: 8px; padding: 8px 16px; cursor: pointer; background: #d32f2f; color: white; border: none; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-item active" data-folder="All">📂 All Files</div>
+  <div class="sidebar-item" data-folder="Documents">📄 Documents</div>
+  <div class="sidebar-item" data-folder="Pictures">🖼️ Pictures</div>
+</div>
+<div class="main">
+  <div class="header" id="folderTitle">All Files</div>
+  <div class="grid" id="fileGrid"></div>
+</div>
+
+<div class="preview-modal" id="previewModal">
+  <div class="preview-content" id="previewContent"></div>
+  <button class="set-bg-btn" id="setBgBtn">Set as Wallpaper</button>
+  <button class="delete-btn" id="deleteBtn">Delete File</button>
+  <button class="close-btn" id="closePreviewBtn">Close</button>
+</div>
+
+<script>
+  let currentFolder = 'All';
+  let files = [];
+  let currentPreviewFile = null;
+
+  function loadFiles() {
+    files = JSON.parse(localStorage.getItem('my_documents_files') || '[]');
+    renderFiles();
+  }
+
+  function renderFiles() {
+    const grid = document.getElementById('fileGrid');
+    grid.innerHTML = '';
+    
+    const filtered = currentFolder === 'All' ? files : files.filter(f => f.folder === currentFolder);
+    
+    if (filtered.length === 0) {
+      grid.innerHTML = '<div style="color:#999; width: 100%; text-align: center; padding-top: 40px; grid-column: 1/-1;">No files found in this folder.</div>';
+      return;
+    }
+    
+    filtered.forEach(file => {
+      const card = document.createElement('div');
+      card.className = 'file-card';
+      card.onclick = () => openPreview(file);
+      
+      const icon = document.createElement('div');
+      icon.className = 'file-icon';
+      icon.innerText = file.type === 'image' ? '🖼️' : '📄';
+      
+      const name = document.createElement('div');
+      name.className = 'file-name';
+      name.innerText = file.name;
+      
+      card.appendChild(icon);
+      card.appendChild(name);
+      grid.appendChild(card);
+    });
+  }
+
+  document.querySelectorAll('.sidebar-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+      document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+      e.target.classList.add('active');
+      currentFolder = e.target.dataset.folder;
+      document.getElementById('folderTitle').innerText = e.target.innerText;
+      renderFiles();
+    });
+  });
+
+  function openPreview(file) {
+    currentPreviewFile = file;
+    const modal = document.getElementById('previewModal');
+    const content = document.getElementById('previewContent');
+    const setBgBtn = document.getElementById('setBgBtn');
+    
+    content.innerHTML = '';
+    
+    if (file.type === 'image') {
+      const img = document.createElement('img');
+      img.src = file.content;
+      content.appendChild(img);
+      setBgBtn.style.display = 'block';
+    } else {
+      const pre = document.createElement('pre');
+      pre.innerText = file.content;
+      content.appendChild(pre);
+      setBgBtn.style.display = 'none';
+    }
+    
+    modal.classList.add('active');
+  }
+
+  document.getElementById('closePreviewBtn').addEventListener('click', () => {
+    document.getElementById('previewModal').classList.remove('active');
+    currentPreviewFile = null;
+  });
+
+  document.getElementById('setBgBtn').addEventListener('click', () => {
+    if (currentPreviewFile && currentPreviewFile.type === 'image') {
+      localStorage.setItem('custom_wallpaper', currentPreviewFile.content);
+      alert('Wallpaper updated! Please refresh the page or click outside to see changes on desktop.');
+    }
+  });
+  
+  document.getElementById('deleteBtn').addEventListener('click', () => {
+    if (currentPreviewFile) {
+      if (confirm('Are you sure you want to delete this file?')) {
+        files = files.filter(f => f.id !== currentPreviewFile.id);
+        localStorage.setItem('my_documents_files', JSON.stringify(files));
+        document.getElementById('previewModal').classList.remove('active');
+        currentPreviewFile = null;
+        renderFiles();
+      }
+    }
+  });
+
+  // Listen for storage changes in case Notepad saves a file while this is open
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'my_documents_files') {
+      loadFiles();
+    }
+  });
+
+  loadFiles();
+</script>
+</body>
+</html>

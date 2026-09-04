@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Notepad</title>
+<style>
+  body { margin: 0; font-family: monospace; display: flex; flex-direction: column; height: 100vh; background: #fff; }
+  .toolbar { background: #f0f0f0; border-bottom: 1px solid #ccc; padding: 5px 10px; display: flex; gap: 10px; align-items: center; }
+  .toolbar button { padding: 4px 8px; cursor: pointer; }
+  .toolbar input { padding: 4px; border: 1px solid #ccc; flex: 1; max-width: 200px; }
+  textarea { flex: 1; border: none; padding: 10px; outline: none; font-size: 14px; resize: none; }
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <input type="text" id="filename" placeholder="Filename (e.g. diary.txt)" value="diary.txt">
+  <button id="saveBtn">Save to My Documents</button>
+  <button id="openBtn">Open from My Documents</button>
+  <span id="status" style="font-size: 12px; color: #666; margin-left: auto;"></span>
+</div>
+<textarea id="editor" placeholder="Start typing..."></textarea>
+<script>
+  const editor = document.getElementById('editor');
+  const filename = document.getElementById('filename');
+  const status = document.getElementById('status');
+
+  document.getElementById('saveBtn').addEventListener('click', () => {
+    const name = filename.value.trim() || 'Untitled.txt';
+    const content = editor.value;
+    
+    let files = JSON.parse(localStorage.getItem('my_documents_files') || '[]');
+    
+    // Check if exists and overwrite, or create new
+    const existingIndex = files.findIndex(f => f.name === name);
+    if (existingIndex > -1) {
+      files[existingIndex].content = content;
+      files[existingIndex].type = 'text';
+    } else {
+      files.push({
+        id: Date.now().toString(),
+        name: name,
+        type: 'text',
+        content: content,
+        folder: 'Documents'
+      });
+    }
+    
+    localStorage.setItem('my_documents_files', JSON.stringify(files));
+    status.innerText = 'Saved!';
+    setTimeout(() => status.innerText = '', 2000);
+  });
+
+  document.getElementById('openBtn').addEventListener('click', () => {
+    let files = JSON.parse(localStorage.getItem('my_documents_files') || '[]');
+    const textFiles = files.filter(f => f.type === 'text');
+    
+    if (textFiles.length === 0) {
+      alert("No text files found in My Documents.");
+      return;
+    }
+    
+    const fileNames = textFiles.map(f => f.name).join('\\n');
+    const name = prompt("Enter filename to open:\\n" + fileNames);
+    if (name) {
+      const file = textFiles.find(f => f.name === name);
+      if (file) {
+        editor.value = file.content;
+        filename.value = file.name;
+        status.innerText = 'Opened!';
+        setTimeout(() => status.innerText = '', 2000);
+      } else {
+        alert("File not found.");
+      }
+    }
+  });
+</script>
+</body>
+</html>

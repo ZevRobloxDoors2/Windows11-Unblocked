@@ -1,3 +1,17 @@
+const PROXY_BASE = "https://error404.n43.pw";
+
+function getProxiedUrl(targetUrl: string): string {
+    if (!targetUrl) return "";
+    
+    const encoded = targetUrl
+        .toString()
+        .split('')
+        .map((char, ind) => (ind % 2 ? String.fromCharCode(char.charCodeAt(0) ^ 2) : char))
+        .join('');
+        
+    return `${PROXY_BASE}/service/${encodeURIComponent(encoded)}`;
+}
+
 export const ALL_GAMES = [
   {
     "id": "app-local-share",
@@ -17,7 +31,6 @@ export const ALL_GAMES = [
     "image": "https://upload.wikimedia.org/wikipedia/commons/e/e4/Windows_11_logo.svg",
     "type": "app"
   },
-
   {
     "id": "1v1 LOL",
     "title": "1v1 LOL",
@@ -159,11 +172,11 @@ export const ALL_GAMES = [
     "file": "Games/Ragdoll Hit.html"
   },
   {
-    "id": "Roblox",
+    "id": "roblox",
     "title": "Roblox",
     "image": "https://upload.wikimedia.org/wikipedia/commons/3/3a/Roblox_player_icon_black.svg",
     "type": "game",
-    "file": "Games/Roblox.html"
+    "file": "https://nowgg.fun/apps/a/19900/b.html"
   },
   {
     "id": "RobloxOLD",
@@ -276,5 +289,47 @@ export const ALL_GAMES = [
     "image": "https://ui-avatars.com/api/?name=undertaleyellow&background=random&color=fff&size=256&font-size=0.33",
     "type": "game",
     "file": "Games/undertaleyellow.html"
+  },
+  {
+    "id": "tiktok",
+    "title": "TikTok",
+    "image": "https://upload.wikimedia.org/wikipedia/en/a/a9/TikTok_logo.svg",
+    "type": "app",
+    "file": getProxiedUrl("https://www.tiktok.com/")
+  },
+  {
+    "id": "Chrome",
+    "title": "Chrome",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/e/e1/Google_Chrome_icon_%28February_2022%29.svg",
+    "type": "app",
+    "file": "https://galxy.it.com/slate"
+  },
+  {
+    "id": "Notepad",
+    "title": "Notepad",
+    "image": "https://ui-avatars.com/api/?name=Notepad&background=random&color=fff&size=256&font-size=0.33",
+    "type": "app",
+    "file": "Apps/Notepad.html"
+  },
+  {
+    "id": "My Documents",
+    "title": "My Documents",
+    "image": "https://ui-avatars.com/api/?name=My%20Documents&background=random&color=fff&size=256&font-size=0.33",
+    "type": "app",
+    "file": "Apps/MyDocuments.html"
+  },
+  {
+    "id": "aniwaves",
+    "title": "Aniwaves",
+    "image": "https://ui-avatars.com/api/?name=Aniwaves&background=random&color=fff&size=256&font-size=0.33",
+    "type": "app",
+    "file": getProxiedUrl("https://aniwaves.ru/")
+  },
+  {
+    "id": "gemini",
+    "title": "Google Gemini",
+    "image": "https://ui-avatars.com/api/?name=Google%20Gemini&background=random&color=fff&size=256&font-size=0.33",
+    "type": "app",
+    "file": getProxiedUrl("https://gemini.google.com/")
   }
 ];

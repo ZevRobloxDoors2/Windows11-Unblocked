@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Search, Bell, Settings as SettingsIcon, MessageSquare, Users, Store, Box, User, Activity, Image as ImageIcon, Mic, GraduationCap } from 'lucide-react';
 import { ALL_GAMES } from '../games';
 import { UserProfile } from '../types';
+import { DesktopWidgets } from './DesktopWidgets';
 
 export const Desktop = ({ 
   profile, 
@@ -42,6 +43,35 @@ export const Desktop = ({
   onActivateDeadComputer?: () => void
 }) => {
   const [startOpen, setStartOpen] = useState(false);
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dataUrl = ev.target?.result as string;
+        if (window.confirm("Do you want to set this image as your wallpaper? (Cancel to save to My Documents/Pictures)")) {
+          localStorage.setItem('custom_wallpaper', dataUrl);
+          window.location.reload();
+        } else {
+          const files = JSON.parse(localStorage.getItem('my_documents_files') || '[]');
+          files.push({
+            id: Date.now().toString(),
+            name: file.name,
+            type: 'image',
+            content: dataUrl,
+            folder: 'Pictures'
+          });
+          localStorage.setItem('my_documents_files', JSON.stringify(files));
+          alert('Image saved to My Documents > Pictures!');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  const handleDragOver = (e: React.DragEvent) => e.preventDefault();
+
   const [weather, setWeather] = useState<{ temp: number, condition: string } | null>(null);
   useEffect(() => {
     const fetchWeather = async () => {
@@ -513,6 +543,26 @@ export const Desktop = ({
                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"></path><path d="M12 8v8"></path><path d="M8 12h8"></path></svg>
             </div>
           </button>
+
+          
+          {/* Pinned Chrome */}
+          <motion.div layout className="relative group flex items-center h-full">
+            <button 
+              onClick={() => { 
+                const chromeApp = ALL_GAMES.find(g => g.id === 'Chrome');
+                if (chromeApp) onPlayGame(chromeApp); 
+              }} 
+              className="w-10 h-10 flex items-center justify-center rounded-md hover:bg-white/10 transition-colors relative"
+            >
+              <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/Google_Chrome_icon_%28February_2022%29.svg" className="w-5 h-5 object-contain" />
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 h-1 bg-transparent rounded-full transition-all w-1.5 group-hover:bg-[#00A4EF]" />
+            </button>
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 z-[1000] drop-shadow-2xl flex flex-col items-center">
+              <div className="bg-zinc-900 border border-white/20 p-2 rounded-lg shadow-xl mb-2 min-w-[120px] flex flex-col items-center gap-2">
+                <span className="text-xs font-semibold text-white truncate max-w-[100px] capitalize">Chrome</span>
+              </div>
+            </div>
+          </motion.div>
 
           {/* Pinned Chat */}
           <motion.div layout className="relative group flex items-center h-full">

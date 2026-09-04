@@ -5,8 +5,9 @@ import { motion } from 'motion/react';
 
 export const WinStore = ({ installedApps, onInstall, onPlay }: { installedApps: string[], onInstall: (id: string) => void, onPlay: (game: any) => void }) => {
   const [search, setSearch] = useState('');
+  const [activeTab, setActiveTab] = useState<'home' | 'games' | 'apps'>('home');
   
-  const filtered = ALL_GAMES.filter(g => g.title.toLowerCase().includes(search.toLowerCase()));
+  const filtered = ALL_GAMES.filter(g => g.title.toLowerCase().includes(search.toLowerCase()) && (activeTab === 'home' || (activeTab === 'games' ? g.type === 'game' : g.type === 'app')));
 
   return (
     <div className="flex h-full bg-[#202020] text-white">
@@ -20,13 +21,17 @@ export const WinStore = ({ installedApps, onInstall, onPlay }: { installedApps: 
         </div>
         
         <div className="flex flex-col gap-2 w-full px-2 md:px-4">
-          <button className="flex items-center gap-3 p-3 w-full rounded-md bg-white/10 text-white transition-colors">
+          <button onClick={() => setActiveTab('home')} className={`flex items-center gap-3 p-3 w-full rounded-md transition-colors ${activeTab === 'home' ? 'bg-white/10 text-white' : 'hover:bg-white/5 text-zinc-400 hover:text-white'}`}>
             <LayoutGrid size={20} className="shrink-0" />
             <span className="hidden md:block text-sm">Home</span>
           </button>
-          <button className="flex items-center gap-3 p-3 w-full rounded-md hover:bg-white/5 text-zinc-400 hover:text-white transition-colors">
+          <button onClick={() => setActiveTab('games')} className={`flex items-center gap-3 p-3 w-full rounded-md transition-colors ${activeTab === 'games' ? 'bg-white/10 text-white' : 'hover:bg-white/5 text-zinc-400 hover:text-white'}`}>
             <Gamepad2 size={20} className="shrink-0" />
             <span className="hidden md:block text-sm">Gaming</span>
+          </button>
+          <button onClick={() => setActiveTab('apps')} className={`flex items-center gap-3 p-3 w-full rounded-md transition-colors ${activeTab === 'apps' ? 'bg-white/10 text-white' : 'hover:bg-white/5 text-zinc-400 hover:text-white'}`}>
+            <LayoutGrid size={20} className="shrink-0" />
+            <span className="hidden md:block text-sm">Apps</span>
           </button>
         </div>
 
@@ -65,7 +70,7 @@ export const WinStore = ({ installedApps, onInstall, onPlay }: { installedApps: 
         </div>
         
         <div className="flex-1 overflow-y-auto p-6 lg:p-8">
-          <h2 className="text-xl font-semibold mb-6">Top free games</h2>
+          <h2 className="text-xl font-semibold mb-6">{activeTab === 'games' ? 'Top games' : activeTab === 'apps' ? 'Top apps' : 'Top free games & apps'}</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
             {filtered.map(game => {
               const isInstalled = installedApps.includes(game.id);
