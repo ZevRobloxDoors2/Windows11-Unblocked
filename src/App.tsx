@@ -31,6 +31,7 @@ import { GlobalSearch } from './components/GlobalSearch';
 import { Desktop } from './components/Desktop';
 import { Minus, Square, X } from 'lucide-react';
 import { Window } from './components/Window';
+import { AppIframe } from './components/AppIframe';
 import { WinStore } from './components/WinStore';
 import { GTAVModal } from './components/GTAVModal';
 import { LocalShare } from './components/LocalShare';
@@ -186,6 +187,12 @@ export default function App() {
   const [openViews, setOpenViews] = useState<View[]>([]);
   const [minimizedViews, setMinimizedViews] = useState<View[]>([]);
   const [minimizedWindows, setMinimizedWindows] = useState<string[]>([]);
+  const [reloadTriggers, setReloadTriggers] = useState<Record<string, number>>({});
+
+  const handleReloadGame = (instanceId?: string) => {
+    if (!instanceId) return;
+    setReloadTriggers(prev => ({ ...prev, [instanceId]: (prev[instanceId] || 0) + 1 }));
+  };
 
   const handleSetCurrentView = (view: View) => {
     setCurrentView(view);
@@ -996,6 +1003,7 @@ export default function App() {
                     onClose={() => handleStopGame(g.instanceId)}
                     onMinimize={() => handleMinimizeGame(g.instanceId || '')}
                     onGuide={() => setIsGuideOpen(true)}
+                    onReload={() => handleReloadGame(g.instanceId)}
                     isActive={isActive}
                     isMinimized={isMinimized}
                     onFocus={() => {
@@ -1037,12 +1045,12 @@ export default function App() {
                       {g.id === 'GTA V' && !isLoadingGame && (
                         <GTAVModal />
                       )}
-                      <iframe 
-                        src={getUrl(g.file, idx)} 
-                        className="w-full h-full" 
-                        sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-popups allow-presentation"
-                        allow="fullscreen; autoplay; gamepad"
-                        onLoad={() => { if (isActive) setIsLoadingGame(false); }}
+                      <AppIframe
+                        src={getUrl(g.file, idx)}
+                        isActive={isActive}
+                        onLoadStart={() => { if (isActive) setIsLoadingGame(true); }}
+                        onLoadEnd={() => { if (isActive) setIsLoadingGame(false); }}
+                        reloadTrigger={reloadTriggers[g.instanceId || ''] || 0}
                       />
                     </div>
                   </Window>
