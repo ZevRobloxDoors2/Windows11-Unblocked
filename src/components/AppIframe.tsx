@@ -7,23 +7,36 @@ interface AppIframeProps {
   onLoadStart: () => void;
   onLoadEnd: () => void;
   reloadTrigger: number;
+  fallbackSrc?: string;
 }
 
-export const AppIframe: React.FC<AppIframeProps> = ({ src, isActive, onLoadStart, onLoadEnd, reloadTrigger }) => {
+export const AppIframe: React.FC<AppIframeProps> = ({ src, isActive, onLoadStart, onLoadEnd, reloadTrigger, fallbackSrc }) => {
   const [currentSrc, setCurrentSrc] = useState(src);
   const [showError, setShowError] = useState(false);
+  const [hasUsedFallback, setHasUsedFallback] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     if (reloadTrigger > 0) {
       setCurrentSrc('');
       setShowError(false);
+      setHasUsedFallback(false);
       onLoadStart();
       setTimeout(() => {
         setCurrentSrc(src);
       }, 150);
     }
   }, [reloadTrigger, src]);
+
+  const triggerError = () => {
+    if (fallbackSrc && !hasUsedFallback) {
+      setHasUsedFallback(true);
+      setCurrentSrc(fallbackSrc);
+      setShowError(false);
+    } else {
+      setShowError(true);
+    }
+  };
 
   const handleLoad = () => {
     if (isActive) onLoadEnd();
@@ -35,13 +48,13 @@ export const AppIframe: React.FC<AppIframeProps> = ({ src, isActive, onLoadStart
       if (iframeDoc) {
         // Detect white screen
         if (iframeDoc.body && iframeDoc.body.scrollHeight === 0 && iframeDoc.body.childNodes.length === 0) {
-           setShowError(true);
+           triggerError();
         }
         
         // Listen for network errors inside the iframe
         if (iframeWindow) {
            iframeWindow.onerror = (msg, url, lineNo, columnNo, error) => {
-               setShowError(true);
+               triggerError();
                return false;
            };
         }
@@ -81,7 +94,7 @@ export const AppIframe: React.FC<AppIframeProps> = ({ src, isActive, onLoadStart
           sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-popups allow-presentation"
           allow="fullscreen; autoplay; gamepad"
           onLoad={handleLoad}
-          onError={() => setShowError(true)}
+          onError={() => triggerError()}
         />
       )}
     </div>
