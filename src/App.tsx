@@ -430,26 +430,6 @@ export default function App() {
   };
 
   const actuallyPlayGame = async (game: {id: string, title: string, file: string, instanceId?: string}) => {
-    // New tab override for problematic proxies
-    if (game.id === 'tiktok' || game.id === 'gemini' || game.id === 'aniwaves') {
-      const url = game.file;
-      let win = window.open();
-      if (win) {
-        win.document.title = game.title;
-        let iframe = win.document.createElement('iframe');
-        iframe.src = url;
-        iframe.style.position = "fixed";
-        iframe.style.top = "0";
-        iframe.style.left = "0";
-        iframe.style.width = "100%";
-        iframe.style.height = "100%";
-        iframe.style.border = "none";
-        iframe.style.margin = "0";
-        win.document.body.appendChild(iframe);
-      }
-      return;
-    }
-
     const isNewLaunch = !game.instanceId;
     const gameInstance = isNewLaunch ? { ...game, instanceId: `${game.id}-${Date.now()}-${Math.floor(Math.random()*1000)}` } : game;
 

@@ -3,9 +3,11 @@ import { motion } from 'motion/react';
 import { Monitor, Paintbrush, User, ShieldAlert, MonitorPlay, History, Upload } from 'lucide-react';
 import { UserProfile } from '../types';
 import { db } from "../firebase";
+import { ProxyManagerModal } from './ProxyManagerModal';
 
 export function Settings({ profile, onBack, onLogout, isGuestMode }: { profile: UserProfile, onBack: () => void, onLogout: () => void, isGuestMode: boolean }) {
   const [activeTab, setActiveTab] = useState<'system' | 'personalization' | 'accounts' | 'privacy' | 'gaming'>('system');
+  const [showProxyManager, setShowProxyManager] = useState(false);
   
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinStep, setPinStep] = useState<'enter' | 'confirm'>('enter');
@@ -148,6 +150,7 @@ export function Settings({ profile, onBack, onLogout, isGuestMode }: { profile: 
 
   return (
     <>
+    {showProxyManager && <ProxyManagerModal onClose={() => setShowProxyManager(false)} />}
     {showPinModal && (
       <div className="fixed inset-0 bg-black/80 z-[100] flex flex-col items-center justify-center p-4">
         <div className="bg-zinc-900 border border-zinc-700 p-8 rounded-xl shadow-2xl flex flex-col items-center gap-4 w-96">
@@ -213,6 +216,14 @@ export function Settings({ profile, onBack, onLogout, isGuestMode }: { profile: 
               <h2 className="text-2xl font-semibold mb-2">System</h2>
               
               <div className="bg-white/5 rounded-lg border border-white/10 overflow-hidden">
+                <div className="p-4 border-b border-white/10 flex items-center justify-between">
+                  <div>
+                    <span className="font-semibold block text-sm">Proxy Manager</span>
+                    <span className="text-xs text-zinc-400 block mt-1">Switch UV proxy servers for apps like TikTok and Gemini</span>
+                  </div>
+                  <button onClick={() => setShowProxyManager(true)} className="px-4 py-1.5 bg-[#00A4EF]/20 text-[#00A4EF] hover:bg-[#00A4EF]/30 rounded text-xs font-bold border border-[#00A4EF]/30 transition-colors">Manage</button>
+                </div>
+                
                 <div className="p-4 border-b border-white/10 flex items-center justify-between">
                   <div>
                     <span className="font-semibold block text-sm">Framerate Counter</span>

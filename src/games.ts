@@ -1,4 +1,8 @@
-const PROXY_BASE = "https://error404.n43.pw";
+export const DEFAULT_PROXY_BASE = "https://error404.n43.pw";
+
+export function getProxyBase() {
+    return localStorage.getItem('proxy_base') || DEFAULT_PROXY_BASE;
+}
 
 function getProxiedUrl(targetUrl: string): string {
     if (!targetUrl) return "";
@@ -9,7 +13,7 @@ function getProxiedUrl(targetUrl: string): string {
         .map((char, ind) => (ind % 2 ? String.fromCharCode(char.charCodeAt(0) ^ 2) : char))
         .join('');
         
-    return `${PROXY_BASE}/service/${encodeURIComponent(encoded)}`;
+    return `${getProxyBase()}/service/${encodeURIComponent(encoded)}`;
 }
 
 export const ALL_GAMES = [
