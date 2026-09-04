@@ -302,7 +302,7 @@ export const ALL_GAMES = [
     "title": "Chrome",
     "image": "https://upload.wikimedia.org/wikipedia/commons/e/e1/Google_Chrome_icon_%28February_2022%29.svg",
     "type": "app",
-    "file": "https://galxy.it.com/slate"
+    "file": "https://error404.n43.pw/"
   },
   {
     "id": "Notepad",

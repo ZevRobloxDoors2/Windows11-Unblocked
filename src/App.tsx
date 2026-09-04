@@ -1067,7 +1067,6 @@ export default function App() {
                       )}
                       <AppIframe
                         src={getUrl(g.file, idx)}
-                        fallbackSrc={g.id === 'Chrome' ? 'https://error404.n43.pw/' : undefined}
                         isActive={isActive}
                         onLoadStart={() => { if (isActive) setIsLoadingGame(true); }}
                         onLoadEnd={() => { if (isActive) setIsLoadingGame(false); }}
