@@ -135,7 +135,10 @@ export const Desktop = ({
   const [fullscreenCountdown, setFullscreenCountdown] = useState(5);
   const [showFullscreenModal, setShowFullscreenModal] = useState(true);
   const [contextMenu, setContextMenu] = useState<{x: number, y: number} | null>(null);
+  const [isHalloween, setIsHalloween] = useState(() => localStorage.getItem('halloween_theme') === 'true');
   const [bgImage, setBgImage] = useState(() => localStorage.getItem('win11_bg') || 'https://images.unsplash.com/photo-1622737133809-d95047b9e673?auto=format&fit=crop&w=2000&q=80');
+  const halloweenBg = 'https://images.unsplash.com/photo-1508385082359-f38ae991e8f2?auto=format&fit=crop&w=2000&q=80';
+  const currentBg = isHalloween ? halloweenBg : bgImage;
 
   useEffect(() => {
     if (fullscreenCountdown > 0) {
@@ -216,10 +219,17 @@ export const Desktop = ({
 
   return (
     <div 
-      className="absolute inset-0 bg-cover bg-center overflow-hidden z-0" 
-      style={{ backgroundImage: `url('${bgImage}')` }}
+      className={`absolute inset-0 bg-cover bg-center overflow-hidden z-0 ${isHalloween ? 'brightness-90 saturate-125' : ''}`} 
+      style={{ backgroundImage: `url('${currentBg}')` }}
       onContextMenu={handleContextMenu}
     >
+      {/* Spooky Halloween ambient glow overlay */}
+      {isHalloween && (
+        <div className="absolute inset-0 pointer-events-none z-[1] overflow-hidden">
+          <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-orange-600/15 rounded-full blur-[140px]" />
+          <div className="absolute bottom-0 left-1/4 w-[500px] h-[500px] bg-purple-600/20 rounded-full blur-[140px]" />
+        </div>
+      )}
       {/* Context Menu */}
       <AnimatePresence>
         {contextMenu && (
@@ -532,6 +542,29 @@ export const Desktop = ({
             <svg viewBox="0 0 88 88" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
               <path d="M0 0h42v42H0zm46 0h42v42H46zM0 46h42v42H0zm46 0h42v42H46z" fill="#00A4EF"/>
             </svg>
+          </button>
+
+          {/* Spooky Tilted Pumpkin Button with Glowing Eyes */}
+          <button 
+            onClick={() => {
+              const nextVal = !isHalloween;
+              setIsHalloween(nextVal);
+              localStorage.setItem('halloween_theme', String(nextVal));
+            }}
+            className={`w-10 h-10 flex items-center justify-center rounded-md transition-all relative group ${isHalloween ? 'bg-orange-500/30 shadow-[0_0_20px_rgba(255,107,0,0.8)]' : 'hover:bg-orange-500/20'}`}
+            title="Toggle Halloween Theme"
+          >
+            <div className="relative transform -rotate-12 group-hover:rotate-0 transition-transform">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="#ff7518" stroke="#2b1100" strokeWidth="1.2">
+                <ellipse cx="12" cy="13" rx="8.5" ry="7.5" />
+                <path d="M12 3.5v3.5" stroke="#2e7d32" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+                {/* Glowing Eyes */}
+                <polygon points="7.5,10 10.5,12 8,14" fill="#ffeb3b" className="drop-shadow-[0_0_6px_#ffeb3b] animate-pulse" />
+                <polygon points="16.5,10 13.5,12 16,14" fill="#ffeb3b" className="drop-shadow-[0_0_6px_#ffeb3b] animate-pulse" />
+                {/* Spooky Smile */}
+                <path d="M8.5 16.5l1.5 1.5 1-1 1 1 1-1 1.5 1.5" stroke="#ffeb3b" strokeWidth="1.5" fill="none" strokeLinecap="round" className="drop-shadow-[0_0_4px_#ffeb3b]" />
+              </svg>
+            </div>
           </button>
           
           <button onClick={() => { setStartOpen(false); onOpenSearch(); }} className="w-10 h-10 flex items-center justify-center rounded-md hover:bg-white/10 transition-colors">
