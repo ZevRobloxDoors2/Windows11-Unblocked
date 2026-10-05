@@ -43,6 +43,12 @@ export const Party: React.FC<{ profile: any, onBack: () => void, initialPartyId?
   const [selectedRingtone, setSelectedRingtone] = useState(() => localStorage.getItem('selected_ringtone') || 'classic');
   const [customRingtoneUrl, setCustomRingtoneUrl] = useState<string | null>(() => localStorage.getItem('custom_ringtone_url'));
 
+  useEffect(() => {
+    if (initialPartyId && !inParty) {
+      joinParty();
+    }
+  }, [initialPartyId]);
+
   const playRingtoneSample = (type: string, customUrl?: string | null) => {
     if (customUrl) {
       const audio = new Audio(customUrl);

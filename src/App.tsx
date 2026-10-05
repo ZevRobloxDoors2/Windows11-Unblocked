@@ -963,7 +963,6 @@ export default function App() {
             className={`absolute inset-0 pointer-events-none ${minimizedViews.includes(view) ? 'hidden' : 'block'}`}
             style={{ zIndex: currentView === view ? 200 : 100 }}
           >
-            <div className="pointer-events-auto w-full h-full">
               <Window 
                 title={view.charAt(0).toUpperCase() + view.slice(1)} 
                 onClose={() => handleCloseView(view)} 
@@ -983,7 +982,6 @@ export default function App() {
                 {view === 'local-share' && <LocalShare profile={activeProfile as any} />}
                 {view === 'classroom' && <Classroom />}
               </Window>
-            </div>
           </div>
         ))}
 
@@ -1005,34 +1003,38 @@ export default function App() {
                 const isMinimized = minimizedWindows.includes(g.instanceId || '');
                 // The user asked to "Allow to run multiple apps at once", meaning we should have multiple windows open at once.
                 return (
-                  <Window
+                  <div 
                     key={g.instanceId || g.id}
-                    title={g.title}
-                    onClose={() => handleStopGame(g.instanceId)}
-                    onMinimize={() => handleMinimizeGame(g.instanceId || '')}
-                    onGuide={() => setIsGuideOpen(true)}
-                    onReload={() => handleReloadGame(g.instanceId)}
-                    isActive={isActive}
-                    isMinimized={isMinimized}
-                    onFocus={() => {
-                      if (!isActive) {
-                        if (playingGame) {
-                          setSuspendedGames(prev => {
-                            const filtered = prev.filter(s => s.game.instanceId !== playingGame.instanceId);
-                            return [...filtered, { game: playingGame, minutes: playMinutes }];
-                          });
-                        }
-                        const suspended = suspendedGames.find(s => s.game.instanceId === g.instanceId);
-                        if (suspended) {
-                          setPlayMinutes(suspended.minutes);
-                          setSuspendedGames(prev => prev.filter(s => s.game.instanceId !== g.instanceId));
-                        }
-                        setPlayingGame(g);
-                        setMinimizedWindows(prev => prev.filter(id => id !== g.instanceId));
-                      }
-                    }}
-                    className={`transition-opacity duration-300 ${isActive ? 'z-[150]' : 'z-[140]'} ${isMinimized ? 'opacity-0 pointer-events-none translate-y-24 scale-95' : 'opacity-100'}`}
+                    className={`absolute inset-0 pointer-events-none ${isMinimized ? 'hidden' : 'block'}`}
+                    style={{ zIndex: isActive ? 150 : 140 }}
                   >
+                    <Window
+                      title={g.title}
+                      onClose={() => handleStopGame(g.instanceId)}
+                      onMinimize={() => handleMinimizeGame(g.instanceId || '')}
+                      onGuide={() => setIsGuideOpen(true)}
+                      onReload={() => handleReloadGame(g.instanceId)}
+                      isActive={isActive}
+                      isMinimized={isMinimized}
+                      onFocus={() => {
+                        if (!isActive) {
+                          if (playingGame) {
+                            setSuspendedGames(prev => {
+                              const filtered = prev.filter(s => s.game.instanceId !== playingGame.instanceId);
+                              return [...filtered, { game: playingGame, minutes: playMinutes }];
+                            });
+                          }
+                          const suspended = suspendedGames.find(s => s.game.instanceId === g.instanceId);
+                          if (suspended) {
+                            setPlayMinutes(suspended.minutes);
+                            setSuspendedGames(prev => prev.filter(s => s.game.instanceId !== g.instanceId));
+                          }
+                          setPlayingGame(g);
+                          setMinimizedWindows(prev => prev.filter(id => id !== g.instanceId));
+                        }
+                      }}
+                      className={`transition-opacity duration-300 ${isMinimized ? 'opacity-0 pointer-events-none translate-y-24 scale-95' : 'opacity-100'}`}
+                    >
                     <AnimatePresence>
                       {isLoadingGame && isActive && (
                         <motion.div 
@@ -1062,6 +1064,7 @@ export default function App() {
                       />
                     </div>
                   </Window>
+                  </div>
                 );
               })}
             </AnimatePresence>

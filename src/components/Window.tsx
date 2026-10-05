@@ -101,7 +101,7 @@ export const Window = ({ title, onClose, onMinimize, onGuide, onReload, isActive
       animate={getAnimationProps()}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
-      className={`absolute ${isHalloween ? 'bg-[#140b04] border border-orange-500/50 shadow-[0_0_30px_rgba(255,107,0,0.3)]' : 'bg-[#202020] border border-white/10'} rounded-lg shadow-2xl flex flex-col overflow-hidden ${isActive ? 'z-[100]' : 'z-[50] opacity-90 shadow-none'} ${className} ${windowState !== 'floating' ? 'rounded-none border-0' : ''}`}
+      className={`absolute pointer-events-auto ${isHalloween ? 'bg-[#140b04] border border-orange-500/50 shadow-[0_0_30px_rgba(255,107,0,0.3)]' : 'bg-[#202020] border border-white/10'} rounded-lg shadow-2xl flex flex-col overflow-hidden ${isActive ? 'z-[100]' : 'z-[50] opacity-90 shadow-none'} ${className} ${windowState !== 'floating' ? 'rounded-none border-0' : ''}`}
     >
       <div 
         className={`h-10 ${isHalloween ? (isActive ? 'bg-[#260f02]' : 'bg-[#180901]') : (isActive ? 'bg-[#181818]' : 'bg-[#121212]')} flex items-center justify-between select-none px-4 shrink-0 border-b ${isHalloween ? 'border-orange-500/20' : 'border-white/5'} cursor-grab active:cursor-grabbing transition-colors`}
