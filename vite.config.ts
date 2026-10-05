@@ -14,7 +14,7 @@ export default defineConfig(({mode, command}) => {
   }
   
   return {
-    base: isGitHubPages ? '/Ebox-Cloud-Unblocked/' : './',
+    base: isGitHubPages ? '/Windows11-Unblocked/' : './',
     plugins,
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
