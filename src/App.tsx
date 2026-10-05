@@ -25,6 +25,7 @@ import { WelcomeMessage } from './components/WelcomeMessage';
 import { useSpatialNavigation } from './hooks/useSpatialNavigation';
 import { ALL_GAMES } from './games';
 import { GlobalNotifications } from './components/GlobalNotifications';
+import { InstallPromptModal } from './components/InstallPromptModal';
 
 import { ActivityFeed } from './components/ActivityFeed';
 import { GlobalSearch } from './components/GlobalSearch';
@@ -272,6 +273,7 @@ export default function App() {
   
   const [activePartyId, setActivePartyId] = useState<string | undefined>(undefined);
   const [chatConfig, setChatConfig] = useState<{id: string, name: string, isGroup: boolean} | null>(null);
+  const [showInstallModal, setShowInstallModal] = useState(() => !localStorage.getItem('pwa_prompt_dismissed'));
   
   // Playing state
   const [isLoadingGame, setIsLoadingGame] = useState(false);
@@ -689,6 +691,12 @@ export default function App() {
     <>
       <style>{cursorCss}</style>
       <DMCAModal />
+      {showInstallModal && (
+        <InstallPromptModal onDismiss={() => {
+          localStorage.setItem('pwa_prompt_dismissed', 'true');
+          setShowInstallModal(false);
+        }} />
+      )}
       <GlobalNotifications profile={activeProfile} playingGame={!!playingGame} activeChatId={currentView === 'chat' && chatConfig ? (chatConfig.isGroup ? chatConfig.id : chatConfig.id) : null} onNavigateToChat={(id, isGroup, name) => { setChatConfig({id, name, isGroup}); handleSetCurrentView('chat'); }} onNavigateToParty={(id) => { setActivePartyId(id); handleSetCurrentView('party'); }} />
       <div className={`h-screen bg-black text-white font-sans overflow-hidden flex flex-col relative z-0`}>
       <div className={`flex-1 min-h-0 flex flex-col relative z-10`}>
