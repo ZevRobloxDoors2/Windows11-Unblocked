@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { ChevronLeft, UserPlus, User, MessageSquare, Users } from 'lucide-react';
+import { ChevronLeft, UserPlus, User, MessageSquare, Users, Phone, Sparkles } from 'lucide-react';
 import { UserProfile, FriendRequest } from '../types';
 import { db, auth } from '../firebase';
-import { collection, query, where, getDocs, addDoc, updateDoc, doc, onSnapshot, or, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, doc, onSnapshot, or, serverTimestamp } from 'firebase/firestore';
 
 interface FriendsProps {
   key?: string;
   userProfile: UserProfile;
   onBack: () => void;
   onChat: (id: string, name: string, isGroup?: boolean) => void;
+  onCall: (friendUid: string) => void;
 }
 
-// Fuzzy search helper
 const fuzzyMatch = (searchTerm: string, target: string): boolean => {
   const search = searchTerm.toLowerCase();
   const haystack = target.toLowerCase();
@@ -26,15 +26,17 @@ const fuzzyMatch = (searchTerm: string, target: string): boolean => {
   return searchIdx === search.length;
 };
 
-export function Friends({ userProfile, onBack, onChat }: FriendsProps) {
+export function Friends({ userProfile, onBack, onChat, onCall }: FriendsProps) {
   const [searchTag, setSearchTag] = useState('');
   const [searching, setSearching] = useState(false);
   const [showCreateGC, setShowCreateGC] = useState(false);
   const [gcName, setGcName] = useState('');
   
-  const [friends, setFriends] = useState<{uid: string, gamertag: string}[]>([]);
+  const [friends, setFriends] = useState<{uid: string, gamertag: string, status?: string}[]>([]);
   const [searchResults, setSearchResults] = useState<{uid: string, gamertag: string}[]>([]);
   const [groupChats, setGroupChats] = useState<{id: string, name: string}[]>([]);
+
+  const isHalloween = localStorage.getItem('halloween_theme') === 'true';
 
   useEffect(() => {
     if (!auth.currentUser) return;
@@ -48,24 +50,21 @@ export function Friends({ userProfile, onBack, onChat }: FriendsProps) {
 
     const unsubscribe = onSnapshot(q, async (snapshot) => {
       const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as FriendRequest));
-      
-      // Compute friends
       const accepted = data.filter(r => r.status === 'accepted');
-      const friendList: {uid: string, gamertag: string, status?: string, score?: number}[] = [];
+      const friendList: {uid: string, gamertag: string, status?: string}[] = [];
       
       for (const r of accepted) {
         if (r.fromUid === auth.currentUser!.uid) {
-          // Fetch to user's gamertag
           const userDoc = await getDocs(query(collection(db, 'users'), where('uid', '==', r.toUid)));
           if (!userDoc.empty) {
             const uData = userDoc.docs[0].data() as UserProfile;
-            friendList.push({ uid: r.toUid, gamertag: uData.gamertag, status: uData.status, score: uData.score });
+            friendList.push({ uid: r.toUid, gamertag: uData.gamertag, status: uData.status });
           }
         } else {
            const userDoc = await getDocs(query(collection(db, 'users'), where('uid', '==', r.fromUid)));
            if (!userDoc.empty) {
              const uData = userDoc.docs[0].data() as UserProfile;
-             friendList.push({ uid: r.fromUid, gamertag: uData.gamertag, status: uData.status, score: uData.score });
+             friendList.push({ uid: r.fromUid, gamertag: uData.gamertag, status: uData.status });
            } else {
              friendList.push({ uid: r.fromUid, gamertag: r.fromGamertag });
            }
@@ -91,23 +90,13 @@ export function Friends({ userProfile, onBack, onChat }: FriendsProps) {
     if (!searchTag.trim()) return;
     setSearching(true);
     try {
-      // Fuzzy search - get users and filter with fuzzy match
       const q = query(collection(db, 'users'));
       const snap = await getDocs(q);
-      
       const matches = snap.docs
         .map(d => ({ uid: d.id, ...(d.data() as UserProfile) }))
-        .filter(u => 
-          fuzzyMatch(searchTag.trim(), u.gamertag) && 
-          u.uid !== userProfile.uid
-        )
-        .sort((a, b) => {
-          // Sort by how close the match is (shorter distance = better match)
-          const aLen = a.gamertag.length;
-          const bLen = b.gamertag.length;
-          return aLen - bLen;
-        })
-        .slice(0, 10); // Limit to top 10 results
+        .filter(u => fuzzyMatch(searchTag.trim(), u.gamertag) && u.uid !== userProfile.uid)
+        .sort((a, b) => a.gamertag.length - b.gamertag.length)
+        .slice(0, 10);
 
       if (matches.length === 0) {
         alert("Player not found.");
@@ -164,46 +153,53 @@ export function Friends({ userProfile, onBack, onChat }: FriendsProps) {
   };
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="px-12 max-w-5xl mx-auto flex flex-col flex-1 min-h-0 h-full gap-8 pt-8 pb-12 overflow-y-auto w-full">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="px-12 max-w-6xl mx-auto flex flex-col flex-1 min-h-0 h-full gap-8 pt-8 pb-12 overflow-y-auto w-full text-white">
       <div className="flex items-center gap-4 border-b border-white/10 pb-6 shrink-0">
-        <button onClick={onBack} className="p-2 hover:bg-white/10 rounded-full transition-colors -ml-2">
-          <ChevronLeft size={24} />
+        <button onClick={onBack} className={`p-2 rounded-full transition-colors -ml-2 ${isHalloween ? 'hover:bg-orange-500/20 text-orange-400' : 'hover:bg-white/10 text-white'}`}>
+          <ChevronLeft size={26} />
         </button>
-        <h2 className="text-3xl font-bold">Social & Friends</h2>
+        <div className="flex items-center gap-3">
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ${isHalloween ? 'bg-orange-600/30 text-orange-400 border border-orange-500/30' : 'bg-blue-600/30 text-blue-400 border border-blue-500/30'}`}>
+            <Users size={26} />
+          </div>
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">Social & Friends</h2>
+            <p className="text-sm text-zinc-400">Connect, chat, and call your friends instantly</p>
+          </div>
+        </div>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="flex flex-col gap-8">
           {/* Add Friend */}
-          <div className="bg-zinc-800/80 p-6 rounded-lg border border-transparent hover:border-white/10 transition-colors">
-            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              <UserPlus size={20} className="text-green-400" /> Add a Friend
+          <div className={`${isHalloween ? 'bg-[#1c0c03]/90 border-orange-500/30 shadow-[0_0_25px_rgba(255,107,0,0.15)]' : 'bg-zinc-900/90 border-white/10 shadow-xl'} p-6 rounded-2xl border backdrop-blur-xl transition-all`}>
+            <h3 className="text-xl font-bold mb-4 flex items-center gap-2.5">
+              <UserPlus size={22} className={isHalloween ? 'text-orange-400' : 'text-green-400'} /> Add a Friend
             </h3>
             <form onSubmit={handleSearch} className="flex flex-col gap-3">
               <input 
                 type="text"
                 value={searchTag}
                 onChange={(e) => setSearchTag(e.target.value)}
-                placeholder="Search gamertag (fuzzy match)..."
-                className="bg-zinc-900 border border-zinc-700 px-4 py-3 rounded-md text-white focus:outline-none focus:border-green-500 font-medium"
+                placeholder="Search gamertag..."
+                className={`border px-4 py-3 rounded-xl text-white focus:outline-none font-medium transition-all ${isHalloween ? 'bg-black/50 border-orange-500/40 focus:border-orange-500 shadow-inner' : 'bg-black/50 border-zinc-700 focus:border-green-500 shadow-inner'}`}
               />
-              <button disabled={searching} type="submit" className="bg-green-600 hover:bg-green-500 disabled:opacity-50 font-bold py-3 rounded-md transition-colors text-sm uppercase tracking-wide">
+              <button disabled={searching} type="submit" className={`${isHalloween ? 'bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 shadow-orange-900/30' : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 shadow-green-900/30'} disabled:opacity-50 font-bold py-3.5 rounded-xl transition-all shadow-lg text-sm uppercase tracking-wider`}>
                 {searching ? 'Searching...' : 'Search Players'}
               </button>
             </form>
             
-            {/* Search Results */}
             {searchResults.length > 0 && (
-              <div className="mt-4 flex flex-col gap-2 max-h-64 overflow-y-auto">
-                <p className="text-xs text-zinc-400 font-semibold">Search Results:</p>
+              <div className="mt-4 flex flex-col gap-2.5 max-h-64 overflow-y-auto">
+                <p className="text-xs text-zinc-400 font-bold uppercase tracking-wider">Search Results:</p>
                 {searchResults.map(result => (
-                  <div key={result.uid} className="bg-zinc-900 p-3 rounded-md flex items-center justify-between">
+                  <div key={result.uid} className="bg-black/40 border border-white/5 p-3.5 rounded-xl flex items-center justify-between hover:bg-black/60 transition-colors">
                     <span className="font-semibold text-sm">{result.gamertag}</span>
                     <button 
                       onClick={() => handleSendRequest(result.uid, result.gamertag)}
-                      className="bg-green-600 hover:bg-green-500 px-3 py-1 rounded-md text-xs font-bold transition-colors"
+                      className={`${isHalloween ? 'bg-orange-600 hover:bg-orange-500' : 'bg-green-600 hover:bg-green-500'} px-4 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-md`}
                     >
-                      Add
+                      Add Friend
                     </button>
                   </div>
                 ))}
@@ -212,15 +208,15 @@ export function Friends({ userProfile, onBack, onChat }: FriendsProps) {
           </div>
 
           {/* Create Group Chat */}
-          <div className="bg-zinc-800/80 p-6 rounded-lg border border-transparent hover:border-white/10 transition-colors">
-            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              <Users size={20} className="text-purple-400" /> Group Chats
+          <div className={`${isHalloween ? 'bg-[#1c0c03]/90 border-orange-500/30 shadow-[0_0_25px_rgba(255,107,0,0.15)]' : 'bg-zinc-900/90 border-white/10 shadow-xl'} p-6 rounded-2xl border backdrop-blur-xl transition-all`}>
+            <h3 className="text-xl font-bold mb-4 flex items-center gap-2.5">
+              <Sparkles size={22} className="text-purple-400" /> Group Chats
             </h3>
             <button 
               onClick={() => setShowCreateGC(!showCreateGC)}
-              className="w-full bg-purple-600 hover:bg-purple-500 font-bold py-2 rounded-md transition-colors text-sm"
+              className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-purple-900/30 text-sm"
             >
-              {showCreateGC ? 'Cancel' : 'Create Group Chat'}
+              {showCreateGC ? 'Cancel' : '+ Create Group Chat'}
             </button>
             
             {showCreateGC && (
@@ -230,73 +226,96 @@ export function Friends({ userProfile, onBack, onChat }: FriendsProps) {
                   value={gcName}
                   onChange={(e) => setGcName(e.target.value)}
                   placeholder="Group chat name..."
-                  className="bg-zinc-900 border border-zinc-700 px-4 py-2 rounded-md text-white focus:outline-none focus:border-purple-500"
+                  className="bg-black/50 border border-purple-500/40 px-4 py-3 rounded-xl text-white focus:outline-none focus:border-purple-500 shadow-inner"
                 />
                 <button 
                   onClick={handleCreateGroupChat}
-                  className="bg-purple-600 hover:bg-purple-500 font-bold py-2 rounded-md transition-colors text-sm"
+                  className="bg-purple-600 hover:bg-purple-500 font-bold py-3 rounded-xl transition-colors text-sm shadow-lg shadow-purple-900/20"
                 >
-                  Create
+                  Create Room
                 </button>
               </div>
             )}
           </div>
         </div>
 
-        {/* Friend List */}
-        <div className="bg-zinc-800/80 p-6 rounded-lg border border-transparent hover:border-white/10 transition-colors">
-          <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <User size={20} className="text-blue-400" /> My Friends ({friends.length})
-          </h3>
-          {friends.length === 0 ? (
-            <p className="text-zinc-400 text-sm">You haven't added any friends yet. Search for friends using the search above!</p>
-          ) : (
-            <div className="flex flex-col gap-3 max-h-96 overflow-y-auto">
-              {friends.map((f: any) => (
-                <div key={f.uid} className="bg-zinc-900 p-4 rounded-md flex items-center justify-between group hover:bg-zinc-800 transition-colors">
-                  <div className="flex flex-col">
-                    <span className="font-semibold">{f.gamertag}</span>
+        <div className="flex flex-col gap-8">
+          {/* Friend List */}
+          <div className={`${isHalloween ? 'bg-[#1c0c03]/90 border-orange-500/30 shadow-[0_0_25px_rgba(255,107,0,0.15)]' : 'bg-zinc-900/90 border-white/10 shadow-xl'} p-6 rounded-2xl border backdrop-blur-xl transition-all flex flex-col h-[400px]`}>
+            <h3 className="text-xl font-bold mb-4 flex items-center gap-2.5 shrink-0">
+              <User size={22} className="text-blue-400" /> My Friends ({friends.length})
+            </h3>
+            {friends.length === 0 ? (
+              <div className="flex flex-col items-center justify-center flex-1 text-center text-zinc-400 gap-2">
+                <User size={40} className="text-zinc-600" />
+                <p className="text-sm">You haven't added any friends yet. Search above to connect!</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3 overflow-y-auto pr-1 flex-1">
+                {friends.map((f: any) => (
+                  <div key={f.uid} className="bg-black/40 border border-white/5 p-4 rounded-xl flex items-center justify-between group hover:bg-black/60 transition-all">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center font-bold text-zinc-300 border border-white/10">
+                        {f.gamertag.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-base">{f.gamertag}</span>
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2.5 h-2.5 rounded-full ${f.status === 'Online' ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' : (f.status === 'Do not disturb' ? 'bg-red-500' : 'bg-zinc-500')}`} />
+                          <span className="text-xs text-zinc-400 font-medium">{f.status || 'Offline'}</span>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Action Buttons: Single Call + Chat */}
                     <div className="flex items-center gap-2">
-                      <span className={`w-2 h-2 rounded-full ${f.status === 'Online' ? 'bg-green-500' : (f.status === 'Do not disturb' ? 'bg-red-500' : 'bg-zinc-500')}`} />
-                      <span className="text-xs text-zinc-400">{f.status || 'Appear offline'}</span>
+                      <button 
+                        onClick={() => onCall(f.uid)} 
+                        className="bg-green-600 hover:bg-green-500 text-white p-2.5 rounded-full transition-all shadow-lg hover:scale-105"
+                        title="Start Single Voice Call"
+                      >
+                        <Phone size={16} />
+                      </button>
+                      <button 
+                        onClick={() => onChat(f.uid, f.gamertag, false)} 
+                        className="bg-zinc-800 hover:bg-zinc-700 text-white p-2.5 rounded-full transition-all hover:scale-105 shadow-md"
+                        title="Open Message"
+                      >
+                        <MessageSquare size={16} />
+                      </button>
                     </div>
                   </div>
-                  <button 
-                    onClick={() => onChat(f.uid, f.gamertag, false)} 
-                    className="bg-zinc-700 hover:bg-zinc-600 text-white p-2 rounded-full transition-colors opacity-0 group-hover:opacity-100"
-                    title="Message"
-                  >
-                    <MessageSquare size={16} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        
-        {/* Group Chats List */}
-        <div className="bg-zinc-800/80 p-6 rounded-lg border border-transparent hover:border-white/10 transition-colors">
-          <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-            <Users size={20} className="text-purple-400" /> My Group Chats ({groupChats.length})
-          </h3>
-          {groupChats.length === 0 ? (
-            <p className="text-zinc-400 text-sm">You aren't in any group chats yet. Create one above!</p>
-          ) : (
-            <div className="flex flex-col gap-3 max-h-96 overflow-y-auto">
-              {groupChats.map(gc => (
-                <div key={gc.id} className="bg-zinc-900 p-4 rounded-md flex items-center justify-between group hover:bg-zinc-800 transition-colors">
-                  <span className="font-semibold">{gc.name}</span>
-                  <button 
-                    onClick={() => onChat(gc.id, gc.name, true)} 
-                    className="bg-zinc-700 hover:bg-zinc-600 text-white p-2 rounded-full transition-colors opacity-0 group-hover:opacity-100"
-                    title="Message"
-                  >
-                    <MessageSquare size={16} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
+          
+          {/* Group Chats List */}
+          <div className={`${isHalloween ? 'bg-[#1c0c03]/90 border-orange-500/30 shadow-[0_0_25px_rgba(255,107,0,0.15)]' : 'bg-zinc-900/90 border-white/10 shadow-xl'} p-6 rounded-2xl border backdrop-blur-xl transition-all flex flex-col h-[280px]`}>
+            <h3 className="text-xl font-bold mb-4 flex items-center gap-2.5 shrink-0">
+              <Users size={22} className="text-purple-400" /> My Group Chats ({groupChats.length})
+            </h3>
+            {groupChats.length === 0 ? (
+              <div className="flex flex-col items-center justify-center flex-1 text-center text-zinc-400 gap-2">
+                <Users size={32} className="text-zinc-600" />
+                <p className="text-sm">No group chats yet. Create one above!</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3 overflow-y-auto pr-1 flex-1">
+                {groupChats.map(gc => (
+                  <div key={gc.id} className="bg-black/40 border border-white/5 p-4 rounded-xl flex items-center justify-between group hover:bg-black/60 transition-all">
+                    <span className="font-bold">{gc.name}</span>
+                    <button 
+                      onClick={() => onChat(gc.id, gc.name, true)} 
+                      className="bg-zinc-800 hover:bg-zinc-700 text-white p-2.5 rounded-full transition-all hover:scale-105 shadow-md"
+                      title="Open Group Chat"
+                    >
+                      <MessageSquare size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </motion.div>

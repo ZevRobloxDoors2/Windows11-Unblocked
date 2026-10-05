@@ -433,52 +433,57 @@ export const Party: React.FC<{ profile: any, onBack: () => void, initialPartyId?
     }
   };
 
+  const isHalloween = localStorage.getItem('halloween_theme') === 'true';
+
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="px-12 max-w-4xl mx-auto flex flex-col pt-8 pb-12 h-full overflow-y-auto w-full">
-      <div className="flex items-center justify-between border-b border-white/10 pb-4 shrink-0">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="px-12 max-w-4xl mx-auto flex flex-col pt-8 pb-12 h-full overflow-y-auto w-full text-white">
+      <div className="flex items-center justify-between border-b border-white/10 pb-6 shrink-0">
         <div className="flex items-center gap-4">
-          <button onClick={onBack} className="p-2 hover:bg-white/10 rounded-full transition-colors -ml-2 focus:ring-2 focus:ring-green-500 focus:outline-none">
-            <ChevronLeft size={24} />
+          <button onClick={onBack} className={`p-2 rounded-full transition-colors -ml-2 ${isHalloween ? 'hover:bg-orange-500/20 text-orange-400' : 'hover:bg-white/10 text-white'}`}>
+            <ChevronLeft size={26} />
           </button>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center text-green-500">
-              <Users size={20} />
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg ${isHalloween ? 'bg-orange-600/30 text-orange-400 border border-orange-500/30' : 'bg-green-600/30 text-green-400 border border-green-500/30'}`}>
+              <Users size={26} />
             </div>
             <div>
-              <h2 className="text-2xl font-bold">Party</h2>
-              <span className="text-sm text-green-500">{partyMembers.length} Members</span>
+              <h2 className="text-3xl font-bold tracking-tight">Voice & Party</h2>
+              <span className={`text-sm font-semibold ${isHalloween ? 'text-orange-400' : 'text-green-400'}`}>{partyMembers.length} Active Connected</span>
             </div>
           </div>
         </div>
         
         {inParty ? (
           <div className="flex items-center gap-3">
-            <button onClick={() => setShowInviteModal(true)} className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold rounded-md transition-colors text-sm">
+            <button onClick={() => setShowInviteModal(true)} className={`px-4 py-2.5 rounded-xl font-bold transition-all text-sm shadow-md ${isHalloween ? 'bg-orange-600 hover:bg-orange-500 text-white' : 'bg-zinc-800 hover:bg-zinc-700 text-white'}`}>
               Invite Friends
             </button>
-            <div className="w-px h-6 bg-white/20 mx-2"></div>
+            <div className="w-px h-6 bg-white/20 mx-1"></div>
             <button 
               onClick={toggleMute}
-              className={`p-3 rounded-full flex items-center justify-center transition-colors focus:ring-2 focus:ring-white focus:outline-none ${isMuted ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30' : 'bg-zinc-800 text-white hover:bg-zinc-700'}`}
+              className={`p-3 rounded-full flex items-center justify-center transition-all shadow-md ${isMuted ? 'bg-red-600 text-white' : 'bg-zinc-800 text-white hover:bg-zinc-700'}`}
+              title={isMuted ? 'Unmute' : 'Mute'}
             >
               {isMuted ? <MicOff size={20} /> : <Mic size={20} />}
             </button>
             <button 
               onClick={toggleDeafen}
-              className={`p-3 rounded-full flex items-center justify-center transition-colors focus:ring-2 focus:ring-white focus:outline-none ${isDeafened ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30' : 'bg-zinc-800 text-white hover:bg-zinc-700'}`}
+              className={`p-3 rounded-full flex items-center justify-center transition-all shadow-md ${isDeafened ? 'bg-red-600 text-white' : 'bg-zinc-800 text-white hover:bg-zinc-700'}`}
+              title={isDeafened ? 'Undeafen' : 'Deafen'}
             >
               <Headphones size={20} />
             </button>
             <button 
               onClick={() => setInParty(false)}
-              className="p-3 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center text-white transition-colors focus:ring-2 focus:ring-white focus:outline-none"
+              className="p-3 bg-red-600 hover:bg-red-700 rounded-full flex items-center justify-center text-white transition-all shadow-lg shadow-red-900/30"
+              title="Leave Call"
             >
               <PhoneOff size={20} />
             </button>
           </div>
         ) : (
-          <button onClick={joinParty} className="px-6 py-2 rounded-full bg-blue-600 hover:bg-blue-500 font-bold transition-colors shadow-lg shadow-blue-900/20">
-            Join Party
+          <button onClick={joinParty} className={`px-8 py-3 rounded-2xl font-bold transition-all shadow-xl text-base ${isHalloween ? 'bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 shadow-orange-900/30' : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-900/30'}`}>
+            Join Voice Room
           </button>
         )}
       </div>
@@ -487,42 +492,44 @@ export const Party: React.FC<{ profile: any, onBack: () => void, initialPartyId?
 
       <div className="flex flex-col gap-4 mt-8">
         {partyMembers.map((member) => (
-          <div key={member.id} className="bg-zinc-900/50 border border-white/5 rounded-xl p-4 flex items-center justify-between">
+          <div key={member.id} className={`${isHalloween ? 'bg-[#1c0c03]/90 border-orange-500/30 shadow-[0_0_20px_rgba(255,107,0,0.15)]' : 'bg-zinc-900/90 border-white/10 shadow-xl'} border rounded-2xl p-5 flex items-center justify-between backdrop-blur-xl transition-all`}>
             <div className="flex items-center gap-4">
               <div className="relative">
                 {member.avatar ? (
-                  <img src={member.avatar} alt={member.gamertag} className="w-12 h-12 rounded-full object-cover" />
+                  <img src={member.avatar} alt={member.gamertag} className="w-14 h-14 rounded-full object-cover border-2 border-white/10 shadow-md" />
                 ) : (
-                  <div className="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-500 text-xl font-bold">
+                  <div className="w-14 h-14 rounded-full bg-zinc-800 border-2 border-white/10 flex items-center justify-center text-zinc-300 text-xl font-bold shadow-md">
                     {member.gamertag?.charAt(0).toUpperCase()}
                   </div>
                 )}
                 {!member.isMuted && speakingPeers[member.id] && (
-                  <div className="absolute -inset-1 rounded-full border-2 border-green-500 animate-pulse pointer-events-none shadow-[0_0_15px_rgba(34,197,94,0.6)]"></div>
+                  <div className={`absolute -inset-1 rounded-full border-2 ${isHalloween ? 'border-orange-500 shadow-[0_0_20px_rgba(255,107,0,0.8)]' : 'border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.8)]'} animate-pulse pointer-events-none`}></div>
                 )}
               </div>
               <div className="flex flex-col">
-                <span className="font-semibold text-lg">{member.gamertag}</span>
-                <span className="text-sm text-zinc-400">{member.isMuted ? 'Muted' : (speakingPeers[member.id] ? 'Speaking...' : 'Listening')}</span>
+                <span className="font-bold text-lg">{member.gamertag}</span>
+                <span className={`text-xs font-semibold ${member.isMuted ? 'text-red-400' : (speakingPeers[member.id] ? (isHalloween ? 'text-orange-400' : 'text-green-400') : 'text-zinc-400')}`}>
+                  {member.isMuted ? 'Muted' : (speakingPeers[member.id] ? 'Speaking...' : 'Connected & Listening')}
+                </span>
               </div>
             </div>
             <div className="flex items-center gap-2">
               {member.id === profile.uid ? (
                 <>
-                  <button onClick={toggleDeafen} className={`p-2 rounded-full transition-colors ${isDeafened ? 'bg-red-500 text-white' : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'}`} title="Deafen">
+                  <button onClick={toggleDeafen} className={`p-2.5 rounded-full transition-colors shadow-md ${isDeafened ? 'bg-red-600 text-white' : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'}`} title="Deafen">
                     <Headphones size={18} />
                   </button>
-                  <button onClick={toggleMute} className={`p-2 rounded-full transition-colors ${isMuted ? 'bg-red-500 text-white' : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'}`} title="Mute">
+                  <button onClick={toggleMute} className={`p-2.5 rounded-full transition-colors shadow-md ${isMuted ? 'bg-red-600 text-white' : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'}`} title="Mute">
                     {isMuted ? <MicOff size={18} /> : <Mic size={18} />}
                   </button>
                 </>
               ) : (
                 <>
-                  <button onClick={() => setPeerMutes(prev => ({...prev, [member.id]: !prev[member.id]}))} className={`p-2 rounded-full transition-colors ${peerMutes[member.id] ? 'bg-red-500 text-white' : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'}`} title={peerMutes[member.id] ? 'Unmute User' : 'Mute User'}>
+                  <button onClick={() => setPeerMutes(prev => ({...prev, [member.id]: !prev[member.id]}))} className={`p-2.5 rounded-full transition-colors shadow-md ${peerMutes[member.id] ? 'bg-red-600 text-white' : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'}`} title={peerMutes[member.id] ? 'Unmute User' : 'Mute User'}>
                     {peerMutes[member.id] ? <VolumeX size={18} /> : <Volume2 size={18} />}
                   </button>
-                  <div className="p-2 text-zinc-500 flex items-center justify-center">
-                    {member.isMuted ? <MicOff size={18} /> : <Mic size={18} className="text-green-500" />}
+                  <div className="p-2.5 text-zinc-500 flex items-center justify-center bg-black/30 rounded-full">
+                    {member.isMuted ? <MicOff size={18} className="text-red-400" /> : <Mic size={18} className={isHalloween ? 'text-orange-400' : 'text-green-400'} />}
                   </div>
                 </>
               )}
@@ -530,26 +537,30 @@ export const Party: React.FC<{ profile: any, onBack: () => void, initialPartyId?
           </div>
         ))}
         {partyMembers.length === 0 && (
-          <div className="text-center text-zinc-500 py-12">
-            No one is in the party right now.
+          <div className="text-center text-zinc-500 py-16 flex flex-col items-center justify-center gap-3">
+            <Users size={48} className="text-zinc-600" />
+            <p className="text-base font-medium">You are not currently in a voice call room.</p>
+            <button onClick={joinParty} className={`px-6 py-2.5 rounded-xl font-bold transition-all shadow-lg ${isHalloween ? 'bg-orange-600 hover:bg-orange-500 text-white' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}>
+              Connect Now
+            </button>
           </div>
         )}
       </div>
 
       {showInviteModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-zinc-900 border border-zinc-700 rounded-xl p-6 w-full max-w-md shadow-2xl">
-            <h3 className="text-2xl font-bold mb-4">Invite Friends to Party</h3>
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className={`${isHalloween ? 'bg-[#1c0c03] border-orange-500/40 shadow-[0_0_30px_rgba(255,107,0,0.25)]' : 'bg-zinc-900 border-zinc-700 shadow-2xl'} border rounded-2xl p-6 w-full max-w-md`}>
+            <h3 className="text-2xl font-bold mb-4">Invite Friends to Call</h3>
             <div className="flex flex-col gap-3 max-h-64 overflow-y-auto pr-2 custom-scroll mb-6">
               {friendsList.length === 0 ? (
-                <p className="text-zinc-500 text-center py-4">You have no friends to invite.</p>
+                <p className="text-zinc-500 text-center py-6">You have no friends to invite right now.</p>
               ) : (
                 friendsList.map(f => (
-                  <div key={f.uid} className="flex items-center justify-between bg-zinc-800 p-3 rounded-md">
+                  <div key={f.uid} className="flex items-center justify-between bg-black/40 border border-white/5 p-3.5 rounded-xl">
                     <span className="font-semibold text-white">{f.gamertag}</span>
                     <button 
                       onClick={() => sendInvite(f.uid)}
-                      className="bg-green-600 hover:bg-green-500 text-white px-4 py-1.5 rounded-md text-sm font-bold transition-colors"
+                      className={`${isHalloween ? 'bg-orange-600 hover:bg-orange-500' : 'bg-green-600 hover:bg-green-500'} text-white px-4 py-2 rounded-xl text-sm font-bold transition-colors shadow-md`}
                     >
                       Invite
                     </button>
@@ -557,7 +568,7 @@ export const Party: React.FC<{ profile: any, onBack: () => void, initialPartyId?
                 ))
               )}
             </div>
-            <button onClick={() => setShowInviteModal(false)} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-3 rounded-md transition-colors">
+            <button onClick={() => setShowInviteModal(false)} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-3.5 rounded-xl transition-colors shadow-lg">
               Close
             </button>
           </motion.div>
