@@ -75,6 +75,8 @@ export const Window = ({ title, onClose, onMinimize, onGuide, onReload, isActive
     }
   };
 
+  const isHalloween = localStorage.getItem('halloween_theme') === 'true';
+
   return (
     <motion.div
       ref={windowRef}
@@ -99,32 +101,42 @@ export const Window = ({ title, onClose, onMinimize, onGuide, onReload, isActive
       animate={getAnimationProps()}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
-      className={`absolute bg-[#202020] border border-white/10 rounded-lg shadow-2xl flex flex-col overflow-hidden ${isActive ? 'z-[100]' : 'z-[50] opacity-90 shadow-none'} ${className} ${windowState !== 'floating' ? 'rounded-none border-0' : ''}`}
+      className={`absolute ${isHalloween ? 'bg-[#140b04] border border-orange-500/50 shadow-[0_0_30px_rgba(255,107,0,0.3)]' : 'bg-[#202020] border border-white/10'} rounded-lg shadow-2xl flex flex-col overflow-hidden ${isActive ? 'z-[100]' : 'z-[50] opacity-90 shadow-none'} ${className} ${windowState !== 'floating' ? 'rounded-none border-0' : ''}`}
     >
       <div 
-        className={`h-10 ${isActive ? 'bg-[#181818]' : 'bg-[#121212]'} flex items-center justify-between select-none px-4 shrink-0 border-b border-white/5 cursor-grab active:cursor-grabbing transition-colors`}
+        className={`h-10 ${isHalloween ? (isActive ? 'bg-[#260f02]' : 'bg-[#180901]') : (isActive ? 'bg-[#181818]' : 'bg-[#121212]')} flex items-center justify-between select-none px-4 shrink-0 border-b ${isHalloween ? 'border-orange-500/20' : 'border-white/5'} cursor-grab active:cursor-grabbing transition-colors`}
         onDoubleClick={toggleMaximize}
         onPointerDown={startDrag}
         style={{ touchAction: 'none' }}
       >
-        <div className={`text-xs font-semibold ${isActive ? 'text-zinc-300' : 'text-zinc-500'} pointer-events-none z-10 relative`}>{title}</div>
+        <div className={`text-xs font-semibold flex items-center gap-2 ${isHalloween ? 'text-orange-300' : (isActive ? 'text-zinc-300' : 'text-zinc-500')} pointer-events-none z-10 relative`}>
+          {isHalloween && (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#ff7518" stroke="#2b1100" strokeWidth="1.5" className="animate-pulse">
+              <ellipse cx="12" cy="13" rx="8" ry="7" />
+              <path d="M12 4v3" stroke="#2e7d32" strokeWidth="2" strokeLinecap="round" fill="none" />
+              <polygon points="8,10 10,12 7,13" fill="#ffeb3b" />
+              <polygon points="16,10 17,13 14,12" fill="#ffeb3b" />
+            </svg>
+          )}
+          {title}
+        </div>
         <div className="flex items-center gap-1 z-10 relative">
           {onReload && (
-            <button onClick={onReload} onPointerDown={e => e.stopPropagation()} className="text-zinc-400 hover:bg-white/10 hover:text-white transition-colors p-1.5 rounded-sm" title="Reload">
+            <button onClick={onReload} onPointerDown={e => e.stopPropagation()} className={`${isHalloween ? 'text-orange-400 hover:bg-orange-500/20 hover:text-orange-200' : 'text-zinc-400 hover:bg-white/10 hover:text-white'} transition-colors p-1.5 rounded-sm`} title="Reload">
               <RefreshCw size={14} />
             </button>
           )}
-          <button onClick={onGuide} onPointerDown={e => e.stopPropagation()} className="text-zinc-400 hover:bg-white/10 hover:text-white transition-colors p-1.5 rounded-sm" title="Guide">
+          <button onClick={onGuide} onPointerDown={e => e.stopPropagation()} className={`${isHalloween ? 'text-orange-400 hover:bg-orange-500/20 hover:text-orange-200' : 'text-zinc-400 hover:bg-white/10 hover:text-white'} transition-colors p-1.5 rounded-sm`} title="Guide">
             <span className="font-bold text-sm">E</span>
           </button>
-          <button onClick={onMinimize} onPointerDown={e => e.stopPropagation()} className="text-zinc-400 hover:bg-white/10 hover:text-white transition-colors p-1.5 rounded-sm"><Minus size={16} /></button>
-          <button onClick={toggleMaximize} onPointerDown={e => e.stopPropagation()} className="text-zinc-400 hover:bg-white/10 hover:text-white transition-colors p-1.5 rounded-sm">
+          <button onClick={onMinimize} onPointerDown={e => e.stopPropagation()} className={`${isHalloween ? 'text-orange-400 hover:bg-orange-500/20 hover:text-orange-200' : 'text-zinc-400 hover:bg-white/10 hover:text-white'} transition-colors p-1.5 rounded-sm`}><Minus size={16} /></button>
+          <button onClick={toggleMaximize} onPointerDown={e => e.stopPropagation()} className={`${isHalloween ? 'text-orange-400 hover:bg-orange-500/20 hover:text-orange-200' : 'text-zinc-400 hover:bg-white/10 hover:text-white'} transition-colors p-1.5 rounded-sm`}>
             {windowState === 'maximized' ? <Copy size={14} /> : <Square size={14} />}
           </button>
-          <button onClick={onClose} className="text-zinc-400 hover:bg-red-500 hover:text-white transition-colors p-1.5 rounded-sm" onPointerDown={e => e.stopPropagation()}><X size={16} /></button>
+          <button onClick={onClose} className={`${isHalloween ? 'text-orange-400 hover:bg-red-600 hover:text-white' : 'text-zinc-400 hover:bg-red-500 hover:text-white'} transition-colors p-1.5 rounded-sm`} onPointerDown={e => e.stopPropagation()}><X size={16} /></button>
         </div>
       </div>
-      <div className={`flex-1 overflow-auto bg-[#202020] relative z-10 ${!isActive && 'pointer-events-none'}`}>
+      <div className={`flex-1 overflow-auto ${isHalloween ? 'bg-[#140b04]' : 'bg-[#202020]'} relative z-10 ${!isActive && 'pointer-events-none'}`}>
         <div className="w-full h-full relative">
           {(!isActive || isDragging) && <div className="absolute inset-0 z-50 bg-transparent" />}
           {children}
