@@ -130,6 +130,26 @@ export function Friends({ userProfile, onBack, onChat, onCall }: FriendsProps) {
     }
   };
 
+  const handleCallFriend = async (friendUid: string) => {
+    const callId = 'call_' + [userProfile.uid, friendUid].sort().join('_');
+    try {
+      await addDoc(collection(db, 'notifications'), {
+        toUid: friendUid,
+        fromUid: userProfile.uid,
+        fromGamertag: userProfile.gamertag,
+        fromAvatar: userProfile.avatar || '',
+        type: 'incoming_call',
+        callId: callId,
+        read: false,
+        createdAt: serverTimestamp()
+      });
+      onCall(friendUid);
+    } catch(e) {
+      console.error(e);
+      onCall(friendUid);
+    }
+  };
+
   const handleCreateGroupChat = async () => {
     if (!gcName.trim()) {
       alert("Please enter a group chat name");
@@ -269,7 +289,7 @@ export function Friends({ userProfile, onBack, onChat, onCall }: FriendsProps) {
                     {/* Action Buttons: Single Call + Chat */}
                     <div className="flex items-center gap-2">
                       <button 
-                        onClick={() => onCall(f.uid)} 
+                        onClick={() => handleCallFriend(f.uid)} 
                         className="bg-green-600 hover:bg-green-500 text-white p-2.5 rounded-full transition-all shadow-lg hover:scale-105"
                         title="Start Single Voice Call"
                       >
