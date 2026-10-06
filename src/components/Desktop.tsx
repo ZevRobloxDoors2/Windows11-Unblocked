@@ -748,13 +748,15 @@ export const Desktop = ({
             <Mic size={16} className="text-white" />
           </button>
           
-          <button
-            onClick={onOpenModerationPanel}
-            className="flex items-center gap-2 hover:bg-red-500/20 px-2 h-full rounded-md cursor-pointer transition-colors"
-            title="Moderation & Admin Panel"
-          >
-            <ShieldAlert size={16} className="text-red-500 animate-pulse" />
-          </button>
+          {(profile?.email === 'zaellacruze1@gmail.com' || profile?.role === 'staff' || profile?.role === 'owner') && (
+            <button
+              onClick={onOpenModerationPanel}
+              className="flex items-center gap-2 hover:bg-red-500/20 px-2 h-full rounded-md cursor-pointer transition-colors"
+              title="Moderation & Admin Panel"
+            >
+              <ShieldAlert size={16} className="text-red-500 animate-pulse" />
+            </button>
+          )}
           
           {/* Quick Settings Cluster */}
           <div 
