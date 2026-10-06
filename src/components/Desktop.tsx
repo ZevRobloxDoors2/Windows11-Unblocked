@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Bell, Settings as SettingsIcon, MessageSquare, Users, Store, Box, User, Activity, Image as ImageIcon, Mic, GraduationCap } from 'lucide-react';
+import { Search, Bell, Settings as SettingsIcon, MessageSquare, Users, Store, Box, User, Activity, Image as ImageIcon, Mic, GraduationCap, ShieldAlert } from 'lucide-react';
 import { ALL_GAMES } from '../games';
 import { UserProfile } from '../types';
 import { DesktopWidgets } from './DesktopWidgets';
@@ -22,7 +22,8 @@ export const Desktop = ({
   onMinimizeGame,
   notificationCount,
   onLogout,
-  onActivateDeadComputer
+  onActivateDeadComputer,
+  onOpenModerationPanel
 }: { 
   profile: UserProfile, 
   installedApps: string[],
@@ -40,7 +41,8 @@ export const Desktop = ({
   suspendedGames?: any[],
   notificationCount: number,
   onLogout: () => void,
-  onActivateDeadComputer?: () => void
+  onActivateDeadComputer?: () => void,
+  onOpenModerationPanel?: () => void
 }) => {
   const [startOpen, setStartOpen] = useState(false);
 
@@ -742,6 +744,14 @@ export const Desktop = ({
             title="Create/Join a Party"
           >
             <Mic size={16} className="text-white" />
+          </button>
+          
+          <button
+            onClick={onOpenModerationPanel}
+            className="flex items-center gap-2 hover:bg-red-500/20 px-2 h-full rounded-md cursor-pointer transition-colors"
+            title="Moderation & Admin Panel"
+          >
+            <ShieldAlert size={16} className="text-red-500 animate-pulse" />
           </button>
           
           {/* Quick Settings Cluster */}
