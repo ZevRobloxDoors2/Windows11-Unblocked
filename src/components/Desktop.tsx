@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Bell, Settings as SettingsIcon, MessageSquare, Users, Store, Box, User, Activity, Image as ImageIcon, Mic, GraduationCap, ShieldAlert } from 'lucide-react';
+import { Search, Bell, Settings as SettingsIcon, MessageSquare, Users, Store, Box, User, Activity, Image as ImageIcon, Mic, GraduationCap, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { ALL_GAMES } from '../games';
 import { UserProfile } from '../types';
 import { DesktopWidgets } from './DesktopWidgets';
@@ -23,7 +23,8 @@ export const Desktop = ({
   notificationCount,
   onLogout,
   onActivateDeadComputer,
-  onOpenModerationPanel
+  onOpenModerationPanel,
+  onOpenVerification
 }: { 
   profile: UserProfile, 
   installedApps: string[],
@@ -42,7 +43,8 @@ export const Desktop = ({
   notificationCount: number,
   onLogout: () => void,
   onActivateDeadComputer?: () => void,
-  onOpenModerationPanel?: () => void
+  onOpenModerationPanel?: () => void,
+  onOpenVerification?: () => void
 }) => {
   const [startOpen, setStartOpen] = useState(false);
 
@@ -767,7 +769,16 @@ export const Desktop = ({
           </div>
           
           {/* Time and Notifications */}
-          <div className="flex items-center gap-1 hover:bg-white/10 px-2 rounded-md cursor-pointer transition-colors h-full" onClick={() => setCurrentView('notifications')}>
+                     {/* Be Verified Button for Everyone */}
+           <button
+             onClick={onOpenVerification}
+             className="flex items-center gap-1.5 bg-[#00A4EF]/20 border border-[#00A4EF]/50 hover:bg-[#00A4EF]/30 px-2.5 h-7 rounded-lg text-xs font-semibold text-[#00A4EF] transition-colors cursor-pointer"
+             title="Apply for Verified Badge"
+           >
+             <ShieldCheck size={14} /> Be Verified
+           </button>
+
+           <div className="flex items-center gap-1 hover:bg-white/10 px-2 rounded-md cursor-pointer transition-colors h-full" onClick={() => setCurrentView('notifications')}>
             <div className="flex flex-col items-end justify-center px-1">
               <span className="text-[11px] font-medium text-white">{time}</span>
               <span className="text-[11px] text-white/80">{new Date().toLocaleDateString()}</span>

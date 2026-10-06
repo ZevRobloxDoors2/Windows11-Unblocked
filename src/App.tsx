@@ -31,6 +31,7 @@ import { ActivityFeed } from './components/ActivityFeed';
 import { GlobalSearch } from './components/GlobalSearch';
 import { Desktop } from './components/Desktop';
 import { ModerationPanel } from './components/ModerationPanel';
+import { VerificationModal } from './components/VerificationModal';
 import { Minus, Square, X } from 'lucide-react';
 import { Window } from './components/Window';
 import { AppIframe } from './components/AppIframe';
@@ -182,6 +183,7 @@ export default function App() {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [showModerationPanel, setShowModerationPanel] = useState(false);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
   const [userAuth, setUserAuth] = useState(auth.currentUser);
   const [authLoaded, setAuthLoaded] = useState(false);
   const [profileLoaded, setProfileLoaded] = useState(false);
