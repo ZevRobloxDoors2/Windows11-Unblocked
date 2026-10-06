@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ShieldAlert, Users, FileText, Activity, Megaphone, CheckCircle, 
   HelpCircle, Settings as SettingsIcon, BarChart3, X, Search, Ban, 
   UserCheck, Trash2, Check, AlertTriangle, RefreshCw, Send, Plus
 } from 'lucide-react';
+import { collection, onSnapshot, doc, updateDoc, deleteDoc, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db, auth } from '../firebase';
 
 interface ModerationPanelProps {
   onClose: () => void;
@@ -13,17 +15,30 @@ interface ModerationPanelProps {
 export const ModerationPanel: React.FC<ModerationPanelProps> = ({ onClose, userProfile }) => {
   const [activeTab, setActiveTab] = useState<'reports' | 'users' | 'appeals' | 'logs' | 'announcements' | 'verification' | 'suggestions' | 'settings' | 'analytics'>('reports');
 
-  // Dummy mock data for moderation management
+  // Real users from Firestore & local profiles
+  const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+
+  // Real-time listener for all signed-in users in Firestore
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, 'users'), (snapshot) => {
+      const usersData: any[] = [];
+      snapshot.forEach((docSnap) => {
+        usersData.push({ id: docSnap.id, ...docSnap.data() });
+      });
+      setAllUsers(usersData);
+      setLoadingUsers(false);
+    }, (error) => {
+      console.error("Error fetching users:", error);
+      setLoadingUsers(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   const [reports, setReports] = useState([
     { id: 'rep-1', type: 'Comment', submitter: 'user123', content: 'Inappropriate language in chat', status: 'Pending', time: '10 mins ago' },
     { id: 'rep-2', type: 'Account', submitter: 'gamer99', content: 'Suspicious bot activity / spamming', status: 'Pending', time: '1 hour ago' },
-  ]);
-
-  const [usersList, setUsersList] = useState([
-    { uid: 'u-1', username: 'jascen67', handle: '@jascen67', role: 'owner', verified: true, banned: false },
-    { uid: 'u-2', username: 'Sebastianthegoat61', handle: '@seb', role: 'staff', verified: true, banned: false },
-    { uid: 'u-3', username: 'gamedev99', handle: '@dev', role: 'user', verified: false, banned: false },
-    { uid: 'u-4', username: 'badactor', handle: '@troll', role: 'user', verified: false, banned: true, banReason: 'Harassment' },
   ]);
 
   const [appeals, setAppeals] = useState([
@@ -31,8 +46,7 @@ export const ModerationPanel: React.FC<ModerationPanelProps> = ({ onClose, userP
   ]);
 
   const [auditLogs, setAuditLogs] = useState([
-    { id: 'log-1', admin: 'jascen67', action: 'Promoted Sebastianthegoat61 to Staff', time: '2026-10-05 14:22' },
-    { id: 'log-2', admin: 'Sebastianthegoat61', action: 'Banned user badactor for Harassment', time: '2026-10-05 16:10' }
+    { id: 'log-1', admin: userProfile?.username || 'admin', action: 'Accessed Security & Moderation Panel', time: new Date().toLocaleString() }
   ]);
 
   const [announcements, setAnnouncements] = useState([
@@ -57,7 +71,80 @@ export const ModerationPanel: React.FC<ModerationPanelProps> = ({ onClose, userP
 
   const [userSearch, setUserSearch] = useState('');
 
-  const isStaffOrOwner = userProfile?.role === 'staff' || userProfile?.role === 'owner' || userProfile?.email?.includes('ownertest');
+  // Action helpers with Firestore persistence
+  const handleToggleBan = async (targetUserId: string, currentBannedStatus: boolean) => {
+    try {
+      const userDocRef = doc(db, 'users', targetUserId);
+      const newStatus = !currentBannedStatus;
+      const reason = newStatus ? prompt('Enter reason for ban:') || 'Violating community guidelines' : '';
+      
+      await updateDoc(userDocRef, {
+        banned: newStatus,
+        banReason: newStatus ? reason : null
+      });
+
+      setAuditLogs(prev => [
+        { id: `log-${Date.now()}`, admin: userProfile?.username || 'Staff', action: `${newStatus ? 'Banned' : 'Unbanned'} user ${targetUserId} (${reason})`, time: new Date().toLocaleString() },
+        ...prev
+      ]);
+    } catch (e) {
+      console.error("Error toggling ban:", e);
+      alert("Failed to update ban status in database.");
+    }
+  };
+
+  const handleForceRename = async (targetUserId: string, currentName: string) => {
+    const newName = prompt('Enter new username for user:', currentName);
+    if (!newName || newName.trim() === '') return;
+    try {
+      const userDocRef = doc(db, 'users', targetUserId);
+      await updateDoc(userDocRef, {
+        username: newName.trim(),
+        gamertagLower: newName.trim().toLowerCase()
+      });
+
+      setAuditLogs(prev => [
+        { id: `log-${Date.now()}`, admin: userProfile?.username || 'Staff', action: `Force-renamed user ${targetUserId} to ${newName}`, time: new Date().toLocaleString() },
+        ...prev
+      ]);
+    } catch (e) {
+      console.error("Error force-renaming user:", e);
+      alert("Failed to update username.");
+    }
+  };
+
+  const handleToggleVerification = async (targetUserId: string, currentVerifiedStatus: boolean) => {
+    try {
+      const userDocRef = doc(db, 'users', targetUserId);
+      const newStatus = !currentVerifiedStatus;
+      await updateDoc(userDocRef, {
+        verified: newStatus
+      });
+
+      setAuditLogs(prev => [
+        { id: `log-${Date.now()}`, admin: userProfile?.username || 'Staff', action: `${newStatus ? 'Granted' : 'Revoked'} verification for ${targetUserId}`, time: new Date().toLocaleString() },
+        ...prev
+      ]);
+    } catch (e) {
+      console.error("Error updating verification:", e);
+    }
+  };
+
+  const handleUpdateRole = async (targetUserId: string, newRole: string) => {
+    try {
+      const userDocRef = doc(db, 'users', targetUserId);
+      await updateDoc(userDocRef, {
+        role: newRole
+      });
+
+      setAuditLogs(prev => [
+        { id: `log-${Date.now()}`, admin: userProfile?.username || 'Staff', action: `Changed role of ${targetUserId} to ${newRole}`, time: new Date().toLocaleString() },
+        ...prev
+      ]);
+    } catch (e) {
+      console.error("Error updating role:", e);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-fadeIn">
@@ -76,7 +163,7 @@ export const ModerationPanel: React.FC<ModerationPanelProps> = ({ onClose, userP
                   {userProfile?.role || 'Staff / Owner'}
                 </span>
               </h2>
-              <p className="text-xs text-zinc-400">Complete platform governance, user management, audit trails & security controls</p>
+              <p className="text-xs text-zinc-400">Complete platform governance, user management for all registered accounts, audit trails & security controls</p>
             </div>
           </div>
           <button 
@@ -105,7 +192,7 @@ export const ModerationPanel: React.FC<ModerationPanelProps> = ({ onClose, userP
               onClick={() => setActiveTab('users')}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'users' ? 'bg-red-600/20 text-red-400 border border-red-500/30' : 'text-zinc-400 hover:bg-zinc-800/60 hover:text-white'}`}
             >
-              <Users size={18} /> Users & Bans
+              <Users size={18} /> All Users ({allUsers.length})
             </button>
 
             <button 
@@ -195,7 +282,10 @@ export const ModerationPanel: React.FC<ModerationPanelProps> = ({ onClose, userP
                             Dismiss
                           </button>
                           <button 
-                            onClick={() => setReports(reports.filter(r => r.id !== rep.id))}
+                            onClick={() => {
+                              setReports(reports.filter(r => r.id !== rep.id));
+                              setAuditLogs(prev => [{ id: `log-${Date.now()}`, admin: userProfile?.username || 'Staff', action: `Resolved report ${rep.id} and took action`, time: new Date().toLocaleString() }, ...prev]);
+                            }}
                             className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-xs font-medium rounded-lg text-white transition-colors flex items-center gap-1"
                           >
                             <Trash2 size={14} /> Delete & Penalize
@@ -208,19 +298,19 @@ export const ModerationPanel: React.FC<ModerationPanelProps> = ({ onClose, userP
               </div>
             )}
 
-            {/* 2. USERS TAB */}
+            {/* 2. USERS TAB (All Signed-In Accounts) */}
             {activeTab === 'users' && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-lg font-bold">User Management & Bans</h3>
-                    <p className="text-xs text-zinc-400">Inspect registered users, apply bans, force-rename, or grant verification badges.</p>
+                    <h3 className="text-lg font-bold">All Signed-In Users ({allUsers.length})</h3>
+                    <p className="text-xs text-zinc-400">Inspect every account that has ever signed into the site, apply bans, force-rename, or manage roles.</p>
                   </div>
                   <div className="relative w-64">
                     <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
                     <input 
                       type="text" 
-                      placeholder="Search users..." 
+                      placeholder="Search users by name/email..." 
                       value={userSearch}
                       onChange={(e) => setUserSearch(e.target.value)}
                       className="w-full bg-zinc-900 border border-zinc-800 rounded-xl pl-9 pr-4 py-2 text-xs text-white focus:outline-none focus:border-red-500"
@@ -229,61 +319,73 @@ export const ModerationPanel: React.FC<ModerationPanelProps> = ({ onClose, userP
                 </div>
 
                 <div className="border border-zinc-800 rounded-xl overflow-hidden bg-zinc-900/40">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="bg-zinc-900 text-zinc-400 border-b border-zinc-800">
-                        <th className="p-3">User</th>
-                        <th className="p-3">Handle</th>
-                        <th className="p-3">Role</th>
-                        <th className="p-3">Status</th>
-                        <th className="p-3 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-zinc-800/60">
-                      {usersList.filter(u => u.username.toLowerCase().includes(userSearch.toLowerCase())).map(u => (
-                        <tr key={u.uid} className="hover:bg-zinc-900/50 transition-colors">
-                          <td className="p-3 font-medium text-white flex items-center gap-2">
-                            {u.username}
-                            {u.verified && <span className="text-[#00A4EF] font-bold">✓</span>}
-                          </td>
-                          <td className="p-3 text-zinc-400">{u.handle}</td>
-                          <td className="p-3">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${u.role === 'owner' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : u.role === 'staff' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'bg-zinc-800 text-zinc-300'}`}>
-                              {u.role}
-                            </span>
-                          </td>
-                          <td className="p-3">
-                            {u.banned ? (
-                              <span className="px-2 py-0.5 bg-red-500/20 text-red-400 rounded text-[10px] font-semibold">Banned</span>
-                            ) : (
-                              <span className="px-2 py-0.5 bg-green-500/20 text-green-400 rounded text-[10px] font-semibold">Active</span>
-                            )}
-                          </td>
-                          <td className="p-3 text-right space-x-2">
-                            <button 
-                              onClick={() => {
-                                setUsersList(usersList.map(item => item.uid === u.uid ? {...item, banned: !item.banned} : item));
-                              }}
-                              className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors ${u.banned ? 'bg-green-600 hover:bg-green-500 text-white' : 'bg-red-600 hover:bg-red-500 text-white'}`}
-                            >
-                              {u.banned ? 'Unban' : 'Ban'}
-                            </button>
-                            <button 
-                              onClick={() => {
-                                const newName = prompt('Enter new username for user:', u.username);
-                                if (newName) {
-                                  setUsersList(usersList.map(item => item.uid === u.uid ? {...item, username: newName} : item));
-                                }
-                              }}
-                              className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 rounded text-[11px] font-medium text-zinc-300 transition-colors"
-                            >
-                              Rename
-                            </button>
-                          </td>
+                  {loadingUsers ? (
+                    <div className="p-8 text-center text-zinc-500">Loading registered users from database...</div>
+                  ) : allUsers.length === 0 ? (
+                    <div className="p-8 text-center text-zinc-500">No registered accounts found in database yet.</div>
+                  ) : (
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-zinc-900 text-zinc-400 border-b border-zinc-800">
+                          <th className="p-3">User / Gamertag</th>
+                          <th className="p-3">Email</th>
+                          <th className="p-3">Role</th>
+                          <th className="p-3">Status</th>
+                          <th className="p-3 text-right">Actions</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-800/60">
+                        {allUsers.filter(u => (u.username || '').toLowerCase().includes(userSearch.toLowerCase()) || (u.email || '').toLowerCase().includes(userSearch.toLowerCase())).map(u => (
+                          <tr key={u.id || u.uid} className="hover:bg-zinc-900/50 transition-colors">
+                            <td className="p-3 font-medium text-white flex items-center gap-2">
+                              {u.photoURL && <img src={u.photoURL} alt="" className="w-6 h-6 rounded-full object-cover" />}
+                              {u.username || 'Anonymous User'}
+                              {u.verified && <span className="text-[#00A4EF] font-bold" title="Verified">✓</span>}
+                            </td>
+                            <td className="p-3 text-zinc-400">{u.email || 'No email'}</td>
+                            <td className="p-3">
+                              <select 
+                                value={u.role || 'user'}
+                                onChange={(e) => handleUpdateRole(u.id || u.uid, e.target.value)}
+                                className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-[11px] text-white focus:outline-none"
+                              >
+                                <option value="user">User</option>
+                                <option value="staff">Staff</option>
+                                <option value="owner">Owner</option>
+                              </select>
+                            </td>
+                            <td className="p-3">
+                              {u.banned ? (
+                                <span className="px-2 py-0.5 bg-red-500/20 text-red-400 rounded text-[10px] font-semibold" title={u.banReason}>Banned</span>
+                              ) : (
+                                <span className="px-2 py-0.5 bg-green-500/20 text-green-400 rounded text-[10px] font-semibold">Active</span>
+                              )}
+                            </td>
+                            <td className="p-3 text-right space-x-2">
+                              <button 
+                                onClick={() => handleToggleBan(u.id || u.uid, !!u.banned)}
+                                className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors ${u.banned ? 'bg-green-600 hover:bg-green-500 text-white' : 'bg-red-600 hover:bg-red-500 text-white'}`}
+                              >
+                                {u.banned ? 'Unban' : 'Ban'}
+                              </button>
+                              <button 
+                                onClick={() => handleForceRename(u.id || u.uid, u.username || 'User')}
+                                className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 rounded text-[11px] font-medium text-zinc-300 transition-colors"
+                              >
+                                Rename
+                              </button>
+                              <button 
+                                onClick={() => handleToggleVerification(u.id || u.uid, !!u.verified)}
+                                className={`px-2.5 py-1 rounded text-[11px] font-medium transition-colors ${u.verified ? 'bg-yellow-600/20 text-yellow-400 border border-yellow-500/30' : 'bg-blue-600/20 text-blue-400 border border-blue-500/30'}`}
+                              >
+                                {u.verified ? 'Unverify' : 'Verify'}
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
               </div>
             )}
@@ -315,8 +417,8 @@ export const ModerationPanel: React.FC<ModerationPanelProps> = ({ onClose, userP
                           </button>
                           <button 
                             onClick={() => {
-                              setUsersList(usersList.map(u => u.username === app.username ? {...u, banned: false} : u));
                               setAppeals(appeals.filter(a => a.id !== app.id));
+                              setAuditLogs(prev => [{ id: `log-${Date.now()}`, admin: userProfile?.username || 'Staff', action: `Approved appeal for ${app.username}`, time: new Date().toLocaleString() }, ...prev]);
                             }}
                             className="px-3 py-1.5 bg-green-600 hover:bg-green-500 text-xs font-medium rounded-lg text-white transition-colors"
                           >
@@ -338,7 +440,7 @@ export const ModerationPanel: React.FC<ModerationPanelProps> = ({ onClose, userP
                   <p className="text-xs text-zinc-400">Complete security trail tracking staff and owner actions with timestamps.</p>
                 </div>
 
-                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3 font-mono text-xs">
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3 font-mono text-xs max-h-[500px] overflow-y-auto">
                   {auditLogs.map(log => (
                     <div key={log.id} className="p-3 bg-zinc-950 rounded-lg border border-zinc-800/80 flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -372,6 +474,7 @@ export const ModerationPanel: React.FC<ModerationPanelProps> = ({ onClose, userP
                     onClick={() => {
                       if (newAnnText.trim()) {
                         setAnnouncements([...announcements, { id: `ann-${Date.now()}`, text: newAnnText, color: 'orange', active: true }]);
+                        setAuditLogs(prev => [{ id: `log-${Date.now()}`, admin: userProfile?.username || 'Staff', action: `Broadcasted announcement: ${newAnnText}`, time: new Date().toLocaleString() }, ...prev]);
                         setNewAnnText('');
                       }
                     }}
@@ -430,8 +533,8 @@ export const ModerationPanel: React.FC<ModerationPanelProps> = ({ onClose, userP
                           </button>
                           <button 
                             onClick={() => {
-                              setUsersList(usersList.map(u => u.username === v.username ? {...u, verified: true} : u));
                               setVerifications(verifications.filter(item => item.id !== v.id));
+                              setAuditLogs(prev => [{ id: `log-${Date.now()}`, admin: userProfile?.username || 'Staff', action: `Approved verification for ${v.username}`, time: new Date().toLocaleString() }, ...prev]);
                             }}
                             className="px-3 py-1.5 bg-[#00A4EF] hover:bg-[#0090d4] text-xs font-semibold rounded-lg text-white"
                           >
@@ -490,7 +593,11 @@ export const ModerationPanel: React.FC<ModerationPanelProps> = ({ onClose, userP
                       <p className="text-xs text-zinc-400">Enable local storage caching for assets & app state</p>
                     </div>
                     <button 
-                      onClick={() => setSettingsToggles({...settingsToggles, cacheEnabled: !settingsToggles.cacheEnabled})}
+                      onClick={() => {
+                        const newVal = !settingsToggles.cacheEnabled;
+                        setSettingsToggles({...settingsToggles, cacheEnabled: newVal});
+                        setAuditLogs(prev => [{ id: `log-${Date.now()}`, admin: userProfile?.username || 'Staff', action: `Toggled Cache to ${newVal}`, time: new Date().toLocaleString() }, ...prev]);
+                      }}
                       className={`w-12 h-6 rounded-full transition-colors relative p-1 ${settingsToggles.cacheEnabled ? 'bg-green-600' : 'bg-zinc-700'}`}
                     >
                       <div className={`w-4 h-4 bg-white rounded-full transition-transform ${settingsToggles.cacheEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
@@ -503,7 +610,11 @@ export const ModerationPanel: React.FC<ModerationPanelProps> = ({ onClose, userP
                       <p className="text-xs text-zinc-400">Automatically rotate API service credentials</p>
                     </div>
                     <button 
-                      onClick={() => setSettingsToggles({...settingsToggles, apiKeyRotation: !settingsToggles.apiKeyRotation})}
+                      onClick={() => {
+                        const newVal = !settingsToggles.apiKeyRotation;
+                        setSettingsToggles({...settingsToggles, apiKeyRotation: newVal});
+                        setAuditLogs(prev => [{ id: `log-${Date.now()}`, admin: userProfile?.username || 'Staff', action: `Toggled API Key Rotation to ${newVal}`, time: new Date().toLocaleString() }, ...prev]);
+                      }}
                       className={`w-12 h-6 rounded-full transition-colors relative p-1 ${settingsToggles.apiKeyRotation ? 'bg-green-600' : 'bg-zinc-700'}`}
                     >
                       <div className={`w-4 h-4 bg-white rounded-full transition-transform ${settingsToggles.apiKeyRotation ? 'translate-x-6' : 'translate-x-0'}`} />
@@ -516,7 +627,11 @@ export const ModerationPanel: React.FC<ModerationPanelProps> = ({ onClose, userP
                       <p className="text-xs text-zinc-400">Simulate backend response failures for resilience testing</p>
                     </div>
                     <button 
-                      onClick={() => setSettingsToggles({...settingsToggles, serverCrashSim: !settingsToggles.serverCrashSim})}
+                      onClick={() => {
+                        const newVal = !settingsToggles.serverCrashSim;
+                        setSettingsToggles({...settingsToggles, serverCrashSim: newVal});
+                        setAuditLogs(prev => [{ id: `log-${Date.now()}`, admin: userProfile?.username || 'Staff', action: `Toggled Server Crash Simulation to ${newVal}`, time: new Date().toLocaleString() }, ...prev]);
+                      }}
                       className={`w-12 h-6 rounded-full transition-colors relative p-1 ${settingsToggles.serverCrashSim ? 'bg-red-600' : 'bg-zinc-700'}`}
                     >
                       <div className={`w-4 h-4 bg-white rounded-full transition-transform ${settingsToggles.serverCrashSim ? 'translate-x-6' : 'translate-x-0'}`} />
@@ -529,7 +644,11 @@ export const ModerationPanel: React.FC<ModerationPanelProps> = ({ onClose, userP
                       <p className="text-xs text-zinc-400">Lock site with maintenance banner</p>
                     </div>
                     <button 
-                      onClick={() => setSettingsToggles({...settingsToggles, maintenanceMode: !settingsToggles.maintenanceMode})}
+                      onClick={() => {
+                        const newVal = !settingsToggles.maintenanceMode;
+                        setSettingsToggles({...settingsToggles, maintenanceMode: newVal});
+                        setAuditLogs(prev => [{ id: `log-${Date.now()}`, admin: userProfile?.username || 'Staff', action: `Toggled Maintenance Mode to ${newVal}`, time: new Date().toLocaleString() }, ...prev]);
+                      }}
                       className={`w-12 h-6 rounded-full transition-colors relative p-1 ${settingsToggles.maintenanceMode ? 'bg-red-600' : 'bg-zinc-700'}`}
                     >
                       <div className={`w-4 h-4 bg-white rounded-full transition-transform ${settingsToggles.maintenanceMode ? 'translate-x-6' : 'translate-x-0'}`} />
@@ -550,8 +669,8 @@ export const ModerationPanel: React.FC<ModerationPanelProps> = ({ onClose, userP
                 <div className="grid grid-cols-3 gap-4">
                   <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-xl">
                     <span className="text-xs text-zinc-400">Total Registered Users</span>
-                    <h4 className="text-3xl font-bold text-white mt-1">1,482</h4>
-                    <span className="text-[11px] text-green-400 mt-2 inline-block">↑ 12% this week</span>
+                    <h4 className="text-3xl font-bold text-white mt-1">{allUsers.length}</h4>
+                    <span className="text-[11px] text-green-400 mt-2 inline-block">Live database count</span>
                   </div>
                   <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-xl">
                     <span className="text-xs text-zinc-400">Active Reports</span>
@@ -560,7 +679,9 @@ export const ModerationPanel: React.FC<ModerationPanelProps> = ({ onClose, userP
                   </div>
                   <div className="p-5 bg-zinc-900 border border-zinc-800 rounded-xl">
                     <span className="text-xs text-zinc-400">Staff / Owner Ratio</span>
-                    <h4 className="text-3xl font-bold text-blue-400 mt-1">2 / 1</h4>
+                    <h4 className="text-3xl font-bold text-blue-400 mt-1">
+                      {allUsers.filter(u => u.role === 'staff' || u.role === 'owner').length} / {allUsers.filter(u => u.role === 'owner').length || 1}
+                    </h4>
                     <span className="text-[11px] text-blue-400 mt-2 inline-block">Fully operational</span>
                   </div>
                 </div>
