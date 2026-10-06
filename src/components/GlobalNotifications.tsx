@@ -148,7 +148,7 @@ export function GlobalNotifications({ profile, playingGame, activeChatId, onNavi
       </AnimatePresence>
 
       {/* Standard Notification Toasts */}
-      <div className="fixed bottom-16 right-4 z-[500] flex flex-col items-end gap-2 pointer-events-none">
+      <div className="fixed bottom-16 right-4 z-[999999] flex flex-col items-end gap-2 pointer-events-none">
         <AnimatePresence>
           {activeToasts.map(toast => (
             <motion.div
