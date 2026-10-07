@@ -141,7 +141,7 @@ export const Desktop = ({
   const [contextMenu, setContextMenu] = useState<{x: number, y: number} | null>(null);
   const [isHalloween, setIsHalloween] = useState(() => localStorage.getItem('halloween_theme') === 'true');
   const [bgImage, setBgImage] = useState(() => localStorage.getItem('win11_bg') || 'https://images.unsplash.com/photo-1622737133809-d95047b9e673?auto=format&fit=crop&w=2000&q=80');
-  const halloweenBg = 'https://images.unsplash.com/photo-1508385082359-f38ae991e8f2?auto=format&fit=crop&w=2000&q=80';
+  const halloweenBg = '/minecraft_halloween.jpg';
   const currentBg = isHalloween ? halloweenBg : bgImage;
 
   useEffect(() => {
