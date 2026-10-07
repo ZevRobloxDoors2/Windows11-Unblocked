@@ -5,7 +5,7 @@ import {
   Battery, BatteryCharging, BatteryFull, BatteryLow, BatteryMedium, ChevronDown
 , Zap, Play } from 'lucide-react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { doc, onSnapshot, updateDoc, serverTimestamp, collection, query, where, increment, addDoc } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, serverTimestamp, collection, query, where, increment, addDoc, setDoc } from 'firebase/firestore';
 
 import { auth, db } from './firebase';
 import { UserProfile } from './types';
@@ -568,11 +568,30 @@ export default function App() {
       setProfileLoaded(true);
       return;
     }
-    const unsub = onSnapshot(doc(db, 'users', userAuth.uid), (docSnap) => {
+    const unsub = onSnapshot(doc(db, 'users', userAuth.uid), async (docSnap) => {
       if (docSnap.exists()) {
         setProfile(docSnap.data() as UserProfile);
       } else {
-        setProfile(null);
+        // Fallback default profile if document doesn't exist yet
+        const defaultProfile: UserProfile = {
+          uid: userAuth.uid,
+          email: userAuth.email || '',
+          gamertag: userAuth.email ? userAuth.email.split('@')[0] : 'Player',
+          gamertagLower: userAuth.email ? userAuth.email.split('@')[0].toLowerCase() : 'player',
+          avatar: userAuth.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userAuth.uid}`,
+          status: 'Online',
+          score: 0,
+          homeTheme: 'default',
+          recentGames: [],
+          lastTrophyAt: new Date().toISOString(),
+          role: userAuth.email === 'zaellacruze1@gmail.com' ? 'owner' : 'user'
+        };
+        try {
+          await setDoc(doc(db, 'users', userAuth.uid), defaultProfile, { merge: true });
+        } catch (e) {
+          console.warn("Could not create fallback profile:", e);
+        }
+        setProfile(defaultProfile);
       }
       setProfileLoaded(true);
     }, () => {
