@@ -588,7 +588,13 @@ export default function App() {
     // Set immediate fallback profile so UI never shows black screen
     setProfile(defaultProfile);
 
+    // Fallback timer to prevent black screen if network / firestore hangs
+    const timer = setTimeout(() => {
+      setProfileLoaded(true);
+    }, 2000);
+
     const unsub = onSnapshot(doc(db, 'users', userAuth.uid), async (docSnap) => {
+      clearTimeout(timer);
       if (docSnap.exists()) {
         setProfile(docSnap.data() as UserProfile);
       } else {
@@ -603,10 +609,11 @@ export default function App() {
       }
       setProfileLoaded(true);
     }, (err) => {
+      clearTimeout(timer);
       console.warn("Snapshot error:", err);
       setProfileLoaded(true);
     });
-    return () => unsub();
+    return () => { clearTimeout(timer); unsub(); };
   }, [userAuth]);
 
   useEffect(() => {
