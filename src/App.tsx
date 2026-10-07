@@ -568,33 +568,39 @@ export default function App() {
       setProfileLoaded(true);
       return;
     }
+    const defaultProfile: UserProfile = {
+      uid: userAuth.uid,
+      email: userAuth.email || '',
+      gamertag: userAuth.email ? userAuth.email.split('@')[0] : 'Player',
+      gamertagLower: userAuth.email ? userAuth.email.split('@')[0].toLowerCase() : 'player',
+      avatar: userAuth.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userAuth.uid}`,
+      status: 'Online',
+      score: 0,
+      homeTheme: 'default',
+      recentGames: [],
+      lastTrophyAt: new Date().toISOString(),
+      role: userAuth.email === 'zaellacruze1@gmail.com' ? 'owner' : 'user'
+    };
+
+    // Set immediate fallback profile so UI never shows black screen
+    setProfile(defaultProfile);
+
     const unsub = onSnapshot(doc(db, 'users', userAuth.uid), async (docSnap) => {
       if (docSnap.exists()) {
         setProfile(docSnap.data() as UserProfile);
       } else {
-        // Fallback default profile if document doesn't exist yet
-        const defaultProfile: UserProfile = {
-          uid: userAuth.uid,
-          email: userAuth.email || '',
-          gamertag: userAuth.email ? userAuth.email.split('@')[0] : 'Player',
-          gamertagLower: userAuth.email ? userAuth.email.split('@')[0].toLowerCase() : 'player',
-          avatar: userAuth.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userAuth.uid}`,
-          status: 'Online',
-          score: 0,
-          homeTheme: 'default',
-          recentGames: [],
-          lastTrophyAt: new Date().toISOString(),
-          role: userAuth.email === 'zaellacruze1@gmail.com' ? 'owner' : 'user'
-        };
         try {
-          await setDoc(doc(db, 'users', userAuth.uid), defaultProfile, { merge: true });
+          await setDoc(doc(db, 'users', userAuth.uid), {
+            ...defaultProfile,
+            lastTrophyAt: serverTimestamp()
+          }, { merge: true });
         } catch (e) {
           console.warn("Could not create fallback profile:", e);
         }
-        setProfile(defaultProfile);
       }
       setProfileLoaded(true);
-    }, () => {
+    }, (err) => {
+      console.warn("Snapshot error:", err);
       setProfileLoaded(true);
     });
     return () => unsub();
@@ -693,11 +699,21 @@ export default function App() {
   }
 
   if (!isGuestMode && (userAuth && !profileLoaded)) {
-    return <div className="min-h-screen bg-black flex items-center justify-center text-white"><div className="w-8 h-8 border-4 border-zinc-800 border-t-green-500 rounded-full animate-spin"></div></div>;
+    return (
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white gap-4">
+        <div className="w-8 h-8 border-4 border-zinc-800 border-t-green-500 rounded-full animate-spin"></div>
+        <div className="text-sm text-zinc-400 font-mono">Loading profile data...</div>
+      </div>
+    );
   }
   
   if (!isGuestMode && (!userAuth || !profile)) {
-    return null;
+    return (
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white gap-4">
+        <div className="w-8 h-8 border-4 border-zinc-800 border-t-green-500 rounded-full animate-spin"></div>
+        <div className="text-sm text-zinc-400 font-mono">Connecting session...</div>
+      </div>
+    );
   }
 
   const handleLogout = () => {
