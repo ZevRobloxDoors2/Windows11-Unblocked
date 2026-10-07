@@ -276,6 +276,7 @@ export default function App() {
   }, []);
   
   const [activePartyId, setActivePartyId] = useState<string | undefined>(undefined);
+  const [targetCallFriend, setTargetCallFriend] = useState<{ uid: string, gamertag: string } | undefined>(undefined);
   const [chatConfig, setChatConfig] = useState<{id: string, name: string, isGroup: boolean} | null>(null);
   const [showInstallModal, setShowInstallModal] = useState(() => !localStorage.getItem('pwa_prompt_dismissed'));
   
@@ -1009,9 +1010,9 @@ export default function App() {
                 {view === 'store' && <WinStore installedApps={installedApps} onInstall={handleInstallApp} onPlay={handlePlayGame} />}
                 {view === 'profile' && <Profile userProfile={activeProfile as any} onBack={() => handleSetCurrentView('home')} />}
                 {view === 'settings' && <SettingsView profile={activeProfile as any} onBack={() => handleSetCurrentView('home')} onLogout={handleLogout} isGuestMode={isGuestMode} />}
-                {view === 'friends' && <Friends userProfile={activeProfile as any} onBack={() => handleSetCurrentView('home')} onChat={(id, name, isGroup) => { setChatConfig({id, name, isGroup: !!isGroup}); handleSetCurrentView('chat'); }} onCall={(friendUid) => { const callId = 'call_' + [activeProfile.uid, friendUid].sort().join('_'); setActivePartyId(callId); setCurrentView('party'); }} />}
+                {view === 'friends' && <Friends userProfile={activeProfile as any} onBack={() => handleSetCurrentView('home')} onChat={(id, name, isGroup) => { setChatConfig({id, name, isGroup: !!isGroup}); handleSetCurrentView('chat'); }} onCall={(friendUid, friendGamertag) => { const callId = 'call_' + [activeProfile.uid, friendUid].sort().join('_'); setActivePartyId(callId); setTargetCallFriend({ uid: friendUid, gamertag: friendGamertag }); setCurrentView('party'); }} />}
                 {view === 'chat' && (chatConfig ? <Chat userProfile={activeProfile as any} friendId={!chatConfig.isGroup ? chatConfig.id : undefined} friendGamertag={!chatConfig.isGroup ? chatConfig.name : undefined} chatId={chatConfig.isGroup ? chatConfig.id : undefined} isGroup={chatConfig.isGroup} chatName={chatConfig.isGroup ? chatConfig.name : undefined} onBack={() => handleSetCurrentView('friends')} /> : <div className="flex h-full items-center justify-center text-zinc-400 flex-col gap-4"><div>Select a friend to start chatting</div><button onClick={() => handleSetCurrentView('friends')} className="px-4 py-2 bg-[#00A4EF] text-white rounded">Open Friends</button></div>)}
-                {view === 'party' && <Party profile={activeProfile as any} initialPartyId={activePartyId} onBack={() => { setActivePartyId(undefined); handleSetCurrentView('home'); }} />}
+                {view === 'party' && <Party profile={activeProfile as any} initialPartyId={activePartyId} targetFriend={targetCallFriend} onBack={() => { setActivePartyId(undefined); setTargetCallFriend(undefined); handleSetCurrentView('home'); }} />}
                 {view === 'notifications' && <Notifications userProfile={activeProfile as any} onBack={() => handleSetCurrentView('home')} />}
                 {view === 'activity' && <ActivityFeed profile={activeProfile as any} />}
                 {view === 'local-share' && <LocalShare profile={activeProfile as any} />}

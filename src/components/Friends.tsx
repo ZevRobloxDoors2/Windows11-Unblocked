@@ -10,7 +10,7 @@ interface FriendsProps {
   userProfile: UserProfile;
   onBack: () => void;
   onChat: (id: string, name: string, isGroup?: boolean) => void;
-  onCall: (friendUid: string) => void;
+  onCall: (friendUid: string, friendGamertag: string) => void;
 }
 
 const fuzzyMatch = (searchTerm: string, target: string): boolean => {
@@ -182,7 +182,7 @@ export function Friends({ userProfile, onBack, onChat, onCall }: FriendsProps) {
     }
   };
 
-  const handleCallFriend = async (friendUid: string) => {
+  const handleCallFriend = async (friendUid: string, friendGamertag: string) => {
     const callId = 'call_' + [userProfile.uid, friendUid].sort().join('_');
     try {
       await addDoc(collection(db, 'notifications'), {
@@ -195,10 +195,10 @@ export function Friends({ userProfile, onBack, onChat, onCall }: FriendsProps) {
         read: false,
         createdAt: serverTimestamp()
       });
-      onCall(friendUid);
+      onCall(friendUid, friendGamertag);
     } catch(e) {
       console.error(e);
-      onCall(friendUid);
+      onCall(friendUid, friendGamertag);
     }
   };
 
@@ -346,7 +346,7 @@ export function Friends({ userProfile, onBack, onChat, onCall }: FriendsProps) {
                     {/* Action Buttons: Single Call + Chat */}
                     <div className="flex items-center gap-2">
                       <button 
-                        onClick={() => handleCallFriend(f.uid)} 
+                        onClick={() => handleCallFriend(f.uid, f.gamertag)} 
                         className="bg-green-600 hover:bg-green-500 text-white p-2.5 rounded-full transition-all shadow-lg hover:scale-105"
                         title="Start Single Voice Call"
                       >

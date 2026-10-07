@@ -739,13 +739,13 @@ export const Desktop = ({
             <GraduationCap size={16} className="text-white" />
           </button>
           
-          {/* Microphone Icon for Party */}
+          {/* Chat Logo for Friends */}
           <button
-            onClick={() => setCurrentView('party')}
+            onClick={() => setCurrentView('friends')}
             className="flex items-center gap-2 hover:bg-white/10 px-2 h-full rounded-md cursor-pointer transition-colors"
-            title="Create/Join a Party"
+            title="Friends & Chat"
           >
-            <Mic size={16} className="text-white" />
+            <MessageSquare size={16} className="text-white" />
           </button>
           
           {(profile?.email === 'zaellacruze1@gmail.com' || profile?.role === 'staff' || profile?.role === 'owner') && (

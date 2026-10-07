@@ -20,7 +20,7 @@ const RINGTONE_PRESETS = [
   { id: 'digital', name: 'Digital Beep' },
 ];
 
-export const Party: React.FC<{ profile: any, onBack: () => void, initialPartyId?: string }> = ({ profile, onBack, initialPartyId }) => {
+export const Party: React.FC<{ profile: any, onBack: () => void, initialPartyId?: string, targetFriend?: { uid: string, gamertag: string } }> = ({ profile, onBack, initialPartyId, targetFriend }) => {
   const [partyId] = useState(initialPartyId || Math.random().toString(36).substring(2, 9));
   const [partyMembers, setPartyMembers] = useState<any[]>([]);
   const [isMuted, setIsMuted] = useState(false);
@@ -32,6 +32,17 @@ export const Party: React.FC<{ profile: any, onBack: () => void, initialPartyId?
   const [friendsList, setFriendsList] = useState<any[]>([]);
   const [micError, setMicError] = useState('');
   const [speakingPeers, setSpeakingPeers] = useState<Record<string, boolean>>({});
+
+  // Outgoing call ringing loop
+  useEffect(() => {
+    if (targetFriend && !inParty) {
+      const interval = setInterval(() => {
+        playRingtoneSample(selectedRingtone, customRingtoneUrl);
+      }, 3500);
+      playRingtoneSample(selectedRingtone, customRingtoneUrl);
+      return () => clearInterval(interval);
+    }
+  }, [targetFriend, inParty]);
 
   // Discord Call Video & Screen Share states
   const [isVideoOn, setIsVideoOn] = useState(false);
@@ -407,6 +418,34 @@ export const Party: React.FC<{ profile: any, onBack: () => void, initialPartyId?
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        ) : targetFriend ? (
+          <div className="flex flex-col items-center justify-center gap-6 text-center max-w-md">
+            <div className="relative">
+              <div className="w-28 h-28 rounded-full bg-zinc-800 border-4 border-green-500/80 flex items-center justify-center text-white text-3xl font-bold shadow-[0_0_40px_rgba(34,197,94,0.4)] animate-pulse">
+                {targetFriend.gamertag.charAt(0).toUpperCase()}
+              </div>
+              <div className="absolute inset-0 rounded-full border-4 border-green-500 animate-ping opacity-25 pointer-events-none" />
+            </div>
+            <div>
+              <h3 className="text-3xl font-bold mb-2">Calling {targetFriend.gamertag}...</h3>
+              <p className="text-sm text-zinc-400 leading-relaxed">Ringing... Waiting for them to join the call.</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={joinParty} 
+                className="px-6 py-3.5 rounded-2xl font-bold text-sm bg-green-600 hover:bg-green-500 text-white transition-all shadow-xl shadow-green-900/40 hover:scale-105"
+              >
+                Join Call Room
+              </button>
+              <button 
+                onClick={onBack} 
+                className="px-6 py-3.5 rounded-2xl font-bold text-sm bg-red-600 hover:bg-red-500 text-white transition-all shadow-xl shadow-red-900/40 hover:scale-105 flex items-center gap-2"
+              >
+                <PhoneOff size={18} />
+                <span>Cancel Call</span>
+              </button>
             </div>
           </div>
         ) : (
