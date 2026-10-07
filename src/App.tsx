@@ -686,7 +686,7 @@ export default function App() {
     );
   }
 
-  if (!isGuestMode && !activeSessionConfirmed) {
+  if (!isGuestMode && (!userAuth || !activeSessionConfirmed)) {
     return (
       <>
         <AuthFlow onConfirm={() => setActiveSessionConfirmed(true)} />
@@ -698,20 +698,11 @@ export default function App() {
     );
   }
 
-  if (!isGuestMode && (userAuth && !profileLoaded)) {
+  if (!isGuestMode && userAuth && !profileLoaded) {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white gap-4">
         <div className="w-8 h-8 border-4 border-zinc-800 border-t-green-500 rounded-full animate-spin"></div>
         <div className="text-sm text-zinc-400 font-mono">Loading profile data...</div>
-      </div>
-    );
-  }
-  
-  if (!isGuestMode && (!userAuth || !profile)) {
-    return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white gap-4">
-        <div className="w-8 h-8 border-4 border-zinc-800 border-t-green-500 rounded-full animate-spin"></div>
-        <div className="text-sm text-zinc-400 font-mono">Connecting session...</div>
       </div>
     );
   }
