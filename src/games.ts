@@ -1,19 +1,32 @@
-export const DEFAULT_PROXY_BASE = "https://error404.n43.pw";
+export const UV_PROXY_BASE = "https://error404.n43.pw";
+export const SCRAMJET_PROXY_BASE = "https://scramjet.n43.pw";
+export const DEFAULT_PROXY_BASE = UV_PROXY_BASE;
 
 export function getProxyBase() {
-    return localStorage.getItem('proxy_base') || DEFAULT_PROXY_BASE;
+    const saved = localStorage.getItem('proxy_base');
+    return saved || DEFAULT_PROXY_BASE;
+}
+
+export function getProxyType(baseUrl: string = getProxyBase()) {
+    return baseUrl.includes('scramjet') ? 'scramjet' : 'uv';
 }
 
 function getProxiedUrl(targetUrl: string): string {
     if (!targetUrl) return "";
-    
-    const encoded = targetUrl
-        .toString()
+
+    const baseUrl = getProxyBase();
+    const cleanTarget = targetUrl.toString();
+
+    if (getProxyType(baseUrl) === 'scramjet') {
+        return `${baseUrl}/?q=${encodeURIComponent(cleanTarget)}`;
+    }
+
+    const encoded = cleanTarget
         .split('')
         .map((char, ind) => (ind % 2 ? String.fromCharCode(char.charCodeAt(0) ^ 2) : char))
         .join('');
-        
-    return `${getProxyBase()}/service/${encodeURIComponent(encoded)}`;
+
+    return `${baseUrl}/service/${encodeURIComponent(encoded)}`;
 }
 
 export const ALL_GAMES = [
@@ -34,6 +47,20 @@ export const ALL_GAMES = [
     "title": "System Update",
     "image": "https://upload.wikimedia.org/wikipedia/commons/e/e4/Windows_11_logo.svg",
     "type": "app"
+  },
+  {
+    "id": "win-music",
+    "title": "Win Music",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/2/22/Notepad_Windows_11.svg",
+    "type": "app",
+    "file": "Apps/Win Music.html"
+  },
+  {
+    "id": "win-flix",
+    "title": "WinFlix",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/6/69/Film_icon.svg",
+    "type": "app",
+    "file": "Apps/WinFlix.html"
   },
   {
     "id": "1v1 LOL",

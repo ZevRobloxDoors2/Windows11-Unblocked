@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { X, Server, Activity, Plus, Trash2 } from 'lucide-react';
-import { getProxyBase, DEFAULT_PROXY_BASE } from '../games';
+import { getProxyBase, DEFAULT_PROXY_BASE, UV_PROXY_BASE, SCRAMJET_PROXY_BASE } from '../games';
 
 interface ProxyOption {
   url: string;
@@ -10,11 +10,12 @@ interface ProxyOption {
 }
 
 export const PROXY_OPTIONS: ProxyOption[] = [
+  { url: UV_PROXY_BASE, label: "UV Proxy (Default)" },
+  { url: SCRAMJET_PROXY_BASE, label: "Scramjet Proxy" },
   { url: "https://incog.dev", label: "Incognito Proxy (Incog)" },
   { url: "https://maths.tbg95.co", label: "TBG95 Math Proxy" },
   { url: "https://uv.student-portal.lol", label: "Student Portal UV" },
-  { url: "https://error404.n43.pw", label: "n43.pw Error404" },
-  { url: "https://n43.pw", label: "n43.pw Main" }
+  { url: "https://error404.n43.pw", label: "n43.pw Error404" }
 ];
 
 export function ProxyManagerModal({ onClose }: { onClose: () => void }) {

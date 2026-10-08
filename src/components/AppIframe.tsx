@@ -15,7 +15,7 @@ export const AppIframe: React.FC<AppIframeProps> = ({ src, isActive, onLoadStart
   const [showError, setShowError] = useState(false);
   const [hasUsedFallback, setHasUsedFallback] = useState(false);
   
-  const isProxied = src.includes('/service/') || src.includes('error404.n43.pw');
+  const isProxied = src.includes('/service/') || src.includes('error404.n43.pw') || src.includes('scramjet') || src.includes('n43.pw') || src.includes('?q=');
   const [showProxyWarning, setShowProxyWarning] = useState(isProxied);
   const [showContinue, setShowContinue] = useState(false);
   

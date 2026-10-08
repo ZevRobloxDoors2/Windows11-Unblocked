@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Echo Flix - Ultimate Streaming</title>
+  <title>WinFlix - Ultimate Streaming</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
@@ -680,6 +680,80 @@
     .retry-btn { background: var(--primary); color: white; border: none; padding: 12px 32px; border-radius: 6px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
     .retry-btn:hover { background: var(--primary-dark); }
 
+    /* Mini Player Styling */
+    .mini-player {
+      position: fixed;
+      top: 84px;
+      left: 24px;
+      width: 340px;
+      aspect-ratio: 16/9;
+      background: rgba(15, 15, 25, 0.7);
+      backdrop-filter: blur(25px) saturate(200%);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6), 0 0 30px rgba(99, 102, 241, 0.15);
+      z-index: 10000;
+      overflow: hidden;
+      display: none;
+      flex-direction: column;
+      animation: miniGlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    @keyframes miniGlideIn {
+      from { transform: translate(-50vw, -50vh) scale(1.5); opacity: 0; filter: blur(20px); }
+      to { transform: translate(0, 0) scale(1); opacity: 1; filter: blur(0); }
+    }
+    .mini-player:hover { border-color: var(--primary); box-shadow: 0 40px 80px -12px rgba(0, 0, 0, 0.7), 0 0 40px rgba(99, 102, 241, 0.3); }
+    .mini-player.show { display: flex; }
+    .mini-player-header {
+      padding: 10px 14px;
+      background: rgba(255, 255, 255, 0.03);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: move;
+      user-select: none;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .mini-player-title { font-size: 10px; font-weight: 700; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; text-transform: uppercase; letter-spacing: 1.5px; }
+    .mini-player-controls { display: flex; gap: 6px; }
+    .mini-btn { 
+      width: 26px; 
+      height: 26px; 
+      border-radius: 8px; 
+      background: rgba(255, 255, 255, 0.05); 
+      border: 1px solid rgba(255, 255, 255, 0.1); 
+      color: white; 
+      cursor: pointer; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      font-size: 12px; 
+      transition: all 0.2s; 
+    }
+    .mini-btn:hover { background: var(--primary); border-color: var(--primary-light); transform: scale(1.1); box-shadow: 0 0 10px var(--primary-glow); }
+    .mini-btn.close:hover { background: var(--danger); border-color: #fca5a5; }
+
+    .paused-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: var(--danger);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      animation: badgePulse 2s infinite;
+    }
+    @keyframes badgePulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(0.95); } }
+    .continue-card { border-color: var(--primary) !important; box-shadow: 0 0 25px rgba(99, 102, 241, 0.3) !important; }
+
     @media (max-width: 1024px) { .sidebar { width: 320px; } .movie-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); } }
     @media (max-width: 768px) {
       .navbar { padding: 0 16px; height: 64px; }
@@ -795,6 +869,13 @@
 
   <!-- Content -->
   <div class="content">
+    <div id="continueWatchingSection" style="display: none; margin-bottom: 40px;">
+      <div class="section-header">
+        <h2 class="section-title">Continue Watching</h2>
+      </div>
+      <div class="movie-grid" id="continueGrid" style="grid-template-columns: repeat(auto-fill, minmax(180px, 250px));"></div>
+    </div>
+
     <div class="section-header">
       <h2 class="section-title" id="sectionTitle">Trending Now</h2>
       <span class="see-all">See all →</span>
@@ -824,13 +905,19 @@
           <div class="unblock-indicator secure" id="unblockIndicator">
             <span>🔒</span> Secure Stream
           </div>
-          <button class="close-btn" id="closeModal">×</button>
+          <button class="icon-btn" onclick="toggleMiniPlayer()" title="Mini Player" style="width: 36px; height: 36px; border-radius: 50%;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><rect x="13" y="13" width="5" height="5" rx="1" ry="1"/></svg>
+          </button>
+          <button class="btn btn-danger" id="closeModal" style="padding: 8px 20px; font-size: 13px; height: 40px; background: var(--danger); color: white; border: none; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            Exit
+          </button>
         </div>
       </div>
       
       <div class="modal-body">
         <div class="video-area">
-          <iframe id="videoFrame" allowfullscreen allow="fullscreen; autoplay; encrypted-media; picture-in-picture; clipboard-write" sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-top-navigation allow-popups-to-escape-sandbox"></iframe>
+          <iframe id="videoFrame" allowfullscreen allow="fullscreen; autoplay; encrypted-media; picture-in-picture; clipboard-write"></iframe>
           
           <div class="video-placeholder" id="videoPlaceholder">
             <div class="spinner"></div>
@@ -925,6 +1012,20 @@
     </div>
   </div>
 
+  <!-- Mini Player Container -->
+  <div class="mini-player" id="miniPlayer">
+    <div class="mini-player-header" id="miniPlayerHeader">
+      <span class="mini-player-title" id="miniTitle">AuraFlix Mini</span>
+      <div class="mini-player-controls">
+        <button class="mini-btn" onclick="toggleFullscreenMini()" title="Toggle Fullscreen">⛶</button>
+        <button class="mini-btn" onclick="nextServerFromMini()" title="Next Server">⏭</button>
+        <button class="mini-btn" onclick="restoreFromMini()" title="Restore Content">⤴</button>
+        <button class="mini-btn close" onclick="closeMiniPlayer()" title="Close Player">×</button>
+      </div>
+    </div>
+    <div style="flex: 1; background: #000;" id="miniVideoContainer"></div>
+  </div>
+
   <script>
     // ==========================================
     // GLOBAL FUNCTIONS (Must be defined before DOMContentLoaded)
@@ -990,12 +1091,29 @@
       retryCount: 0,
       lastLoadTime: 0,
       isLoading: false,
+      timer: null,
+
+      startLoadTimer() {
+        clearTimeout(this.timer);
+        this.timer = setTimeout(() => {
+          const placeholder = document.getElementById('videoPlaceholder');
+          if (placeholder) placeholder.style.display = 'none';
+        }, CONFIG.LOAD_TIMEOUT);
+      },
+
+      handleLoadFailure(msg) {
+        this.isLoading = false;
+        this.showError(msg);
+      },
       
       methods: {
         direct(url) {
           const frame = document.getElementById('videoFrame');
           frame.src = 'about:blank';
-          setTimeout(() => { frame.src = url; UnblockEngine.startLoadTimer(); }, 50);
+          setTimeout(() => { 
+            frame.src = url; 
+            UnblockEngine.startLoadTimer(); 
+          }, 50);
           return true;
         },
 
@@ -1004,19 +1122,8 @@
           frame.src = 'about:blank';
           
           const html = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
-    iframe { width: 100%; height: 100%; border: none; }
-  </style>
-</head>
-<body>
-  <iframe src="${url}" allowfullscreen allow="fullscreen; autoplay; encrypted-media; picture-in-picture; clipboard-write" sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-top-navigation allow-popups-to-escape-sandbox"></iframe>
-</body>
-</html>`;
+<html><head><meta charset="UTF-8"><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;}iframe{width:100%;height:100%;border:none;}</style></head>
+<body><iframe src="${url}" allowfullscreen allow="fullscreen; autoplay; encrypted-media; picture-in-picture; clipboard-write"></iframe></body></html>`;
           
           setTimeout(() => {
             try {
@@ -1026,7 +1133,7 @@
               UnblockEngine.startLoadTimer();
             } catch(e) {
               console.error('about:blank write failed:', e);
-              UnblockEngine.handleLoadFailure('about:blank blocked');
+              UnblockEngine.handleLoadFailure('Stream blocked');
             }
           }, 100);
           return true;
@@ -1035,18 +1142,8 @@
         datauri(url) {
           const frame = document.getElementById('videoFrame');
           const html = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <style>
-    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
-    iframe { width: 100%; height: 100%; border: none; }
-  </style>
-</head>
-<body>
-  <iframe src="${url}" allowfullscreen allow="fullscreen; autoplay; encrypted-media; picture-in-picture; clipboard-write" sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-top-navigation allow-popups-to-escape-sandbox"></iframe>
-</body>
-</html>`;
+<html><head><meta charset="UTF-8"><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;}iframe{width:100%;height:100%;border:none;}</style></head>
+<body><iframe src="${url}" allowfullscreen allow="fullscreen; autoplay; encrypted-media; picture-in-picture; clipboard-write"></iframe></body></html>`;
           
           const base64 = btoa(unescape(encodeURIComponent(html)));
           frame.src = `data:text/html;base64,${base64}`;
@@ -1057,18 +1154,8 @@
         blob(url) {
           const frame = document.getElementById('videoFrame');
           const html = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <style>
-    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
-    iframe { width: 100%; height: 100%; border: none; }
-  </style>
-</head>
-<body>
-  <iframe src="${url}" allowfullscreen allow="fullscreen; autoplay; encrypted-media; picture-in-picture; clipboard-write" sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-top-navigation allow-popups-to-escape-sandbox"></iframe>
-</body>
-</html>`;
+<html><head><meta charset="UTF-8"><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;}iframe{width:100%;height:100%;border:none;}</style></head>
+<body><iframe src="${url}" allowfullscreen allow="fullscreen; autoplay; encrypted-media; picture-in-picture; clipboard-write"></iframe></body></html>`;
           
           if (frame._currentBlob) {
             URL.revokeObjectURL(frame._currentBlob);
@@ -1079,7 +1166,6 @@
           frame._currentBlob = blobUrl;
           frame.src = blobUrl;
           UnblockEngine.startLoadTimer();
-          
           return true;
         }
       },
@@ -1139,12 +1225,36 @@
     
     const VideoSources = [
       { 
-        name: '111movies', 
-        url: 'https://111movies.com/embed/\${t}/\${id}', 
+        name: 'VidLink Pro', 
+        url: 'https://vidlink.pro/${t}/${id}${se}', 
+        quality: '4K', 
+        speed: 'fast',
+        priority: 1,
+        note: 'Default Server (4K)'
+      },
+      { 
+        name: 'Embed.su', 
+        url: 'https://embed.su/embed/${t}/${id}${se}', 
         quality: 'HD', 
         speed: 'fast',
         priority: 1,
-        note: 'Default Movie Server'
+        note: 'Ultra Reliable'
+      },
+      { 
+        name: 'VidSrc CC', 
+        url: 'https://vidsrc.cc/v2/embed/${t}/${id}${se}', 
+        quality: 'HD', 
+        speed: 'fast',
+        priority: 1,
+        note: 'High Speed'
+      },
+      { 
+        name: 'VidBinge', 
+        url: 'https://www.vidbinge.to/${t}/${id}${se}', 
+        quality: 'HD', 
+        speed: 'fast',
+        priority: 1,
+        note: 'MoviesAPI Successor'
       },
       {
         name: 'Videasy',
@@ -1152,41 +1262,23 @@
         quality: 'HD',
         speed: 'fast',
         priority: 1,
-        note: 'Best for Anime'
+        note: 'Best for Anime & TV'
       },
-      // VidSrc PM - Now Priority 1 (Default)
       { 
         name: 'VidSrc PM', 
         url: 'https://vidsrc.pm/embed/${t}?tmdb=${id}${sea}', 
         quality: 'HD', 
         speed: 'fast',
-        priority: 1,
-        note: 'Default Server'
+        priority: 2,
+        note: 'Alternative 1'
       },
       { 
-        name: 'VidSrc CC ', 
-        url: 'https://vidsrc.cc/v2/embed/${t}/${id}${se}', 
+        name: '111movies', 
+        url: 'https://111movies.com/embed/\${t}/\${id}', 
         quality: 'HD', 
         speed: 'fast',
-        priority: 1,
-        note: 'Reliable - 637M visits/month'
-      },
-      
-      // Priority 1 alternatives
-      { 
-        name: 'VidLink Pro', 
-        url: 'https://vidlink.pro/${t}/${id}${se}', 
-        quality: '4K', 
-        speed: 'fast',
-        priority: 1,
-        note: 'Launched Aug 2024'
-      },
-      { 
-        name: 'Embed.su', 
-        url: 'https://embed.su/embed/${t}/${id}${se}', 
-        quality: 'HD', 
-        speed: 'fast',
-        priority: 1 
+        priority: 2,
+        note: 'Alternative 2'
       },
       
       // Priority 2
@@ -1584,6 +1676,15 @@
       DOM.placeholder.style.display = 'none';
       UnblockEngine.hideError();
       UnblockEngine.load(url, UnblockEngine.currentMethod);
+
+      // Notify parent about playing state for mini player
+      if (window.parent !== window) {
+        window.parent.postMessage({
+          type: 'CINEMA_PLAYING',
+          title: item.title || item.name,
+          url: url
+        }, '*');
+      }
     }
 
     function setupTv(item) {
@@ -1651,8 +1752,181 @@
       });
     }
 
+    // Mini Player Logic
+    function toggleMiniPlayer() {
+      if (!currentItem) return;
+      
+      // Notify parent that we want to minimize
+      if (window.parent !== window) {
+        window.parent.postMessage({
+          type: 'CINEMA_MINIMIZE',
+          title: currentItem.title || currentItem.name,
+          url: currentServer ? currentServer.url : ''
+        }, '*');
+      }
+    }
+
+    function restoreFromMini() {
+      const frame = document.getElementById('videoFrame');
+      const videoArea = document.querySelector('.video-area');
+      const mini = document.getElementById('miniPlayer');
+      const modal = document.getElementById('modalOverlay');
+      
+      // Move iframe back to modal
+      videoArea.appendChild(frame);
+      mini.classList.remove('show');
+      
+      // Show modal
+      modal.classList.add('show');
+    }
+
+    function closeMiniPlayer() {
+      const frame = document.getElementById('videoFrame');
+      const videoArea = document.querySelector('.video-area');
+      const mini = document.getElementById('miniPlayer');
+      
+      // Save current state before closing
+      if (currentItem) {
+        const isTv = currentItem.media_type === 'tv' || currentItem.first_air_date;
+        const state = {
+          item: currentItem,
+          server: currentServer,
+          season: isTv ? document.getElementById('seasonSelect').value : null,
+          episode: isTv ? document.getElementById('episodeSelect').value : null,
+          timestamp: Date.now()
+        };
+        localStorage.setItem('aura_last_watched', JSON.stringify(state));
+        renderContinueWatching();
+      }
+
+      frame.src = 'about:blank';
+      videoArea.appendChild(frame);
+      mini.classList.remove('show');
+      currentItem = null;
+      
+      // Also reset modal placeholders
+      document.getElementById('videoPlaceholder').style.display = 'flex';
+    }
+
+    function toggleFullscreenMini() {
+      const mini = document.getElementById('miniPlayer');
+      if (!document.fullscreenElement) {
+        mini.requestFullscreen().catch(err => {
+          console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    function renderContinueWatching() {
+      const last = localStorage.getItem('aura_last_watched');
+      const container = document.getElementById('continueWatchingSection');
+      if (!last || !container) return;
+
+      try {
+        const state = JSON.parse(last);
+        container.style.display = 'block';
+        const grid = document.getElementById('continueGrid');
+        grid.innerHTML = '';
+        
+        const card = createCard(state.item);
+        card.classList.add('continue-card');
+        
+        const badge = document.createElement('div');
+        badge.className = 'paused-badge';
+        badge.innerHTML = `<span>⏸</span> PAUSED ${state.season ? `S${state.season} E${state.episode}` : ''}`;
+        card.appendChild(badge);
+
+        // Override click to resume state
+        card.onclick = () => {
+          openModal(state.item);
+          // If it's a TV show, we need to wait for seasons to load then set the correct ones
+          if (state.season) {
+            const checkLoad = setInterval(() => {
+              const sSelect = document.getElementById('seasonSelect');
+              const eSelect = document.getElementById('episodeSelect');
+              if (sSelect && sSelect.options.length > 1) {
+                sSelect.value = state.season;
+                sSelect.dispatchEvent(new Event('change'));
+                
+                const checkEp = setInterval(() => {
+                  if (eSelect && eSelect.options.length > 0) {
+                    eSelect.value = state.episode;
+                    eSelect.dispatchEvent(new Event('change'));
+                    clearInterval(checkEp);
+                  }
+                }, 100);
+                
+                clearInterval(checkLoad);
+              }
+            }, 100);
+          }
+        };
+
+        grid.appendChild(card);
+      } catch(e) { console.error('Continue watching error:', e); }
+    }
+
+    function nextServerFromMini() {
+      if (!currentItem) return;
+      
+      currentServer = (currentServer + 1) % VideoSources.length;
+      const source = VideoSources[currentServer];
+      
+      // Update UI in sidebar if visible
+      document.querySelectorAll('.server-btn').forEach((btn, idx) => {
+        btn.classList.toggle('active', idx === currentServer);
+      });
+      
+      const isTv = currentItem.media_type === 'tv' || currentItem.first_air_date;
+      const s = isTv ? document.getElementById('seasonSelect').value : null;
+      const e = isTv ? document.getElementById('episodeSelect').value : null;
+      
+      const url = buildUrl(source, currentItem, s, e);
+      UnblockEngine.load(url, UnblockEngine.currentMethod);
+    }
+
+    function makeDraggable(el, handle) {
+      let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+      handle.onmousedown = dragMouseDown;
+
+      function dragMouseDown(e) {
+        e = e || window.event;
+        e.preventDefault();
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        document.onmouseup = closeDragElement;
+        document.onmousemove = elementDrag;
+      }
+
+      function elementDrag(e) {
+        e = e || window.event;
+        e.preventDefault();
+        pos1 = pos3 - e.clientX;
+        pos2 = pos4 - e.clientY;
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        el.style.top = (el.offsetTop - pos2) + "px";
+        el.style.left = (el.offsetLeft - pos1) + "px";
+        el.style.bottom = "auto";
+        el.style.right = "auto";
+      }
+
+      function closeDragElement() {
+        document.onmouseup = null;
+        document.onmousemove = null;
+      }
+    }
+
     function openModal(item) {
       currentItem = item;
+      // Close mini player if opening a new item
+      const mini = document.getElementById('miniPlayer');
+      if (mini.classList.contains('show')) {
+        closeMiniPlayer();
+      }
+      
       document.getElementById('modalTitle').textContent = item.title || item.name;
       document.getElementById('modalMeta').textContent = 
         `${(item.release_date || item.first_air_date || '').substring(0,4)} • ${item.media_type === 'tv' ? 'TV Series' : 'Movie'} • ⭐ ${item.vote_average?.toFixed(1) || 'N/A'}`;
@@ -1682,16 +1956,27 @@
     }
 
     function closeModal() {
+      const frame = document.getElementById('videoFrame');
+      const mini = document.getElementById('miniPlayer');
+      
+      // If a video is actually playing/loaded, transition to mini player on exit
+      if (currentItem && frame.src !== 'about:blank' && !mini.classList.contains('show')) {
+        toggleMiniPlayer();
+        return;
+      }
+
       DOM.modal.classList.remove('show');
       
-      if (DOM.frame._currentBlob) {
-        URL.revokeObjectURL(DOM.frame._currentBlob);
-        DOM.frame._currentBlob = null;
+      // Also ensure mini player is cleared if we are fully closing from the modal
+      if (!mini.classList.contains('show')) {
+        if (DOM.frame._currentBlob) {
+          URL.revokeObjectURL(DOM.frame._currentBlob);
+          DOM.frame._currentBlob = null;
+        }
+        DOM.frame.src = 'about:blank';
+        DOM.placeholder.style.display = 'flex';
+        UnblockEngine.hideError();
       }
-      
-      DOM.frame.src = 'about:blank';
-      DOM.placeholder.style.display = 'flex';
-      UnblockEngine.hideError();
     }
 
     function createCard(item) {
@@ -1770,6 +2055,7 @@
     
     document.addEventListener('DOMContentLoaded', function() {
       console.log('DOM loaded, attaching event listeners');
+      renderContinueWatching();
       
       const agreeBtn = document.getElementById('agreeBtn');
       if (agreeBtn) {
