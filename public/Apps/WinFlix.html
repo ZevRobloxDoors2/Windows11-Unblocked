@@ -1756,28 +1756,32 @@
     function toggleMiniPlayer() {
       if (!currentItem) return;
       
-      // Notify parent that we want to minimize
-      if (window.parent !== window) {
-        window.parent.postMessage({
-          type: 'CINEMA_MINIMIZE',
-          title: currentItem.title || currentItem.name,
-          url: currentServer ? currentServer.url : ''
-        }, '*');
+      const mini = document.getElementById('miniPlayer');
+      const videoContainer = document.getElementById('miniVideoContainer');
+      const frame = document.getElementById('videoFrame');
+      const miniTitle = document.getElementById('miniTitle');
+
+      miniTitle.textContent = currentItem.title || currentItem.name || 'WinFlix Mini';
+      
+      // Move frame into mini video container if not already there
+      if (frame.parentNode !== videoContainer) {
+        videoContainer.appendChild(frame);
       }
+      
+      mini.classList.add('show');
+      DOM.modal.classList.remove('show');
     }
 
     function restoreFromMini() {
       const frame = document.getElementById('videoFrame');
       const videoArea = document.querySelector('.video-area');
       const mini = document.getElementById('miniPlayer');
-      const modal = document.getElementById('modalOverlay');
       
-      // Move iframe back to modal
-      videoArea.appendChild(frame);
+      if (frame.parentNode !== videoArea) {
+        videoArea.appendChild(frame);
+      }
       mini.classList.remove('show');
-      
-      // Show modal
-      modal.classList.add('show');
+      DOM.modal.classList.add('show');
     }
 
     function closeMiniPlayer() {
@@ -1799,13 +1803,20 @@
         renderContinueWatching();
       }
 
+      if (frame._currentBlob) {
+        URL.revokeObjectURL(frame._currentBlob);
+        frame._currentBlob = null;
+      }
       frame.src = 'about:blank';
-      videoArea.appendChild(frame);
+      if (frame.parentNode !== videoArea) {
+        videoArea.appendChild(frame);
+      }
       mini.classList.remove('show');
       currentItem = null;
       
       // Also reset modal placeholders
-      document.getElementById('videoPlaceholder').style.display = 'flex';
+      DOM.placeholder.style.display = 'flex';
+      UnblockEngine.hideError();
     }
 
     function toggleFullscreenMini() {
@@ -2056,6 +2067,12 @@
     document.addEventListener('DOMContentLoaded', function() {
       console.log('DOM loaded, attaching event listeners');
       renderContinueWatching();
+      
+      const miniPlayer = document.getElementById('miniPlayer');
+      const miniHeader = document.getElementById('miniPlayerHeader');
+      if (miniPlayer && miniHeader) {
+        makeDraggable(miniPlayer, miniHeader);
+      }
       
       const agreeBtn = document.getElementById('agreeBtn');
       if (agreeBtn) {
