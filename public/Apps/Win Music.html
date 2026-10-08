@@ -148,6 +148,33 @@
 
         body.lyric-mode #art-zone { width: 120px; height: 120px; margin-bottom: 20px; border-radius: 1.5rem; }
         body.lyric-mode .track-meta h1 { font-size: 1.4rem; }
+
+        /* Floating Miniplayer Widget */
+        .floating-miniplayer {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 320px;
+            background: rgba(15, 23, 42, 0.94);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid var(--accent);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 30px var(--accent-glow);
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+            padding: 16px;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s;
+            animation: miniSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .floating-miniplayer.show {
+            display: flex;
+        }
+        @keyframes miniSlideIn {
+            from { transform: translateY(30px) scale(0.9); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
     </style>
 </head>
 <body>
@@ -155,14 +182,47 @@
     <div id="bg-blur-img"></div>
     <div id="bg-overlay"></div>
 
+    <!-- Floating Miniplayer Widget -->
+    <div class="floating-miniplayer" id="floatingMiniplayer">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+            <span style="font-size: 0.7rem; font-weight: 800; color: var(--accent); letter-spacing: 1.5px; text-transform: uppercase;">Central Music Mini</span>
+            <div style="display: flex; gap: 6px;">
+                <button onclick="restoreMainPlayer()" title="Expand to Full Player" style="background: rgba(255,255,255,0.08); border: none; color: white; width: 26px; height: 26px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">⤢</button>
+                <button onclick="closeFloatingMini()" title="Close Player" style="background: rgba(255,47,87,0.2); border: none; color: #ff4757; width: 26px; height: 26px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">×</button>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+            <img id="mini-artwork" src="" style="width: 50px; height: 50px; border-radius: 12px; object-fit: cover; background: #000; border: 1px solid var(--glass-border);" alt="Art">
+            <div style="flex: 1; min-width: 0;">
+                <div id="mini-title" style="font-weight: 700; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: white;">Not Playing</div>
+                <div id="mini-artist" style="font-size: 0.75rem; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Central Music</div>
+            </div>
+        </div>
+        <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin-bottom: 12px; cursor: pointer;" onclick="seekMini(event)">
+            <div id="mini-progress" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.1s linear;"></div>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
+            <button onclick="changeTrack(-1)" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.1rem; opacity: 0.8; transition: 0.2s;" title="Previous">⏮</button>
+            <button id="mini-play-btn" onclick="togglePlay()" style="width: 38px; height: 38px; border-radius: 50%; background: var(--brand-gradient); border: none; color: white; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px var(--accent-glow);" title="Play/Pause">▶</button>
+            <button onclick="changeTrack(1)" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.1rem; opacity: 0.8; transition: 0.2s;" title="Next">⏭</button>
+        </div>
+    </div>
+
     <aside id="sidebar">
         <div class="sidebar-header">
-            <h2>Central <span style="color:#ffffff">Music</span></h2>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>Central <span style="color:#ffffff">Music</span></h2>
+                <div style="display: flex; gap: 6px;">
+                    <button id="shuffle-btn" onclick="toggleShuffle()" title="Shuffle" style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: var(--text-dim); padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 0.8rem;">🔀</button>
+                    <button id="repeat-btn" onclick="toggleRepeat()" title="Repeat" style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: var(--text-dim); padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 0.8rem;">🔁 Off</button>
+                </div>
+            </div>
             <p style="font-size: 0.7rem; color: var(--accent); margin: 6px 0 0; font-weight: 700; letter-spacing: 1px;">AURA OS AUDIO SYSTEM</p>
         </div>
         <div id="queue-list"></div>
-        <div style="padding: 25px;">
-            <button class="btn-add" style="width:100%;" onclick="showOverlay('search-overlay')">+ Discover Tracks & Albums</button>
+        <div style="padding: 15px 20px; display: flex; gap: 10px;">
+            <button class="btn-add" style="flex:1; padding: 12px; font-size: 0.85rem;" onclick="showOverlay('search-overlay')">+ Discover</button>
+            <button class="btn-add" style="flex:1; padding: 12px; font-size: 0.85rem; background: rgba(255,255,255,0.08); border: 1px solid var(--glass-border);" onclick="openPlaylistModal()">💾 Playlists</button>
         </div>
         <div style="padding: 15px 30px; font-size: 0.7rem; color: var(--text-dim); border-top: 1px solid var(--glass-border); text-align: center;">
             Central Music &bull; Aura OS
@@ -192,6 +252,7 @@
                 <button id="play-btn" class="icon-btn play-main" onclick="togglePlay()" title="Play/Pause">▶</button>
                 <button class="icon-btn" onclick="changeTrack(1)" title="Next">⏭</button>
                 <button id="lyric-btn" class="icon-btn" style="font-size: 1.3rem; margin-left: 10px;" onclick="toggleLyrics()" title="Lyrics">🎤</button>
+                <button class="icon-btn" style="font-size: 1.3rem; margin-left: 10px;" onclick="toggleFloatingMini()" title="Minimize to Miniplayer">🗕</button>
             </div>
         </div>
     </main>
@@ -217,6 +278,21 @@
             </div>
 
             <div id="search-results" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; margin-top: 25px; overflow-y: auto; flex: 1; padding-bottom: 40px;"></div>
+        </div>
+    </div>
+
+    <!-- Playlists Overlay Modal -->
+    <div id="playlist-overlay" class="overlay">
+        <div style="max-width: 600px; margin: auto; width: 100%; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(30px); border: 1px solid var(--accent); border-radius: 24px; padding: 30px; display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="color: var(--accent); margin: 0; font-size: 1.5rem;">Saved Playlists</h2>
+                <button onclick="hideOverlays()" style="background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer;">✕</button>
+            </div>
+            <div style="margin-bottom: 20px; display: flex; gap: 10px;">
+                <input type="text" id="playlist-name-input" placeholder="Enter playlist name..." style="flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); padding: 12px 16px; border-radius: 12px; color: white; outline: none;">
+                <button class="btn-add" onclick="saveCurrentPlaylist()">Save Queue</button>
+            </div>
+            <div id="saved-playlists-list" style="max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;"></div>
         </div>
     </div>
 
@@ -436,14 +512,41 @@
 
         function broadcastState() {
             if (!currentTrackData) return;
-            localStorage.setItem('aura_current_track', JSON.stringify({
+            const state = {
                 title: currentTrackData.song || currentTrackData.title,
                 artist: currentTrackData.artist,
                 artwork: currentTrackData.artwork,
                 isPlaying: !audio.paused,
                 currentTime: audio.currentTime,
-                duration: audio.duration
-            }));
+                duration: audio.duration,
+                queue: queue,
+                currentIndex: currentIndex,
+                volume: audio.volume
+            };
+            localStorage.setItem('aura_current_track', JSON.stringify(state));
+            localStorage.setItem('aura_music_persistence', JSON.stringify(state));
+        }
+
+        function restoreMainPlayer() {
+            document.getElementById('floatingMiniplayer').classList.remove('show');
+        }
+
+        function closeFloatingMini() {
+            audio.pause();
+            document.getElementById('floatingMiniplayer').classList.remove('show');
+            localStorage.removeItem('aura_music_persistence');
+        }
+
+        function toggleFloatingMini() {
+            document.getElementById('floatingMiniplayer').classList.toggle('show');
+        }
+
+        function seekMini(e) {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const pos = (e.clientX - rect.left) / rect.width;
+            if (audio.duration) {
+                audio.currentTime = pos * audio.duration;
+            }
         }
 
         window.addEventListener('storage', (e) => {
@@ -463,6 +566,29 @@
             b.max = audio.duration || 0; b.value = audio.currentTime;
             document.getElementById('time-cur').innerText = formatTime(audio.currentTime);
             document.getElementById('time-dur').innerText = formatTime(audio.duration);
+            
+            const miniProg = document.getElementById('mini-progress');
+            if (miniProg && audio.duration) {
+                miniProg.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
+            }
+
+            if (currentTrackData) {
+                const title = currentTrackData.song || currentTrackData.title || 'Track';
+                const artist = currentTrackData.artist || 'Artist';
+                const art = currentTrackData.artwork || '';
+                const isPlaying = !audio.paused;
+
+                const mTitle = document.getElementById('mini-title');
+                const mArtist = document.getElementById('mini-artist');
+                const mArt = document.getElementById('mini-artwork');
+                const mPlay = document.getElementById('mini-play-btn');
+
+                if (mTitle) mTitle.innerText = title;
+                if (mArtist) mArtist.innerText = artist;
+                if (mArt && art) mArt.src = art;
+                if (mPlay) mPlay.innerText = isPlaying ? '⏸' : '▶';
+            }
+
             broadcastState();
 
             if (isLyricMode && lyricsData.length > 0) {
@@ -480,8 +606,14 @@
 
         function togglePlay() { 
             if(!audio.src) return;
-            audio.paused ? (audio.play(), document.getElementById('play-btn').innerText = '⏸') : (audio.pause(), document.getElementById('play-btn').innerText = '▶'); 
+            const isPlaying = audio.paused;
+            isPlaying ? audio.play() : audio.pause();
+            const btnText = isPlaying ? '⏸' : '▶';
+            document.getElementById('play-btn').innerText = btnText;
+            const mPlay = document.getElementById('mini-play-btn');
+            if (mPlay) mPlay.innerText = btnText;
         }
+
         function changeTrack(dir) { playTrack(currentIndex + dir); }
         function formatTime(s) { if(isNaN(s)) return "0:00"; const m=Math.floor(s/60), sc=Math.floor(s%60); return `${m}:${sc<10?'0':''}${sc}`; }
         function showOverlay(id) { document.getElementById(id).style.display = 'flex'; }
@@ -489,21 +621,210 @@
         function addToQueue(t) { queue.push(t); save(); if (currentIndex === -1) playTrack(queue.length - 1); }
         function save() { localStorage.setItem('t9_queue', JSON.stringify(queue)); updateQueueUI(); }
         
-        function updateQueueUI() {
-            const list = document.getElementById('queue-list');
-            list.innerHTML = queue.map((t, i) => `
-                <div class="q-row ${i === currentIndex ? 'active' : ''}" onclick="playTrack(${i})">
-                    <img src="${t.artwork || t.artworkUrl100 || ''}">
-                    <div style="flex:1; overflow:hidden">
-                        <div style="font-weight:700; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; font-size:0.9rem;">${t.title || t.trackName}</div>
-                        <div style="font-size:0.75rem; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.artist || t.artistName}</div>
+        let isShuffle = false;
+        let repeatMode = 'off'; // 'off', 'all', 'one'
+
+        function toggleShuffle() {
+            isShuffle = !isShuffle;
+            const btn = document.getElementById('shuffle-btn');
+            if (isShuffle) {
+                btn.style.borderColor = 'var(--accent)';
+                btn.style.color = 'var(--accent)';
+                btn.style.background = 'rgba(0,242,254,0.1)';
+            } else {
+                btn.style.borderColor = 'var(--glass-border)';
+                btn.style.color = 'var(--text-dim)';
+                btn.style.background = 'rgba(255,255,255,0.05)';
+            }
+        }
+
+        function toggleRepeat() {
+            if (repeatMode === 'off') repeatMode = 'all';
+            else if (repeatMode === 'all') repeatMode = 'one';
+            else repeatMode = 'off';
+
+            const btn = document.getElementById('repeat-btn');
+            btn.innerText = repeatMode === 'off' ? '🔁 Off' : repeatMode === 'all' ? '🔁 All' : '🔂 One';
+            if (repeatMode !== 'off') {
+                btn.style.borderColor = 'var(--accent)';
+                btn.style.color = 'var(--accent)';
+                btn.style.background = 'rgba(0,242,254,0.1)';
+            } else {
+                btn.style.borderColor = 'var(--glass-border)';
+                btn.style.color = 'var(--text-dim)';
+                btn.style.background = 'rgba(255,255,255,0.05)';
+            }
+        }
+
+        function moveQueue(index, dir) {
+            const target = index + dir;
+            if (target < 0 || target >= queue.length) return;
+            const item = queue.splice(index, 1)[0];
+            queue.splice(target, 0, item);
+            if (currentIndex === index) currentIndex = target;
+            else if (currentIndex === target) currentIndex = index;
+            save();
+        }
+
+        function removeFromQueue(index, event) {
+            if (event) event.stopPropagation();
+            queue.splice(index, 1);
+            if (currentIndex === index) {
+                if (queue.length > 0) playTrack(Math.min(index, queue.length - 1));
+                else {
+                    currentIndex = -1;
+                    audio.src = '';
+                    currentTrackData = null;
+                    document.getElementById('track-title').innerText = 'Ready for Launch';
+                    document.getElementById('track-artist').innerText = 'Select or search a track, album or soundtrack to begin';
+                    document.getElementById('art-zone').innerHTML = `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:rgba(0,242,254,0.05); color:var(--accent); font-weight:800; font-size:1.5rem; text-align:center; padding:20px;">Central Music</div>`;
+                }
+            } else if (currentIndex > index) {
+                currentIndex--;
+            }
+            save();
+        }
+
+        function openPlaylistModal() {
+            showOverlay('playlist-overlay');
+            renderSavedPlaylists();
+        }
+
+        function saveCurrentPlaylist() {
+            const nameInput = document.getElementById('playlist-name-input');
+            const name = nameInput.value.trim();
+            if (!name) {
+                alert("Please enter a playlist name.");
+                return;
+            }
+            if (queue.length === 0) {
+                alert("Queue is empty. Add some tracks before saving a playlist.");
+                return;
+            }
+            let playlists = JSON.parse(localStorage.getItem('aura_saved_playlists') || '{}');
+            playlists[name] = queue;
+            localStorage.setItem('aura_saved_playlists', JSON.stringify(playlists));
+            nameInput.value = '';
+            renderSavedPlaylists();
+            alert(`Playlist "${name}" saved successfully!`);
+        }
+
+        function renderSavedPlaylists() {
+            const container = document.getElementById('saved-playlists-list');
+            let playlists = JSON.parse(localStorage.getItem('aura_saved_playlists') || '{}');
+            const keys = Object.keys(playlists);
+            if (keys.length === 0) {
+                container.innerHTML = `<div style="text-align: center; color: var(--text-dim); padding: 20px;">No saved playlists yet.</div>`;
+                return;
+            }
+            container.innerHTML = keys.map(name => `
+                <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); padding: 12px 16px; border-radius: 14px;">
+                    <div>
+                        <div style="font-weight: 700; color: white; font-size: 0.95rem;">${name}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-dim);">${playlists[name].length} tracks</div>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="loadPlaylist('${name}')" class="btn-add" style="padding: 6px 14px; font-size: 0.8rem;">Load</button>
+                        <button onclick="deletePlaylist('${name}')" style="background: rgba(255,47,87,0.2); border: none; color: #ff4757; padding: 6px 10px; border-radius: 8px; cursor: pointer;" title="Delete">🗑</button>
                     </div>
                 </div>
             `).join('');
         }
 
+        function loadPlaylist(name) {
+            let playlists = JSON.parse(localStorage.getItem('aura_saved_playlists') || '{}');
+            if (playlists[name]) {
+                queue = playlists[name];
+                save();
+                playTrack(0);
+                hideOverlays();
+            }
+        }
+
+        function deletePlaylist(name) {
+            let playlists = JSON.parse(localStorage.getItem('aura_saved_playlists') || '{}');
+            delete playlists[name];
+            localStorage.setItem('aura_saved_playlists', JSON.stringify(playlists));
+            renderSavedPlaylists();
+        }
+
+        function updateQueueUI() {
+            const list = document.getElementById('queue-list');
+            if (queue.length === 0) {
+                list.innerHTML = `<div style="text-align:center; color: var(--text-dim); padding: 40px; font-size: 0.85rem;">Queue is empty.<br>Add tracks or search catalog to begin.</div>`;
+                return;
+            }
+            list.innerHTML = queue.map((t, i) => `
+                <div class="q-row ${i === currentIndex ? 'active' : ''}" style="display: flex; align-items: center; gap: 10px;" onclick="playTrack(${i})">
+                    <img src="${t.artwork || t.artworkUrl100 || ''}" style="width: 45px; height: 45px; border-radius: 10px; object-fit: cover;">
+                    <div style="flex:1; overflow:hidden">
+                        <div style="font-weight:700; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; font-size:0.9rem;">${t.title || t.trackName}</div>
+                        <div style="font-size:0.75rem; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.artist || t.artistName}</div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 2px;" onclick="event.stopPropagation()">
+                        ${i > 0 ? `<button onclick="moveQueue(${i}, -1)" title="Move Up" style="background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:0.7rem;">▲</button>` : ''}
+                        ${i < queue.length - 1 ? `<button onclick="moveQueue(${i}, 1)" title="Move Down" style="background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:0.7rem;">▼</button>` : ''}
+                    </div>
+                    <button onclick="removeFromQueue(${i}, event)" title="Remove" style="background:none; border:none; color:#ff4757; cursor:pointer; font-size:1rem; padding: 4px;">×</button>
+                </div>
+            `).join('');
+        }
+
         document.getElementById('seek-bar').oninput = (e) => audio.currentTime = e.target.value;
-        audio.onended = () => changeTrack(1);
+        
+        audio.onended = () => {
+            if (repeatMode === 'one') {
+                audio.currentTime = 0;
+                audio.play();
+            } else if (isShuffle && queue.length > 1) {
+                let nextIdx;
+                do {
+                    nextIdx = Math.floor(Math.random() * queue.length);
+                } while (nextIdx === currentIndex && queue.length > 1);
+                playTrack(nextIdx);
+            } else if (currentIndex < queue.length - 1) {
+                changeTrack(1);
+            } else if (repeatMode === 'all' && queue.length > 0) {
+                playTrack(0);
+            }
+        };
+        
+        // Restore on load if persistence exists
+        window.addEventListener('DOMContentLoaded', () => {
+            const saved = localStorage.getItem('aura_music_persistence');
+            if (saved) {
+                try {
+                    const st = JSON.parse(saved);
+                    if (st.queue && st.queue.length > 0) {
+                        queue = st.queue;
+                        updateQueueUI();
+                        if (st.currentIndex >= 0 && st.currentIndex < queue.length) {
+                            currentIndex = st.currentIndex;
+                            const track = queue[currentIndex];
+                            currentTrackData = {
+                                song: track.title,
+                                title: track.title,
+                                artist: track.artist,
+                                artwork: track.artwork,
+                                streamUrl: track.streamUrl || track.url
+                            };
+                            audio.src = track.streamUrl || track.url;
+                            document.getElementById('art-zone').innerHTML = `<img src="${track.artwork || ''}">`;
+                            bgBlur.style.backgroundImage = `url(${track.artwork || ''})`;
+                            document.getElementById('track-title').innerText = track.title;
+                            document.getElementById('track-artist').innerText = track.artist;
+                            audio.currentTime = st.currentTime || 0;
+                            audio.volume = st.volume !== undefined ? st.volume : 1;
+                            if (st.isPlaying) {
+                                audio.play().catch(() => {});
+                                document.getElementById('play-btn').innerText = '⏸';
+                                document.getElementById('mini-play-btn').innerText = '⏸';
+                            }
+                        }
+                    }
+                } catch(e) {}
+            }
+        });
         updateQueueUI();
     </script>
 </body>
