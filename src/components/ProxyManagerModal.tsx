@@ -86,6 +86,10 @@ export function ProxyManagerModal({ onClose }: { onClose: () => void }) {
              <button onClick={onClose} className="p-1 hover:bg-white/10 rounded text-zinc-400"><X size={16} /></button>
            </div>
            
+           <div className="bg-blue-500/10 border border-blue-500/30 p-3 rounded-lg text-xs text-blue-300 mb-3 leading-relaxed">
+             💡 <b>Tip:</b> Some UV proxies (like incog.dev) block iframe embedding. If an app shows a webpage error, use the <b>"Open in New Tab"</b> button inside the app or use <b>n43.pw</b>.
+           </div>
+
            <div className="space-y-3 overflow-y-auto flex-1 pr-1">
              <div className="text-xs text-zinc-400 mb-2">Select a working Ultraviolet (UV) proxy server or add your own custom proxy URL below:</div>
              {allProxies.map((opt) => (

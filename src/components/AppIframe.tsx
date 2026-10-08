@@ -99,14 +99,22 @@ export const AppIframe: React.FC<AppIframeProps> = ({ src, isActive, onLoadStart
               </p>
               
               {showContinue && (
-                <motion.button
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  onClick={() => setShowProxyWarning(false)}
-                  className="px-6 py-2.5 bg-[#00A4EF] hover:bg-[#008AC9] text-white font-bold rounded-lg transition-colors"
-                >
-                  Continue
-                </motion.button>
+                <div className="flex gap-3 justify-center">
+                  <motion.button
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    onClick={() => setShowProxyWarning(false)}
+                    className="px-6 py-2.5 bg-[#00A4EF] hover:bg-[#008AC9] text-white font-bold rounded-lg transition-colors cursor-pointer"
+                  >
+                    Continue
+                  </motion.button>
+                  <button
+                    onClick={() => window.open(currentSrc, '_blank')}
+                    className="px-6 py-2.5 bg-zinc-700 hover:bg-zinc-600 text-white font-bold rounded-lg transition-colors cursor-pointer"
+                  >
+                    Open in New Tab
+                  </button>
+                </div>
               )}
             </div>
           </motion.div>
@@ -120,10 +128,18 @@ export const AppIframe: React.FC<AppIframeProps> = ({ src, isActive, onLoadStart
             className="absolute inset-0 z-50 flex items-center justify-center bg-[#202020] text-white p-6 text-center"
           >
             <div>
-              <p className="text-xl font-bold mb-4 text-red-400">Damn, your wifi is bad.</p>
-              <p className="text-zinc-400 mb-6">Click the Reload Button, next time don't hop on my website with that bun ahh wifi..</p>
+              <p className="text-xl font-bold mb-4 text-red-400">Proxy blocked or taking too long.</p>
+              <p className="text-zinc-400 mb-6">Some proxy servers block embedding inside iframes. Open this proxy URL directly in a new tab to bypass restrictions.</p>
+              <div className="flex gap-3 justify-center mb-4">
+                <button
+                  onClick={() => window.open(currentSrc, '_blank')}
+                  className="px-6 py-2.5 bg-[#00A4EF] hover:bg-[#008AC9] text-white font-bold rounded-lg transition-colors cursor-pointer"
+                >
+                  Open Proxy in New Tab
+                </button>
+              </div>
               <p className="text-xs text-zinc-500 mt-4 max-w-sm mx-auto">
-                (If this keeps happening, you might need to switch to a different proxy engine in Settings or wait for it to come back online)
+                (If this keeps happening, switch to n43.pw in Settings)
               </p>
             </div>
           </motion.div>
