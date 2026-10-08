@@ -1967,8 +1967,8 @@
       const frame = document.getElementById('videoFrame');
       const mini = document.getElementById('miniPlayer');
       
-      // If a video is actually playing/loaded, transition to mini player on exit
-      if (currentItem && frame.src !== 'about:blank' && !mini.classList.contains('show')) {
+      // If a video is selected/loaded, transition to mini player on exit
+      if (currentItem && !mini.classList.contains('show')) {
         toggleMiniPlayer();
         return;
       }
