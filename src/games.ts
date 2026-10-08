@@ -296,7 +296,7 @@ export const ALL_GAMES = [
   {
     "id": "not-my-neigh",
     "title": "not-my-neigh",
-    "image": "https://img.itch.zone/aW1nLzE0NzU4NTEyLnBuZw==/315x250%23c/H0o69S.png",
+    "image": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=500&q=80",
     "type": "game",
     "file": "Games/not-my-neigh.html"
   },
