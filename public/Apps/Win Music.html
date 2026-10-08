@@ -538,7 +538,19 @@
         }
 
         function toggleFloatingMini() {
-            document.getElementById('floatingMiniplayer').classList.toggle('show');
+            if (!currentTrackData) return;
+            if (window.parent !== window) {
+                window.parent.postMessage({
+                    type: 'MINIPLAYER_STATE',
+                    action: 'show',
+                    title: currentTrackData.song || currentTrackData.title,
+                    subtitle: currentTrackData.artist,
+                    artwork: currentTrackData.cover || currentTrackData.artwork,
+                    appId: 'Win Music',
+                    track: currentTrackData
+                }, '*');
+                window.parent.postMessage({ type: 'CLOSE_WINDOW_FOR_MINIPLAYER', appId: 'Win Music' }, '*');
+            }
         }
 
         function seekMini(e) {

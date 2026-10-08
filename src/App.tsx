@@ -42,6 +42,7 @@ import { Classroom } from './components/Classroom';
 import { FakeUpdate } from './components/FakeUpdate';
 import { FakeDeadComputer } from './components/FakeDeadComputer';
 import { CustomChromeBrowser } from './components/CustomChromeBrowser';
+import { GlobalMiniPlayer } from './components/GlobalMiniPlayer';
 
 type View = 'home' | 'store' | 'profile' | 'settings' | 'notifications' | 'friends' | 'chat' | 'party' | 'activity' | 'local-share' | 'classroom';
 
@@ -296,7 +297,50 @@ export default function App() {
   const [warningGame, setWarningGame] = useState<{id: string, title: string, file: string, instanceId?: string} | null>(null);
   const [showDropboxPrompt, setShowDropboxPrompt] = useState(true);
   const [dropboxToast, setDropboxToast] = useState(false);
-  const [dropboxSelection, setDropboxSelection] = useState<string>('');
+   const [dropboxSelection, setDropboxSelection] = useState<string>('');
+   const [miniPlayerMedia, setMiniPlayerMedia] = useState<any>(null);
+
+   useEffect(() => {
+     const handleMessage = (event: MessageEvent) => {
+       if (!event.data) return;
+       if (event.data.type === 'MINIPLAYER_STATE' && event.data.action === 'show') {
+         setMiniPlayerMedia({
+           appId: event.data.appId,
+           title: event.data.title,
+           subtitle: event.data.subtitle,
+           artwork: event.data.artwork,
+           item: event.data.item,
+           track: event.data.track
+         });
+       } else if (event.data.type === 'CLOSE_WINDOW_FOR_MINIPLAYER') {
+         const appId = event.data.appId;
+         const matchingGame = ALL_GAMES.find(g => g.title === appId || g.id === appId || (g.file && g.file.includes(appId)));
+         if (matchingGame) {
+           const running = [playingGame, ...suspendedGames.map(s => s.game)].find(g => g?.id === matchingGame.id || g?.title === matchingGame.title);
+           if (running && running.instanceId) {
+             handleStopGame(running.instanceId);
+           } else if (playingGame && (playingGame.id === matchingGame.id || playingGame.title === matchingGame.title)) {
+             handleStopGame(playingGame.instanceId || playingGame.id);
+           }
+         }
+       }
+     };
+     window.addEventListener('message', handleMessage);
+     return () => window.removeEventListener('message', handleMessage);
+   }, [playingGame, suspendedGames]);
+
+   const handleExpandMiniPlayer = (appId: string) => {
+     setMiniPlayerMedia(null);
+     const matchingGame = ALL_GAMES.find(g => g.title === appId || g.id === appId || (g.file && g.file.includes(appId)));
+     if (matchingGame) {
+       handlePlayGame({
+         id: matchingGame.id,
+         title: matchingGame.title,
+         file: matchingGame.file || '',
+         type: matchingGame.type
+       });
+     }
+   };
 
   useEffect(() => {
     const handleStorageChange = () => {
@@ -1131,6 +1175,16 @@ export default function App() {
 
       </div>
       </div>
+
+      <AnimatePresence>
+        {miniPlayerMedia && (
+          <GlobalMiniPlayer
+            media={miniPlayerMedia}
+            onExpand={(appId) => handleExpandMiniPlayer(appId)}
+            onClose={() => setMiniPlayerMedia(null)}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 }

@@ -1756,20 +1756,17 @@
     function toggleMiniPlayer() {
       if (!currentItem) return;
       
-      const mini = document.getElementById('miniPlayer');
-      const videoContainer = document.getElementById('miniVideoContainer');
-      const frame = document.getElementById('videoFrame');
-      const miniTitle = document.getElementById('miniTitle');
-
-      miniTitle.textContent = currentItem.title || currentItem.name || 'WinFlix Mini';
-      
-      // Move frame into mini video container if not already there
-      if (frame.parentNode !== videoContainer) {
-        videoContainer.appendChild(frame);
+      if (window.parent !== window) {
+        window.parent.postMessage({
+          type: 'MINIPLAYER_STATE',
+          action: 'show',
+          title: currentItem.title || currentItem.name,
+          subtitle: currentItem.release_date ? currentItem.release_date.substring(0,4) : 'Movie',
+          appId: 'WinFlix',
+          item: currentItem
+        }, '*');
+        window.parent.postMessage({ type: 'CLOSE_WINDOW_FOR_MINIPLAYER', appId: 'WinFlix' }, '*');
       }
-      
-      mini.classList.add('show');
-      DOM.modal.classList.remove('show');
     }
 
     function restoreFromMini() {
