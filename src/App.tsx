@@ -804,6 +804,8 @@ export default function App() {
           notificationCount={notificationCount}
           onLogout={handleLogout}
           onOpenModerationPanel={() => setShowModerationPanel(true)}
+          miniPlayerMedia={miniPlayerMedia}
+          onExpandMiniPlayer={handleExpandMiniPlayer}
         />
 
         {showModerationPanel && (

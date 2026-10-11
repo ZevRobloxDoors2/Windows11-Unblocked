@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Bell, Settings as SettingsIcon, MessageSquare, Users, Store, Box, User, Activity, Image as ImageIcon, Mic, GraduationCap, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { Search, Bell, Settings as SettingsIcon, MessageSquare, Users, Store, Box, User, Activity, Image as ImageIcon, Mic, GraduationCap, ShieldAlert, ShieldCheck, Play, Pause, SkipBack, SkipForward, Music, Film, Volume2 } from 'lucide-react';
 import { ALL_GAMES } from '../games';
 import { UserProfile } from '../types';
 import { DesktopWidgets } from './DesktopWidgets';
@@ -24,7 +24,9 @@ export const Desktop = ({
   onLogout,
   onActivateDeadComputer,
   onOpenModerationPanel,
-  onOpenVerification
+  onOpenVerification,
+  miniPlayerMedia,
+  onExpandMiniPlayer
 }: { 
   profile: UserProfile, 
   installedApps: string[],
@@ -44,7 +46,9 @@ export const Desktop = ({
   onLogout: () => void,
   onActivateDeadComputer?: () => void,
   onOpenModerationPanel?: () => void,
-  onOpenVerification?: () => void
+  onOpenVerification?: () => void,
+  miniPlayerMedia?: any,
+  onExpandMiniPlayer?: (appId: string, media: any) => void
 }) => {
   const [startOpen, setStartOpen] = useState(false);
 
@@ -389,6 +393,79 @@ export const Desktop = ({
             transition={{ duration: 0.15, ease: 'easeOut' }}
             className="absolute bottom-16 right-4 w-80 bg-[#242424]/95 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl flex flex-col p-5 z-[200]"
           >
+            {/* Media Controls Card in Quick Settings */}
+            {(miniPlayerMedia || localStorage.getItem('aura_current_track') || localStorage.getItem('aura_music_persistence')) && (() => {
+              const media = miniPlayerMedia || (() => {
+                try {
+                  const saved = localStorage.getItem('aura_current_track') || localStorage.getItem('aura_music_persistence');
+                  if (saved) {
+                    const parsed = JSON.parse(saved);
+                    return {
+                      appId: 'Win Music',
+                      title: parsed.song || parsed.title || 'Playing Music',
+                      subtitle: parsed.artist || 'Aura Music',
+                      artwork: parsed.cover || parsed.artwork
+                    };
+                  }
+                } catch(e) {}
+                return null;
+              })();
+
+              if (!media) return null;
+
+              return (
+                <div className="mb-4 bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col gap-2.5">
+                  <div className="flex items-center gap-3">
+                    {media.artwork ? (
+                      <img src={media.artwork} alt={media.title} className="w-12 h-12 rounded-lg object-cover shrink-0 border border-white/10" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center shrink-0 text-indigo-300 font-bold">
+                        <Music size={20} />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-400">
+                        {media.appId === 'WinFlix' ? <Film size={12} /> : <Music size={12} />}
+                        <span>{media.appId}</span>
+                      </div>
+                      <h4 className="text-xs font-bold truncate text-white mt-0.5">{media.title}</h4>
+                      <p className="text-[11px] text-zinc-400 truncate">{media.subtitle}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-center gap-4 pt-1 border-t border-white/5">
+                    <button
+                      onClick={() => {
+                        localStorage.setItem('aura_player_command', JSON.stringify({ action: 'prev', timestamp: Date.now() }));
+                      }}
+                      className="p-2 text-zinc-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                      title="Previous Track"
+                    >
+                      <SkipBack size={16} />
+                    </button>
+                    <button
+                      onClick={() => {
+                        localStorage.setItem('aura_player_command', JSON.stringify({ action: 'togglePlay', timestamp: Date.now() }));
+                      }}
+                      className="w-9 h-9 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center shadow-lg shadow-indigo-600/30 transition-all"
+                      title="Play / Pause"
+                    >
+                      <Play size={16} fill="currentColor" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        localStorage.setItem('aura_player_command', JSON.stringify({ action: 'next', timestamp: Date.now() }));
+                      }}
+                      className="p-2 text-zinc-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                      title="Next Track"
+                    >
+                      <SkipForward size={16} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="grid grid-cols-3 gap-3 mb-4">
               <button onClick={() => setQsWifi(!qsWifi)} className="flex flex-col items-center gap-2 group">
                 <div className={`w-full aspect-video rounded-md flex items-center justify-center transition-colors ${qsWifi ? 'bg-[#00A4EF]/20 border border-[#00A4EF]/30 group-hover:bg-[#00A4EF]/30' : 'bg-white/10 group-hover:bg-white/20'}`}>
