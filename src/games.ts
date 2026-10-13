@@ -67,7 +67,7 @@ export const ALL_GAMES = [
     "title": "GTA 5/6",
     "image": "https://upload.wikimedia.org/wikipedia/en/a/a5/Grand_Theft_Auto_V.png",
     "type": "game",
-    "file": "https://playgta5-tau.vercel.app/"
+    "file": "https://gta5-87g.pages.dev/"
   },
   {
     "id": "1v1 LOL",
