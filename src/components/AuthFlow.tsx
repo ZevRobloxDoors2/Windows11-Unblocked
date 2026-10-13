@@ -259,6 +259,9 @@ export function AuthFlow({ onConfirm }: { onConfirm: () => void }) {
           >
             {accounts.length > 0 && selectedAccount ? (
               <div className="flex flex-col items-center">
+                <div className="mb-2 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg border border-red-400 animate-pulse">
+                  We added GTA 5 and GTA 6!!!
+                </div>
                 <img src={selectedAccount.avatar} className="w-32 h-32 rounded-full mb-6 shadow-2xl border-2 border-white/10" />
                 <h2 className="text-3xl font-semibold text-white mb-6 drop-shadow-md">{selectedAccount.gamertag}</h2>
                 
@@ -291,6 +294,9 @@ export function AuthFlow({ onConfirm }: { onConfirm: () => void }) {
               </div>
             ) : (
               <div className="flex flex-col items-center">
+                <div className="mb-2 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg border border-red-400 animate-pulse">
+                  We added GTA 5 and GTA 6!!!
+                </div>
                 <div className="w-32 h-32 rounded-full mb-6 shadow-2xl border-2 border-white/10 bg-zinc-800/80 flex items-center justify-center backdrop-blur-md">
                   <User size={64} className="text-zinc-400" />
                 </div>

@@ -290,12 +290,67 @@ export default function App() {
   const [showFakeUpdate, setShowFakeUpdate] = useState(false);
   const [showDeadComputer, setShowDeadComputer] = useState(false);
   const [showTrophyToast, setShowTrophyToast] = useState(false);
-  const [playingGame, setPlayingGame] = useState<{ id: string, title: string, file: string, instanceId?: string } | null>(null);
+  const [playingGame, setPlayingGame] = useState<{ id: string, title: string, file: string, instanceId?: string } | null>(() => {
+    try {
+      const saved = localStorage.getItem('quick_resume_playing');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && !parsed.title?.toLowerCase().includes('eaglercraft')) {
+          return parsed;
+        }
+      }
+    } catch (e) {}
+    return null;
+  });
   const [playMinutes, setPlayMinutes] = useState(0);
-  const [suspendedGames, setSuspendedGames] = useState<{game: {id: string, title: string, file: string, instanceId?: string}, minutes: number}[]>([]);
+  const [suspendedGames, setSuspendedGames] = useState<{game: {id: string, title: string, file: string, instanceId?: string}, minutes: number}[]>(() => {
+    try {
+      const saved = localStorage.getItem('quick_resume_suspended');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.filter(s => !s.game.title?.toLowerCase().includes('eaglercraft'));
+        }
+      }
+    } catch (e) {}
+    return [];
+  });
+
+  useEffect(() => {
+    try {
+      if (playingGame && !playingGame.title?.toLowerCase().includes('eaglercraft')) {
+        localStorage.setItem('quick_resume_playing', JSON.stringify(playingGame));
+      } else {
+        localStorage.removeItem('quick_resume_playing');
+      }
+      if (suspendedGames && suspendedGames.length > 0) {
+        const filtered = suspendedGames.filter(s => !s.game.title?.toLowerCase().includes('eaglercraft'));
+        localStorage.setItem('quick_resume_suspended', JSON.stringify(filtered));
+      } else {
+        localStorage.removeItem('quick_resume_suspended');
+      }
+    } catch (e) {}
+  }, [playingGame, suspendedGames]);
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      try {
+        if (playingGame && !playingGame.title?.toLowerCase().includes('eaglercraft')) {
+          localStorage.setItem('quick_resume_playing', JSON.stringify(playingGame));
+        }
+        if (suspendedGames && suspendedGames.length > 0) {
+          const filtered = suspendedGames.filter(s => !s.game.title?.toLowerCase().includes('eaglercraft'));
+          localStorage.setItem('quick_resume_suspended', JSON.stringify(filtered));
+        }
+      } catch (e) {}
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [playingGame, suspendedGames]);
   const [pendingGameToPlay, setPendingGameToPlay] = useState<{id: string, title: string, file: string, instanceId?: string} | null>(null);
   const [warningGame, setWarningGame] = useState<{id: string, title: string, file: string, instanceId?: string} | null>(null);
-  const [showDropboxPrompt, setShowDropboxPrompt] = useState(true);
+  const [showDropboxPrompt, setShowDropboxPrompt] = useState(false);
+  const [showQuickResumeWelcomeModal, setShowQuickResumeWelcomeModal] = useState(false);
   const [dropboxToast, setDropboxToast] = useState(false);
    const [dropboxSelection, setDropboxSelection] = useState<string>('');
    const [miniPlayerMedia, setMiniPlayerMedia] = useState<any>(null);
@@ -536,7 +591,7 @@ export default function App() {
       setShowFakeUpdate(true);
       return;
     }
-    if (game.id === 'Roblox' || game.id === 'TikTok') {
+    if (game.id === 'Roblox' || game.id === 'TikTok' || game.id === 'gta-5-6') {
       setWarningGame(game);
       return;
     }
@@ -659,6 +714,15 @@ export default function App() {
     });
     return () => { clearTimeout(timer); unsub(); };
   }, [userAuth]);
+
+  useEffect(() => {
+    if (profileLoaded && userAuth && !isGuestMode) {
+      const shown = localStorage.getItem('shown_quick_resume_modal');
+      if (!shown) {
+        setShowQuickResumeWelcomeModal(true);
+      }
+    }
+  }, [profileLoaded, userAuth, isGuestMode]);
 
   useEffect(() => {
     const updateTime = () => setTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
@@ -929,17 +993,31 @@ export default function App() {
                 exit={{ scale: 0.9 }}
                 className="bg-zinc-900 border-2 border-red-500 p-8 rounded-lg max-w-md w-full shadow-2xl mx-4"
               >
-                <h2 className="text-2xl font-bold mb-4 text-red-400">⚠️ Warning</h2>
-                <p className="text-white mb-6 text-lg font-semibold">
-                  DO NOT CLICK NOTHING ON THE SCREEN IF IT SAYS "404 page not found"
-                </p>
-                <p className="text-zinc-300 mb-8 leading-relaxed">
-                  Just click continue and click Stop game, if it shows 404 page not found. If it doesn't, just continue and play the game.
-                </p>
-                <div className="flex items-center gap-2 mb-6 bg-red-900/30 border border-red-700 p-3 rounded">
-                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                  <p className="text-red-300 text-sm font-semibold">This error is getting fixed as soon as possible.</p>
-                </div>
+                {warningGame.id === 'gta-5-6' ? (
+                  <>
+                    <h2 className="text-2xl font-bold mb-4 text-red-400">⚠️ GTA 5/6 Warning</h2>
+                    <p className="text-white mb-4 text-lg font-semibold">
+                      This game is sometimes laggy, and happens very often.
+                    </p>
+                    <p className="text-zinc-300 mb-8 leading-relaxed">
+                      Our team is fixing this laggy problem, GTA V is not meant for school computers/laptop.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <h2 className="text-2xl font-bold mb-4 text-red-400">⚠️ Warning</h2>
+                    <p className="text-white mb-6 text-lg font-semibold">
+                      DO NOT CLICK NOTHING ON THE SCREEN IF IT SAYS "404 page not found"
+                    </p>
+                    <p className="text-zinc-300 mb-8 leading-relaxed">
+                      Just click continue and click Stop game, if it shows 404 page not found. If it doesn't, just continue and play the game.
+                    </p>
+                    <div className="flex items-center gap-2 mb-6 bg-red-900/30 border border-red-700 p-3 rounded">
+                      <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                      <p className="text-red-300 text-sm font-semibold">This error is getting fixed as soon as possible.</p>
+                    </div>
+                  </>
+                )}
                 <div className="flex gap-4 justify-end">
                   <button 
                     onClick={() => setWarningGame(null)}
@@ -957,6 +1035,43 @@ export default function App() {
                     className="px-6 py-2 rounded-md bg-green-600 hover:bg-green-500 font-bold transition-colors text-white"
                   >
                     Continue
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {showQuickResumeWelcomeModal && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed inset-0 z-[300] bg-black/70 backdrop-blur-sm flex items-center justify-center"
+            >
+              <motion.div 
+                initial={{ scale: 0.9 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0.9 }}
+                className="bg-zinc-900 border-2 border-blue-500 p-8 rounded-lg max-w-lg w-full shadow-2xl mx-4 text-white"
+              >
+                <h2 className="text-2xl font-bold mb-4 text-blue-400">We introduce... Quick Resume</h2>
+                <p className="text-zinc-200 mb-6 text-sm leading-relaxed">
+                  [once you close out of the tab it will save the current game state, once you log in the site again and enter the game you will see where you left off.]
+                </p>
+                <p className="text-zinc-400 text-xs mb-8 italic">
+                  (NOTE: This does not work for multiplayer games such as Eaglercraft).
+                </p>
+                <div className="flex justify-end">
+                  <button 
+                    onClick={() => {
+                      localStorage.setItem('shown_quick_resume_modal', 'true');
+                      setShowQuickResumeWelcomeModal(false);
+                    }}
+                    className="px-6 py-2.5 rounded-md bg-blue-600 hover:bg-blue-500 font-bold transition-colors text-white text-sm"
+                  >
+                    Got it
                   </button>
                 </div>
               </motion.div>

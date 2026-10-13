@@ -69,6 +69,19 @@ export const WinStore = ({ installedApps, onInstall, onPlay }: { installedApps: 
           </button>
         </div>
         
+        <div className="px-6 pt-6">
+          <div className="bg-gradient-to-r from-red-600 to-rose-700 border border-red-500 text-white px-6 py-4 rounded-xl shadow-lg flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl animate-bounce">🔥</span>
+              <div>
+                <h3 className="font-bold text-lg">We added GTA 5 and GTA 6!!!</h3>
+                <p className="text-xs text-red-100">Play the latest high-performance titles directly in your browser.</p>
+              </div>
+            </div>
+            <span className="text-xs bg-white/20 px-3 py-1.5 rounded-full font-semibold uppercase tracking-wider">New</span>
+          </div>
+        </div>
+        
         <div className="flex-1 overflow-y-auto p-6 lg:p-8">
           <h2 className="text-xl font-semibold mb-6">{activeTab === 'games' ? 'Top games' : activeTab === 'apps' ? 'Top apps' : 'Top free games & apps'}</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">

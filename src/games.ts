@@ -63,6 +63,13 @@ export const ALL_GAMES = [
     "file": "Apps/WinFlix.html"
   },
   {
+    "id": "gta-5-6",
+    "title": "GTA 5/6",
+    "image": "https://upload.wikimedia.org/wikipedia/en/a/a5/Grand_Theft_Auto_V.png",
+    "type": "game",
+    "file": "https://playgta5-tau.vercel.app/"
+  },
+  {
     "id": "1v1 LOL",
     "title": "1v1 LOL",
     "image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2303030/header.jpg",
