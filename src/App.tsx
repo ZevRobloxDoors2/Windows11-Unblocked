@@ -1054,12 +1054,21 @@ export default function App() {
                 localStorage.setItem('performance_preset', preset);
                 if (preset === 'high') {
                   localStorage.setItem('fanmade_svg_images', 'false');
+                  localStorage.setItem('wobbly_window', 'true');
+                  localStorage.setItem('quick_resume', 'true');
+                  localStorage.setItem('taskbar_blur', 'true');
+                  localStorage.setItem('animations', 'true');
+                  setShowComparisonModal(false);
+                  if (!localStorage.getItem('shown_quick_resume_modal')) {
+                    setShowQuickResumeWelcomeModal(true);
+                  }
                 } else {
                   localStorage.setItem('fanmade_svg_images', 'true');
-                }
-                setShowComparisonModal(false);
-                if (!localStorage.getItem('shown_quick_resume_modal')) {
-                  setShowQuickResumeWelcomeModal(true);
+                  localStorage.setItem('wobbly_window', 'false');
+                  localStorage.setItem('quick_resume', 'false');
+                  localStorage.setItem('taskbar_blur', 'false');
+                  localStorage.setItem('animations', 'false');
+                  setShowComparisonModal(false);
                 }
               }}
             />

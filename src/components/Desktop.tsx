@@ -600,7 +600,7 @@ export const Desktop = ({
       </AnimatePresence>
 
       {/* Taskbar */}
-      <div className="absolute bottom-0 left-0 w-full h-12 bg-transparent backdrop-blur-[50px] border-t border-white/10 shadow-[0_-2px_15px_rgba(255,255,255,0.03)] flex items-center justify-between px-2 z-[250]">
+      <div className={`absolute bottom-0 left-0 w-full h-12 ${(localStorage.getItem('performance_preset') === 'low' || localStorage.getItem('taskbar_blur') === 'false') ? 'bg-[#1a1a1a]' : 'bg-transparent backdrop-blur-[50px]'} border-t border-white/10 shadow-[0_-2px_15px_rgba(255,255,255,0.03)] flex items-center justify-between px-2 z-[250]`}>
         <div className="flex-1 flex items-center h-full gap-2 px-2">
           {/* Weather Widget */}
           <div className="flex items-center gap-2 hover:bg-white/10 px-2 py-1 rounded-md cursor-pointer transition-colors text-white">
