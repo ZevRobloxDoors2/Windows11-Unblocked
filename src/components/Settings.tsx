@@ -243,6 +243,17 @@ export function Settings({ profile, onBack, onLogout, isGuestMode }: { profile: 
                   <input type="checkbox" checked={showFramerate} onChange={(e) => setShowFramerate(e.target.checked)} className="w-4 h-4 accent-[#00A4EF]" />
                 </div>
                 
+                <div className="p-4 border-b border-white/10 flex items-center justify-between">
+                  <div>
+                    <span className="font-semibold block text-sm">Performance & Experience Preset</span>
+                    <span className="text-xs text-zinc-400 block mt-1">Current: {localStorage.getItem('performance_preset') === 'low' ? 'Low Preset' : 'High Preset'} (Fan-made SVG: {localStorage.getItem('fanmade_svg_images') === 'true' ? 'Enabled' : 'Disabled'})</span>
+                  </div>
+                  <button onClick={() => {
+                    localStorage.removeItem('ebox_comparison_done');
+                    window.location.reload();
+                  }} className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 rounded text-xs font-bold text-white transition-colors">Change Preset</button>
+                </div>
+
                 <div className="p-4 flex items-center justify-between">
                   <div>
                     <span className="font-semibold block text-sm">Debug Mode</span>

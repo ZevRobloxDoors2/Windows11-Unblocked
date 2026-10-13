@@ -43,6 +43,7 @@ import { FakeUpdate } from './components/FakeUpdate';
 import { FakeDeadComputer } from './components/FakeDeadComputer';
 import { CustomChromeBrowser } from './components/CustomChromeBrowser';
 import { GlobalMiniPlayer } from './components/GlobalMiniPlayer';
+import { ComparisonModal } from './components/ComparisonModal';
 
 type View = 'home' | 'store' | 'profile' | 'settings' | 'notifications' | 'friends' | 'chat' | 'party' | 'activity' | 'local-share' | 'classroom';
 
@@ -277,6 +278,9 @@ export default function App() {
     }
   }, []);
   
+  const [showComparisonModal, setShowComparisonModal] = useState(() => {
+    return localStorage.getItem('ebox_comparison_done') !== 'true';
+  });
   const [activePartyId, setActivePartyId] = useState<string | undefined>(undefined);
   const [targetCallFriend, setTargetCallFriend] = useState<{ uid: string, gamertag: string } | undefined>(undefined);
   const [customChromeInstances, setCustomChromeInstances] = useState<Record<string, boolean>>({});
@@ -1039,6 +1043,26 @@ export default function App() {
                 </div>
               </motion.div>
             </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {showComparisonModal && (
+            <ComparisonModal 
+              onSelectPreset={(preset) => {
+                localStorage.setItem('ebox_comparison_done', 'true');
+                localStorage.setItem('performance_preset', preset);
+                if (preset === 'high') {
+                  localStorage.setItem('fanmade_svg_images', 'false');
+                } else {
+                  localStorage.setItem('fanmade_svg_images', 'true');
+                }
+                setShowComparisonModal(false);
+                if (!localStorage.getItem('shown_quick_resume_modal')) {
+                  setShowQuickResumeWelcomeModal(true);
+                }
+              }}
+            />
           )}
         </AnimatePresence>
 

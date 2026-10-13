@@ -29,6 +29,26 @@ function getProxiedUrl(targetUrl: string): string {
     return `${baseUrl}/service/${encodeURIComponent(encoded)}`;
 }
 
+export function getDisplayImage(game: { id: string, title: string, image: string }): string {
+    const isFanmade = localStorage.getItem('fanmade_svg_images') === 'true' || localStorage.getItem('performance_preset') === 'low';
+    if (isFanmade) {
+        const encodedSvg = encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+                <defs>
+                    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#10b981"/>
+                        <stop offset="100%" stop-color="#047857"/>
+                    </linearGradient>
+                </defs>
+                <rect width="200" height="200" rx="24" fill="url(#g)"/>
+                <text x="100" y="100" font-family="system-ui, sans-serif" font-weight="bold" font-size="24" fill="#ffffff" text-anchor="middle" dominant-baseline="central">${game.title.substring(0, 12)}</text>
+            </svg>
+        `);
+        return `data:image/svg+xml;utf8,${encodedSvg}`;
+    }
+    return game.image;
+}
+
 export const ALL_GAMES = [
   {
     "id": "app-local-share",
