@@ -87,7 +87,7 @@ export const ALL_GAMES = [
     "title": "GTA 5/6",
     "image": "https://upload.wikimedia.org/wikipedia/en/a/a5/Grand_Theft_Auto_V.png",
     "type": "game",
-    "file": "https://gta5-87g.pages.dev/"
+    "file": "https://gta5-87g.pages.dev/?low=1&fps=30&res=1280x720"
   },
   {
     "id": "1v1 LOL",

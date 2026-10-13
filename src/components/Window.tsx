@@ -89,8 +89,8 @@ export const Window = ({ title, onClose, onMinimize, onGuide, onReload, extraHea
       style={{
         x,
         y,
-        skewX: windowState === 'floating' ? skewX : 0,
-        skewY: windowState === 'floating' ? skewY : 0,
+        skewX: (localStorage.getItem('wobbly_window') !== 'false') && windowState === 'floating' ? skewX : 0,
+        skewY: (localStorage.getItem('wobbly_window') !== 'false') && windowState === 'floating' ? skewY : 0,
         resize: windowState === 'floating' ? 'both' : 'none',
         minWidth: 300,
         minHeight: 200,

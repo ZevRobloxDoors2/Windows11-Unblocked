@@ -1061,6 +1061,8 @@ export default function App() {
                   setShowComparisonModal(false);
                   if (!localStorage.getItem('shown_quick_resume_modal')) {
                     setShowQuickResumeWelcomeModal(true);
+                  } else {
+                    window.location.reload();
                   }
                 } else {
                   localStorage.setItem('fanmade_svg_images', 'true');
@@ -1069,6 +1071,7 @@ export default function App() {
                   localStorage.setItem('taskbar_blur', 'false');
                   localStorage.setItem('animations', 'false');
                   setShowComparisonModal(false);
+                  window.location.reload();
                 }
               }}
             />

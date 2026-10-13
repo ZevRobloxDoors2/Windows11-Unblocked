@@ -80,7 +80,30 @@ export const AppIframe: React.FC<AppIframeProps> = ({ src, isActive, onLoadStart
   };
 
   return (
-    <div className="w-full h-full relative bg-white block">
+    <div className="w-full h-full relative bg-white flex flex-col">
+      {currentSrc.includes('gta5-87g.pages.dev') && (
+        <div className="bg-zinc-900 border-b border-zinc-700 px-4 py-2 flex items-center justify-between text-xs text-white z-[70] relative shadow-md shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span>GTA V Cloud GPU: If startup check appears, select mode:</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setCurrentSrc('https://gta5-87g.pages.dev/?low=1&fps=30&res=1280x720')}
+              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 rounded font-bold transition-colors cursor-pointer"
+            >
+              Lower Memory (720p / 30 FPS)
+            </button>
+            <button 
+              onClick={() => setCurrentSrc('https://gta5-87g.pages.dev/')}
+              className="px-2.5 py-1 bg-zinc-700 hover:bg-zinc-600 rounded font-bold transition-colors cursor-pointer"
+            >
+              Original Settings
+            </button>
+          </div>
+        </div>
+      )}
+      <div className="w-full flex-1 relative bg-white">
       <AnimatePresence>
         {showProxyWarning && (
           <motion.div 
@@ -157,6 +180,7 @@ export const AppIframe: React.FC<AppIframeProps> = ({ src, isActive, onLoadStart
           onError={() => triggerError()}
         />
       )}
+      </div>
     </div>
   );
 };
