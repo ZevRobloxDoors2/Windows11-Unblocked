@@ -174,8 +174,8 @@ export const AppIframe: React.FC<AppIframeProps> = ({ src, isActive, onLoadStart
           ref={iframeRef}
           src={currentSrc} 
           className="w-full h-full border-none m-0 p-0" 
-          sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-popups allow-presentation"
-          allow="fullscreen; autoplay; gamepad"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock allow-popups allow-presentation allow-modals"
+          allow="fullscreen; autoplay; gamepad; clipboard-read; clipboard-write; accelerometer; gyroscope; encrypted-media"
           onLoad={handleLoad}
           onError={() => triggerError()}
         />
