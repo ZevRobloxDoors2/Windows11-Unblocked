@@ -4,8 +4,7 @@ import { Search, Bell, Settings as SettingsIcon, MessageSquare, Users, Store, Bo
 import { ALL_GAMES } from '../games';
 import { UserProfile } from '../types';
 import { DesktopWidgets } from './DesktopWidgets';
-import { UPDATE_LOGS } from '../data/updateLogs';
-import { TimerWidget } from './TimerWidget';
+import { WidgetsFlyout } from './WidgetsFlyout';
 
 export const Desktop = ({ 
   profile, 
@@ -134,6 +133,7 @@ export const Desktop = ({
     fetchWeather();
   }, []);
   const [showCredits, setShowCredits] = useState(false);
+  const [showWidgetsFlyout, setShowWidgetsFlyout] = useState(false);
   const [showQuickSettings, setShowQuickSettings] = useState(false);
   const [showBatteryNotice, setShowBatteryNotice] = useState(false);
   
@@ -145,7 +145,6 @@ export const Desktop = ({
   const [fullscreenCountdown, setFullscreenCountdown] = useState(5);
   const [showFullscreenModal, setShowFullscreenModal] = useState(true);
   const [contextMenu, setContextMenu] = useState<{x: number, y: number} | null>(null);
-  const [isUpdateLogsMinimized, setIsUpdateLogsMinimized] = useState(() => localStorage.getItem('update_logs_minimized') === 'true');
   const [isHalloween, setIsHalloween] = useState(() => localStorage.getItem('halloween_theme') === 'true');
   const [bgImage, setBgImage] = useState(() => localStorage.getItem('win11_bg') || 'https://images.unsplash.com/photo-1622737133809-d95047b9e673?auto=format&fit=crop&w=2000&q=80');
   const halloweenBg = `${((import.meta as any).env?.BASE_URL || '/').replace(/\/$/, '')}/minecraft_halloween.jpg`;
@@ -234,7 +233,6 @@ export const Desktop = ({
       style={{ backgroundImage: `url('${currentBg}')` }}
       onContextMenu={handleContextMenu}
     >
-      <TimerWidget onOpenRewardWindow={() => setCurrentView('profile')} />
       {/* Spooky Halloween ambient glow overlay */}
       {isHalloween && (
         <div className="absolute inset-0 pointer-events-none z-[1] overflow-hidden">
@@ -374,70 +372,14 @@ export const Desktop = ({
               ))}
             </div>
 
-            <div className="mt-auto bg-[#1c1c1c] -mx-6 -mb-6 p-4 rounded-b-xl border-t border-white/5 flex flex-col gap-3">
-              {/* Update Logs Glassy Panel with Scroll and Minimize Animation */}
-              <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-3 shadow-xl">
-                <div className="flex items-center justify-between pb-2 border-b border-white/10 mb-2">
-                  <span className="text-base font-bold text-white tracking-wide">Update Logs</span>
-                  <button 
-                    onClick={() => {
-                      const next = !isUpdateLogsMinimized;
-                      setIsUpdateLogsMinimized(next);
-                      localStorage.setItem('update_logs_minimized', String(next));
-                    }}
-                    className="text-xs text-zinc-400 hover:text-white bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-lg transition-colors font-semibold"
-                  >
-                    {isUpdateLogsMinimized ? "Expand +" : "Minimize -"}
-                  </button>
-                </div>
-
-                <AnimatePresence>
-                  {!isUpdateLogsMinimized && (
-                    <motion.div 
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.2, ease: 'easeInOut' }}
-                      className="overflow-hidden"
-                    >
-                      <div className="overflow-y-auto max-h-[140px] pr-1 space-y-3 text-xs custom-scrollbar">
-                        {UPDATE_LOGS.map((log) => (
-                          <div key={log.version} className="space-y-1">
-                            <h4 className="font-bold text-blue-400 text-sm tracking-wide">{log.version} <span className="text-[10px] text-zinc-400 font-normal">({log.date})</span></h4>
-                            <p className="text-zinc-300 font-medium">{log.description}</p>
-                            <ul className="list-disc list-inside space-y-0.5 text-zinc-400 pl-1">
-                              {log.highlights.map((item, idx) => {
-                                const parts = item.split(/\*\*(.*?)\*\*/g);
-                                return (
-                                  <li key={idx} className="leading-tight">
-                                    {parts.map((part, pIdx) => 
-                                      pIdx % 2 === 1 ? <strong key={pIdx} className="text-white font-bold">{part}</strong> : part
-                                    )}
-                                  </li>
-                                );
-                              })}
-                            </ul>
-                          </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+            <div className="mt-auto flex items-center justify-between bg-[#1c1c1c] -mx-6 -mb-6 p-4 rounded-b-xl border-t border-white/5">
+              <div onClick={() => { setStartOpen(false); setCurrentView('profile'); }} className="flex items-center gap-3 hover:bg-white/10 p-2 rounded-md cursor-pointer transition-colors">
+                <img src={profile.avatar} className="w-8 h-8 rounded-full" />
+                <span className="text-sm font-medium text-white">{profile.gamertag}</span>
               </div>
-
-              {/* Profile and Logout Footer Row */}
-              <div className="flex items-center justify-between pt-1">
-                <div onClick={() => { setStartOpen(false); setCurrentView('profile'); }} className="flex items-center gap-3 hover:bg-white/10 p-2 rounded-xl cursor-pointer transition-colors">
-                  <img src={profile.avatar} className="w-9 h-9 rounded-full border border-white/20 shadow-md object-cover" />
-                  <div className="flex flex-col text-left">
-                    <span className="text-sm font-semibold text-white">{profile.gamertag}</span>
-                    <span className="text-[10px] text-zinc-400">View Profile</span>
-                  </div>
-                </div>
-                <button onClick={onLogout} className="text-zinc-400 hover:text-white p-2.5 hover:bg-white/10 rounded-xl transition-colors" title="Logout">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
-                </button>
-              </div>
+              <button onClick={onLogout} className="text-zinc-400 hover:text-white p-2 hover:bg-white/10 rounded-md transition-colors">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+              </button>
             </div>
           </motion.div>
         )}
@@ -663,7 +605,7 @@ export const Desktop = ({
       <div className={`absolute bottom-0 left-0 w-full h-12 ${(localStorage.getItem('performance_preset') === 'low' || localStorage.getItem('taskbar_blur') === 'false') ? 'bg-[#1a1a1a]' : 'bg-transparent backdrop-blur-[50px]'} border-t border-white/10 shadow-[0_-2px_15px_rgba(255,255,255,0.03)] flex items-center justify-between px-2 z-[250]`}>
         <div className="flex-1 flex items-center h-full gap-2 px-2">
           {/* Weather Widget */}
-          <div className="flex items-center gap-2 hover:bg-white/10 px-2 py-1 rounded-md cursor-pointer transition-colors text-white">
+          <div onClick={() => setShowWidgetsFlyout(true)} className="flex items-center gap-2 hover:bg-white/10 px-2 py-1 rounded-md cursor-pointer transition-colors text-white">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.5 19a4.5 4.5 0 0 0 0-9h-.1A7 7 0 1 0 5 17h12.5Z"></path><path d="M12 2v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="M2 12h2"></path><path d="m4.93 19.07 1.41-1.41"></path></svg>
             <div className="flex flex-col">
               <span className="text-[11px] font-semibold">{weather ? `${weather.temp}°F` : `...`}</span>
@@ -922,6 +864,7 @@ export const Desktop = ({
           </div>
         </div>
       </div>
+      {showWidgetsFlyout && <WidgetsFlyout onClose={() => setShowWidgetsFlyout(false)} weather={weather} />}
     </div>
   );
 };

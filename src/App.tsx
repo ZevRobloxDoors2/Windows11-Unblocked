@@ -26,6 +26,7 @@ import { useSpatialNavigation } from './hooks/useSpatialNavigation';
 import { ALL_GAMES } from './games';
 import { GlobalNotifications } from './components/GlobalNotifications';
 import { InstallPromptModal } from './components/InstallPromptModal';
+import { DeploymentFailedScreen } from './components/DeploymentFailedScreen';
 
 import { ActivityFeed } from './components/ActivityFeed';
 import { GlobalSearch } from './components/GlobalSearch';
@@ -61,6 +62,10 @@ const getThemeClasses = (themeId?: string) => {
 };
 
 export default function App() {
+  if (window.location.href.includes("zevrobloxdoors2.github.io/Windows11-Unblocked")) {
+    return <DeploymentFailedScreen />;
+  }
+
   const [activeSessionConfirmed, setActiveSessionConfirmed] = useState(false);
   const [startupDone, setStartupDone] = useState(() => {
     return sessionStorage.getItem('ebox_startup_done') === 'true';
