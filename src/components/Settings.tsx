@@ -300,6 +300,24 @@ export function Settings({ profile, onBack, onLogout, isGuestMode }: { profile: 
 
                 <div className="w-full h-px bg-white/10" />
 
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="font-semibold block text-sm">Halloween Theme</span>
+                    <span className="text-xs text-zinc-400 block mt-1">Enable spooky wallpaper, glowing pumpkin taskbar button, and themed accents</span>
+                  </div>
+                  <input 
+                    type="checkbox" 
+                    checked={localStorage.getItem('halloween_theme') === 'true'} 
+                    onChange={(e) => {
+                      localStorage.setItem('halloween_theme', String(e.target.checked));
+                      window.location.reload();
+                    }} 
+                    className="w-4 h-4 accent-orange-500 cursor-pointer" 
+                  />
+                </div>
+
+                <div className="w-full h-px bg-white/10" />
+
                 <div>
                   <label className="block text-sm font-semibold mb-2">Lock Screen Wallpaper</label>
                   <p className="text-xs text-zinc-400 mb-3">Customize the background of your login screen.</p>
