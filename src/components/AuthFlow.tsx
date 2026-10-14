@@ -4,6 +4,8 @@ import { signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, create
 import { auth, db } from '../firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
+import { UpdateLogsPanel } from './UpdateLogsPanel';
+import { LockscreenTimerWidget } from './LockscreenTimerWidget';
 
 interface LocalAccount {
   uid: string;
@@ -255,70 +257,80 @@ export function AuthFlow({ onConfirm }: { onConfirm: () => void }) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.4 }}
-            className="z-10 absolute inset-0 flex flex-col items-center justify-center"
+            className="z-10 absolute inset-0 flex items-center justify-center p-8"
           >
-            {accounts.length > 0 && selectedAccount ? (
-              <div className="flex flex-col items-center">
-                <div className="mb-2 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg border border-red-400 animate-pulse">
-                  We added GTA 5 and GTA 6!!!
-                </div>
-                <img src={selectedAccount.avatar} className="w-32 h-32 rounded-full mb-6 shadow-2xl border-2 border-white/10" />
-                <h2 className="text-3xl font-semibold text-white mb-6 drop-shadow-md">{selectedAccount.gamertag}</h2>
-                
-                {!selectedAccount.pin ? (
-                  <button onClick={() => authenticate(selectedAccount)} className="w-16 h-16 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 shadow-lg">
-                    <ArrowRight size={32} />
-                  </button>
-                ) : (
-                  <>
-                    <form onSubmit={handlePinSubmit} className="relative w-72">
-                      <input 
-                        type="password" 
-                        placeholder="PIN" 
-                        value={pinInput}
-                        onChange={e => { setPinInput(e.target.value); setError(''); }}
-                        className="w-full px-4 py-3 pr-12 rounded-lg bg-black/40 text-white border border-white/20 focus:border-white/50 focus:bg-black/60 outline-none backdrop-blur-md transition-all text-center tracking-widest placeholder:tracking-normal placeholder:text-center" 
-                        autoFocus
-                      />
-                      <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-white/50 hover:text-white transition-colors">
-                        <ArrowRight size={20} />
-                      </button>
-                    </form>
-                    {error && <p className="text-red-400 mt-4 text-sm font-medium bg-black/40 px-3 py-1 rounded">{error}</p>}
-                  </>
-                )}
-                
-                <button onClick={() => setView('add_method')} className="mt-8 text-white/70 hover:text-white text-sm transition-colors">
-                  Sign-in options
-                </button>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center">
-                <div className="mb-2 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg border border-red-400 animate-pulse">
-                  We added GTA 5 and GTA 6!!!
-                </div>
-                <div className="w-32 h-32 rounded-full mb-6 shadow-2xl border-2 border-white/10 bg-zinc-800/80 flex items-center justify-center backdrop-blur-md">
-                  <User size={64} className="text-zinc-400" />
-                </div>
-                <h2 className="text-3xl font-semibold text-white mb-8 drop-shadow-md">Welcome</h2>
-                
-                <div className="flex flex-col gap-3 w-72">
-                  <button onClick={handleGoogleSignIn} className="w-full py-3 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-lg backdrop-blur-md border border-white/10 transition-colors shadow-lg">
-                    Use Google API
-                  </button>
-                  <button onClick={() => setView('manual_signin')} className="w-full py-3 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-lg backdrop-blur-md border border-white/10 transition-colors shadow-lg">
-                    Sign in & Sign up
-                  </button>
-                  <button onClick={() => setView('tester_login')} className="w-full py-3 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-lg backdrop-blur-md border border-white/10 transition-colors shadow-lg flex items-center justify-center gap-2">
-                    <ShieldAlert size={16} />
-                    Tester & Owner Sign in
-                  </button>
-                  <button onClick={handleGuestPlay} className="w-full py-2 mt-4 bg-transparent hover:bg-white/5 text-white/60 hover:text-white text-sm font-medium rounded-lg transition-colors">
-                    Skip sign in
+            {/* Top Right Timer Widget */}
+            <div className="absolute top-8 right-8">
+              <LockscreenTimerWidget />
+            </div>
+
+            <div className="flex flex-col md:flex-row items-center justify-center gap-12 max-w-4xl w-full">
+              {accounts.length > 0 && selectedAccount ? (
+                <div className="flex flex-col items-center bg-black/40 backdrop-blur-2xl border border-white/15 p-8 rounded-3xl shadow-2xl w-80 shrink-0">
+                  <div className="mb-3 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg border border-red-400 animate-pulse">
+                    We added GTA 5 and GTA 6!!!
+                  </div>
+                  <img src={selectedAccount.avatar} className="w-28 h-28 rounded-full mb-5 shadow-2xl border-2 border-white/15 object-cover" />
+                  <h2 className="text-2xl font-semibold text-white mb-6 drop-shadow-md text-center">{selectedAccount.gamertag}</h2>
+                  
+                  {!selectedAccount.pin ? (
+                    <button onClick={() => authenticate(selectedAccount)} className="w-14 h-14 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 shadow-lg">
+                      <ArrowRight size={28} />
+                    </button>
+                  ) : (
+                    <>
+                      <form onSubmit={handlePinSubmit} className="relative w-full">
+                        <input 
+                          type="password" 
+                          placeholder="PIN" 
+                          value={pinInput}
+                          onChange={e => { setPinInput(e.target.value); setError(''); }}
+                          className="w-full px-4 py-3 pr-12 rounded-xl bg-black/40 text-white border border-white/20 focus:border-white/50 focus:bg-black/60 outline-none backdrop-blur-md transition-all text-center tracking-widest placeholder:tracking-normal placeholder:text-center" 
+                          autoFocus
+                        />
+                        <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-white/50 hover:text-white transition-colors">
+                          <ArrowRight size={20} />
+                        </button>
+                      </form>
+                      {error && <p className="text-red-400 mt-3 text-sm font-medium bg-black/40 px-3 py-1 rounded">{error}</p>}
+                    </>
+                  )}
+                  
+                  <button onClick={() => setView('add_method')} className="mt-6 text-white/70 hover:text-white text-sm transition-colors">
+                    Sign-in options
                   </button>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="flex flex-col items-center bg-black/40 backdrop-blur-2xl border border-white/15 p-8 rounded-3xl shadow-2xl w-80 shrink-0">
+                  <div className="mb-3 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg border border-red-400 animate-pulse">
+                    We added GTA 5 and GTA 6!!!
+                  </div>
+                  <div className="w-28 h-28 rounded-full mb-5 shadow-2xl border-2 border-white/15 bg-zinc-800/80 flex items-center justify-center backdrop-blur-md">
+                    <User size={56} className="text-zinc-400" />
+                  </div>
+                  <h2 className="text-2xl font-semibold text-white mb-6 drop-shadow-md">Welcome</h2>
+                  
+                  <div className="flex flex-col gap-3 w-full">
+                    <button onClick={handleGoogleSignIn} className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl backdrop-blur-md border border-white/10 transition-colors shadow-lg text-sm">
+                      Use Google API
+                    </button>
+                    <button onClick={() => setView('manual_signin')} className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl backdrop-blur-md border border-white/10 transition-colors shadow-lg text-sm">
+                      Sign in & Sign up
+                    </button>
+                    <button onClick={() => setView('tester_login')} className="w-full py-2.5 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl backdrop-blur-md border border-white/10 transition-colors shadow-lg flex items-center justify-center gap-2 text-sm">
+                      <ShieldAlert size={16} />
+                      Tester & Owner Sign in
+                    </button>
+                    <button onClick={handleGuestPlay} className="w-full py-2 mt-2 bg-transparent hover:bg-white/5 text-white/60 hover:text-white text-xs font-medium rounded-lg transition-colors">
+                      Skip sign in
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Update Logs Panel positioned next to the profile picture */}
+              <UpdateLogsPanel />
+            </div>
 
             {/* Bottom Left Accounts List */}
             {accounts.length > 0 && (
