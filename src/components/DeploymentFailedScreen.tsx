@@ -58,6 +58,7 @@ export const DeploymentFailedScreen: React.FC = () => {
         <div className="bg-zinc-900/90 border border-red-500/40 rounded-2xl p-6 w-full shadow-2xl backdrop-blur-xl flex flex-col gap-4">
           <div className="flex items-center justify-between text-xs text-red-400 border-b border-white/10 pb-3">
             <span className="flex items-center gap-2"><Terminal size={14} /> HOST_VERIFICATION_CHECK_FAILED</span>
+            <span className="flex items-center gap-2"><Terminal size={14} /> GO TO: https://windows11-unblocked.pages.dev/</span>
             <span className="animate-ping w-2 h-2 rounded-full bg-red-500" />
           </div>
 
