@@ -82,23 +82,23 @@ export const AppIframe: React.FC<AppIframeProps> = ({ src, isActive, onLoadStart
   return (
     <div className="w-full h-full relative bg-white flex flex-col">
       {currentSrc.includes('gta5-87g.pages.dev') && (
-        <div className="bg-zinc-900 border-b border-zinc-700 px-4 py-2 flex items-center justify-between text-xs text-white z-[70] relative shadow-md shrink-0">
+        <div className="bg-zinc-900 border-b border-zinc-700 px-4 py-2.5 flex items-center justify-between text-xs text-white z-[70] relative shadow-md shrink-0 flex-wrap gap-2">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>GTA V Cloud GPU: If startup check appears, select mode:</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+            <span>GTA V requires Shared Memory (not allowed in iframes). Click to play in a new tab:</span>
           </div>
           <div className="flex items-center gap-2">
             <button 
-              onClick={() => setCurrentSrc('https://gta5-87g.pages.dev/?low=1&fps=30&res=1280x720')}
-              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 rounded font-bold transition-colors cursor-pointer"
+              onClick={() => window.open('https://gta5-87g.pages.dev/?low=1&fps=30&res=1280x720', '_blank')}
+              className="px-3 py-1.5 bg-[#00A4EF] hover:bg-[#008AC9] rounded font-bold transition-colors cursor-pointer text-white flex items-center gap-1.5"
             >
-              Lower Memory (720p / 30 FPS)
+              <span>🚀 Open Directly in New Tab</span>
             </button>
             <button 
-              onClick={() => setCurrentSrc('https://gta5-87g.pages.dev/')}
-              className="px-2.5 py-1 bg-zinc-700 hover:bg-zinc-600 rounded font-bold transition-colors cursor-pointer"
+              onClick={() => setCurrentSrc('https://gta5-87g.pages.dev/?low=1&fps=30&res=1280x720')}
+              className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded font-bold transition-colors cursor-pointer text-white"
             >
-              Original Settings
+              Retry Iframe
             </button>
           </div>
         </div>
