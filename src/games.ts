@@ -349,6 +349,160 @@ export const ALL_GAMES = [
     "file": "Games/undertaleyellow.html"
   },
   {
+    "id": "Amaze",
+    "title": "Amaze",
+    "image": "https://images.crazygames.com/amaze.png?auto=format,compress&q=75&cs=strip",
+    "type": "game",
+    "file": "Games/Amaze.html"
+  },
+  {
+    "id": "Angry Birds",
+    "title": "Angry Birds",
+    "image": "https://upload.wikimedia.org/wikipedia/en/8/87/Angry_Birds_Classic.png",
+    "type": "game",
+    "file": "Games/Angry Birds.html"
+  },
+  {
+    "id": "Aquapark.io",
+    "title": "Aquapark.io",
+    "image": "https://images.crazygames.com/aquapark-io.png?auto=format,compress&q=75&cs=strip",
+    "type": "game",
+    "file": "Games/Aquapark.io.html"
+  },
+  {
+    "id": "Basket Battle",
+    "title": "Basket Battle",
+    "image": "https://images.crazygames.com/games/basket-battle/cover-1658402434032.png?auto=format,compress&q=75&cs=strip",
+    "type": "game",
+    "file": "Games/Basket Battle.html"
+  },
+  {
+    "id": "BitLife-Remastered",
+    "title": "BitLife (Remastered)",
+    "image": "https://images.crazygames.com/games/bitlife-life-simulator/cover-1672322307300.png?auto=format,compress&q=75&cs=strip",
+    "type": "game",
+    "file": "Games/BitLife.html"
+  },
+  {
+    "id": "Bowmasters",
+    "title": "Bowmasters",
+    "image": "https://images.crazygames.com/games/bowmasters/cover-1583344600216.png?auto=format,compress&q=75&cs=strip",
+    "type": "game",
+    "file": "Games/Bowmasters.html"
+  },
+  {
+    "id": "Brawl Simulator 3D",
+    "title": "Brawl Simulator 3D",
+    "image": "https://images.crazygames.com/games/brawl-stars-simulator/cover-1647413627993.png?auto=format,compress&q=75&cs=strip",
+    "type": "game",
+    "file": "Games/Brawl Simulator 3D.html"
+  },
+  {
+    "id": "Build a Big Army",
+    "title": "Build a Big Army",
+    "image": "https://images.crazygames.com/games/build-a-big-army/cover-1699960249279.png?auto=format,compress&q=75&cs=strip",
+    "type": "game",
+    "file": "Games/Build a Big Army.html"
+  },
+  {
+    "id": "BuildNow.gg",
+    "title": "BuildNow.gg",
+    "image": "https://images.crazygames.com/games/buildnow-gg/cover-1634739502759.png?auto=format,compress&q=75&cs=strip",
+    "type": "game",
+    "file": "Games/BuildNow.gg.html"
+  },
+  {
+    "id": "FNF-Sonic-EXE",
+    "title": "FNF Vs. Sonic.EXE",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Friday_Night_Funkin%27_logo.svg",
+    "type": "game",
+    "file": "Games/FNF Vs. Sonic.EXE 3.0_4.0.html"
+  },
+  {
+    "id": "FNF-vs-Carol-V2",
+    "title": "FNF vs Carol V2",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Friday_Night_Funkin%27_logo.svg",
+    "type": "game",
+    "file": "Games/Friday Night Funkin vs Carol V2.html"
+  },
+  {
+    "id": "FNF-vs-Shaggy",
+    "title": "FNF vs Shaggy",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Friday_Night_Funkin%27_logo.svg",
+    "type": "game",
+    "file": "Games/Friday Night Funkin vs Shaggy.html"
+  },
+  {
+    "id": "FNF-vs-Sunday-Remastered",
+    "title": "FNF vs Sunday Remastered",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Friday_Night_Funkin%27_logo.svg",
+    "type": "game",
+    "file": "Games/Friday Night Funkin vs Sunday Remastered HD.html"
+  },
+  {
+    "id": "Harvest.io",
+    "title": "Harvest.io",
+    "image": "https://images.crazygames.com/games/harvest-io/cover-1627918546522.png?auto=format,compress&q=75&cs=strip",
+    "type": "game",
+    "file": "Games/Harvest.io.html"
+  },
+  {
+    "id": "Hypper Sandbox 3D",
+    "title": "Hypper Sandbox 3D",
+    "image": "https://images.crazygames.com/sandtrix.png?auto=format,compress&q=75&cs=strip",
+    "type": "game",
+    "file": "Games/Hypper Sandbox.html"
+  },
+  {
+    "id": "Idle Lumber Inc",
+    "title": "Idle Lumber Inc",
+    "image": "https://images.crazygames.com/games/idle-lumber-inc/cover-1658402434032.png?auto=format,compress&q=75&cs=strip",
+    "type": "game",
+    "file": "Games/Idle Lumber Inc.html"
+  },
+  {
+    "id": "Idle Mining Empire",
+    "title": "Idle Mining Empire",
+    "image": "https://images.crazygames.com/games/idle-mining-empire/cover-1627918546522.png?auto=format,compress&q=75&cs=strip",
+    "type": "game",
+    "file": "Games/Idle Mining Empire.html"
+  },
+  {
+    "id": "Minecraft-Pocket-Edition",
+    "title": "Minecraft Pocket Edition",
+    "image": "https://upload.wikimedia.org/wikipedia/en/5/51/Minecraft_cover.png",
+    "type": "game",
+    "file": "Games/Minecraft Pocket Edition.html"
+  },
+  {
+    "id": "Moto-X3M",
+    "title": "Moto X3M",
+    "image": "https://images.crazygames.com/moto-x3m.png?auto=format,compress&q=75&cs=strip",
+    "type": "game",
+    "file": "Games/Moto X3M.html"
+  },
+  {
+    "id": "Ragdoll-Archers",
+    "title": "Ragdoll Archers",
+    "image": "https://images.crazygames.com/games/ragdoll-archers/cover-1699960249279.png?auto=format,compress&q=75&cs=strip",
+    "type": "game",
+    "file": "Games/Ragdoll Archers.html"
+  },
+  {
+    "id": "Retro-Bowl-Classic",
+    "title": "Retro Bowl Original",
+    "image": "https://images.crazygames.com/games/retro-bowl/cover-1585648834464.png?auto=format,compress&q=75&cs=strip",
+    "type": "game",
+    "file": "Games/Retro Bowl.html"
+  },
+  {
+    "id": "Roblox-Offline",
+    "title": "Roblox (App)",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/3/3a/Roblox_player_icon_black.svg",
+    "type": "game",
+    "file": "Games/Roblox.html"
+  },
+  {
     "id": "tiktok",
     "title": "TikTok",
     "image": "https://upload.wikimedia.org/wikipedia/en/a/a9/TikTok_logo.svg",

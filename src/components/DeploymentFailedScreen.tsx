@@ -71,7 +71,20 @@ export const DeploymentFailedScreen: React.FC = () => {
           </div>
         </div>
 
-        <p className="text-zinc-500 text-xs mt-8">
+        <div className="mt-8 flex flex-col items-center gap-3">
+          <a
+            href="https://windows11-unblocked.pages.dev/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-2xl shadow-[0_0_25px_rgba(59,130,246,0.6)] text-lg transition-all hover:scale-105 active:scale-95 flex items-center gap-2 cursor-pointer"
+          >
+            Click this link to make it work
+            <span className="text-xl">↗</span>
+          </a>
+          <span className="text-xs text-zinc-400">Official Cloudflare mirror: https://windows11-unblocked.pages.dev/</span>
+        </div>
+
+        <p className="text-zinc-500 text-xs mt-4">
           Domain mismatch detected: <span className="text-red-400 font-semibold">zevrobloxdoors2.github.io/Windows11-Unblocked</span> is blacklisted or deployment validation rejected the host.
         </p>
       </motion.div>

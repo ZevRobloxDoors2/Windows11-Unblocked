@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Bell, Settings as SettingsIcon, MessageSquare, Users, Store, Box, User, Activity, Image as ImageIcon, Mic, GraduationCap, ShieldAlert, ShieldCheck, Play, Pause, SkipBack, SkipForward, Music, Film, Volume2 } from 'lucide-react';
+import { Search, Bell, Settings as SettingsIcon, MessageSquare, Users, Store, Box, User, Activity, Image as ImageIcon, Mic, GraduationCap, ShieldAlert, ShieldCheck, Play, Pause, SkipBack, SkipForward, Music, Film, Volume2, Gamepad2 } from 'lucide-react';
 import { ALL_GAMES } from '../games';
 import { UserProfile } from '../types';
 import { DesktopWidgets } from './DesktopWidgets';
@@ -615,6 +615,20 @@ export const Desktop = ({
           <button className="text-white hover:bg-white/10 p-1.5 rounded-md transition-colors" onClick={() => setShowCredits(!showCredits)}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
           </button>
+
+          {/* Taskbar Rich Presence Indicator */}
+          {playingGame && (
+            <div 
+              onClick={() => onPlayGame(playingGame)} 
+              className="hidden md:flex items-center gap-2 bg-gradient-to-r from-blue-600/30 to-indigo-600/30 hover:from-blue-600/50 hover:to-indigo-600/50 border border-blue-400/40 px-3 py-1 rounded-full text-xs text-white shadow-[0_0_15px_rgba(59,130,246,0.3)] transition-all cursor-pointer group"
+              title="Rich Presence: Click to focus active game"
+            >
+              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shrink-0" />
+              <Gamepad2 size={13} className="text-blue-400 group-hover:rotate-12 transition-transform" />
+              <span className="font-semibold truncate max-w-[110px]">{playingGame.title}</span>
+              <span className="text-[10px] text-blue-200 bg-blue-500/20 px-1.5 py-0.5 rounded">Active</span>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-1.5 justify-center absolute left-1/2 -translate-x-1/2 h-full">
           {/* Windows Start Button */}
