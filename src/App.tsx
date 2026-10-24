@@ -569,12 +569,21 @@ export default function App() {
       const recent = activeProfile.recentGames || [];
       const updatedRecent = [{ gameId: game.id, lastPlayed: new Date().toISOString() }, ...recent.filter(g => g.gameId !== game.id)].slice(0, 10);
       try {
-        await updateDoc(doc(db, 'users', activeProfile.uid), { recentGames: updatedRecent });
+        await updateDoc(doc(db, 'users', activeProfile.uid), { 
+          recentGames: updatedRecent,
+          currentGame: {
+            gameId: game.id,
+            title: game.title,
+            startedAt: new Date().toISOString()
+          }
+        });
         await addDoc(collection(db, 'activities'), {
           type: 'game',
           uid: activeProfile.uid,
           gamertag: activeProfile.gamertag,
           avatar: activeProfile.avatar || '',
+          gameId: game.id,
+          gameTitle: game.title,
           details: `Started playing ${game.title}`,
           createdAt: serverTimestamp()
         });
@@ -642,6 +651,11 @@ export default function App() {
     } else {
       setPlayingGame(null);
       setPlayMinutes(0);
+    }
+    if (activeProfile?.uid && activeProfile.uid !== 'guest') {
+      updateDoc(doc(db, 'users', activeProfile.uid), {
+        currentGame: null
+      }).catch(() => {});
     }
   };
 
@@ -1226,7 +1240,7 @@ export default function App() {
                 {view === 'chat' && (chatConfig ? <Chat userProfile={activeProfile as any} friendId={!chatConfig.isGroup ? chatConfig.id : undefined} friendGamertag={!chatConfig.isGroup ? chatConfig.name : undefined} chatId={chatConfig.isGroup ? chatConfig.id : undefined} isGroup={chatConfig.isGroup} chatName={chatConfig.isGroup ? chatConfig.name : undefined} onBack={() => handleSetCurrentView('friends')} /> : <div className="flex h-full items-center justify-center text-zinc-400 flex-col gap-4"><div>Select a friend to start chatting</div><button onClick={() => handleSetCurrentView('friends')} className="px-4 py-2 bg-[#00A4EF] text-white rounded">Open Friends</button></div>)}
                 {view === 'party' && <Party profile={activeProfile as any} initialPartyId={activePartyId} targetFriend={targetCallFriend} onBack={() => { setActivePartyId(undefined); setTargetCallFriend(undefined); handleSetCurrentView('home'); }} />}
                 {view === 'notifications' && <Notifications userProfile={activeProfile as any} onBack={() => handleSetCurrentView('home')} />}
-                {view === 'activity' && <ActivityFeed profile={activeProfile as any} />}
+                {view === 'activity' && <ActivityFeed userProfile={activeProfile as any} onPlayGame={handlePlayGame} onChat={(friendUid, friendGamertag) => { setChatConfig({id: friendUid, name: friendGamertag, isGroup: false}); handleSetCurrentView('chat'); }} />}
                 {view === 'local-share' && <LocalShare profile={activeProfile as any} />}
                 {view === 'classroom' && <Classroom />}
               </Window>

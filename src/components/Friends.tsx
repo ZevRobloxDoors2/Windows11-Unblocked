@@ -9,11 +9,12 @@ import { UserProfile, FriendRequest } from '../types';
 import { db, auth } from '../firebase';
 import { collection, query, where, getDocs, addDoc, doc, onSnapshot, or, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { ALL_GAMES } from '../games';
+import { ActivityFeed } from './ActivityFeed';
 
 interface FriendsProps {
   key?: string;
   userProfile: UserProfile;
-  initialTab?: 'friends' | 'add-friends' | 'lfg' | 'clubs';
+  initialTab?: 'friends' | 'activity' | 'add-friends' | 'lfg' | 'clubs';
   onBack: () => void;
   onChat: (id: string, name: string, isGroup?: boolean) => void;
   onCall: (friendUid: string, friendGamertag: string) => void;
@@ -58,7 +59,7 @@ const fuzzyMatch = (searchTerm: string, target: string): boolean => {
 };
 
 export function Friends({ userProfile, initialTab, onBack, onChat, onCall, onPlayGame }: FriendsProps) {
-  const [activeTab, setActiveTab] = useState<'friends' | 'add-friends' | 'lfg' | 'clubs'>(initialTab || 'friends');
+  const [activeTab, setActiveTab] = useState<'friends' | 'activity' | 'add-friends' | 'lfg' | 'clubs'>(initialTab || 'friends');
   const [searchTag, setSearchTag] = useState('');
   const [searching, setSearching] = useState(false);
   const [showCreateGC, setShowCreateGC] = useState(false);
@@ -589,6 +590,12 @@ export function Friends({ userProfile, initialTab, onBack, onChat, onCall, onPla
             <User size={14} /> Friends ({friends.length})
           </button>
           <button 
+            onClick={() => setActiveTab('activity')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${activeTab === 'activity' ? 'bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 text-white shadow-lg shadow-orange-900/40 ring-1 ring-orange-400' : 'text-amber-400 bg-amber-500/10 hover:bg-amber-500/20'}`}
+          >
+            <Flame size={14} className="text-amber-400 animate-pulse" /> Friend Activity
+          </button>
+          <button 
             onClick={() => setActiveTab('add-friends')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${activeTab === 'add-friends' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-900/40 ring-1 ring-blue-400' : 'text-blue-400 bg-blue-500/10 hover:bg-blue-500/20'}`}
           >
@@ -608,6 +615,17 @@ export function Friends({ userProfile, initialTab, onBack, onChat, onCall, onPla
           </button>
         </div>
       </div>
+
+      {/* TAB: FRIEND ACTIVITY */}
+      {activeTab === 'activity' && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+          <ActivityFeed 
+            userProfile={userProfile} 
+            onPlayGame={onPlayGame} 
+            onChat={(friendUid, friendGamertag) => onChat(friendUid, friendGamertag)} 
+          />
+        </motion.div>
+      )}
 
       {/* TAB 1: FRIENDS LIST */}
       {activeTab === 'friends' && (

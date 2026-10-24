@@ -12,7 +12,27 @@ export interface UserProfile {
   vibrationEnabled?: boolean;
   homeTheme?: string;
   quickResumeEnabled?: boolean;
-  installedApps?: string[];
+  shareActivity?: boolean;
+  currentGame?: {
+    gameId?: string;
+    title: string;
+    startedAt?: string;
+    details?: string;
+  } | null;
+}
+
+export interface ActivityItem {
+  id: string;
+  uid: string;
+  gamertag: string;
+  avatar: string;
+  type: 'online' | 'game' | 'trophy' | 'achievement';
+  gameTitle?: string;
+  gameId?: string;
+  trophyName?: string;
+  points?: number;
+  details: string;
+  createdAt: any;
 }
 
 export interface FriendRequest {
@@ -34,3 +54,4 @@ export interface ChatMessage {
   imageUrl?: string;
   readBy?: string[];
 }
+

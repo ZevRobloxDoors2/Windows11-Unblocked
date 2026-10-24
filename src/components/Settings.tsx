@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Monitor, Paintbrush, User, ShieldAlert, MonitorPlay, History, Upload } from 'lucide-react';
+import { Monitor, Paintbrush, User, ShieldAlert, MonitorPlay, History, Upload, Sparkles } from 'lucide-react';
 import { UserProfile } from '../types';
 import { db } from "../firebase";
 import { ProxyManagerModal } from './ProxyManagerModal';
@@ -27,8 +27,29 @@ export function Settings({ profile, onBack, onLogout, isGuestMode }: { profile: 
   const [showFramerate, setShowFramerate] = useState(localStorage.getItem('show_framerate') === 'true');
   const [antiDeledao, setAntiDeledao] = useState(localStorage.getItem('anti_deledao') === 'true');
   const [autoAboutBlank, setAutoAboutBlank] = useState(localStorage.getItem('auto_about_blank') === 'true');
+  const [shareActivity, setShareActivity] = useState<boolean>(() => {
+    if (profile && profile.shareActivity !== undefined) return profile.shareActivity;
+    const local = localStorage.getItem('share_activity');
+    return local !== null ? local === 'true' : true;
+  });
   const [cloakTitle, setCloakTitle] = useState('');
   const [cloakIcon, setCloakIcon] = useState('');
+
+  const handleToggleShareActivity = async (val: boolean) => {
+    setShareActivity(val);
+    localStorage.setItem('share_activity', String(val));
+    if (profile?.uid && !isGuestMode) {
+      try {
+        const { doc, updateDoc } = await import('firebase/firestore');
+        await updateDoc(doc(db, 'users', profile.uid), {
+          shareActivity: val
+        });
+      } catch (e) {
+        console.warn("Failed to update activity privacy:", e);
+      }
+    }
+  };
+
 
   useEffect(() => {
     localStorage.setItem('skip_playing_today', String(skipPlayingToday));
@@ -420,6 +441,35 @@ export function Settings({ profile, onBack, onLogout, isGuestMode }: { profile: 
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6">
               <h2 className="text-2xl font-semibold mb-2">Privacy & security</h2>
               
+              {/* Friend & Community Activity Sharing Toggle */}
+              <div className="bg-white/5 rounded-lg border border-white/10 p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <span className="font-semibold block text-base flex items-center gap-2">
+                      <Sparkles size={18} className="text-blue-400" /> Friend & Community Activity Sharing
+                    </span>
+                    <span className="text-xs text-zinc-300 block mt-1.5 leading-relaxed max-w-xl">
+                      Allow confirmed mutual friends to see your real-time status, currently played games, and recent trophy unlocks. When enabled, your activity also displays for community players who browse the Friend Activity feed.
+                    </span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-1">
+                    <input 
+                      type="checkbox" 
+                      checked={shareActivity} 
+                      onChange={(e) => handleToggleShareActivity(e.target.checked)} 
+                      className="sr-only peer" 
+                    />
+                    <div className="w-11 h-6 bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#00A4EF]"></div>
+                  </label>
+                </div>
+                <div className="mt-3.5 pt-3 border-t border-white/10 text-xs text-zinc-400 flex items-center gap-2">
+                  <span className={`w-2.5 h-2.5 rounded-full ${shareActivity ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-500'}`} />
+                  {shareActivity 
+                    ? <span className="text-emerald-400 font-medium">Activity Broadcasting ON — Visible to confirmed friends & community members</span>
+                    : <span className="text-zinc-400">Activity Broadcasting OFF — Completely private from non-friends & community</span>}
+                </div>
+              </div>
+
               <div className="bg-white/5 rounded-lg border border-white/10 p-4">
                 <h3 className="font-semibold mb-4 text-sm">about:blank Cloaker</h3>
                 <div className="flex flex-col gap-4">
