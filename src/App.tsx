@@ -46,7 +46,7 @@ import { CustomChromeBrowser } from './components/CustomChromeBrowser';
 import { GlobalMiniPlayer } from './components/GlobalMiniPlayer';
 import { ComparisonModal } from './components/ComparisonModal';
 
-type View = 'home' | 'store' | 'profile' | 'settings' | 'notifications' | 'friends' | 'chat' | 'party' | 'activity' | 'local-share' | 'classroom';
+type View = 'home' | 'store' | 'profile' | 'settings' | 'notifications' | 'friends' | 'add-friends' | 'chat' | 'party' | 'activity' | 'local-share' | 'classroom';
 
 const getThemeClasses = (themeId?: string) => {
   switch (themeId) {
@@ -432,8 +432,8 @@ export default function App() {
             const configs = [{
               initDataTypes: ['cenc', 'keyids', 'webm'],
               videoCapabilities: [
-                { contentType: 'video/mp4; codecs="avc1.42E01E"' },
-                { contentType: 'video/webm; codecs="vp8"' }
+                { contentType: 'video/mp4; codecs="avc1.42E01E"', robustness: 'SW_SECURE_CRYPTO' },
+                { contentType: 'video/webm; codecs="vp8"', robustness: 'SW_SECURE_CRYPTO' }
               ]
             }];
             
@@ -1211,7 +1211,7 @@ export default function App() {
             style={{ zIndex: currentView === view ? 200 : 100 }}
           >
               <Window 
-                title={view.charAt(0).toUpperCase() + view.slice(1)} 
+                title={view === 'add-friends' ? 'Add Friends' : view.charAt(0).toUpperCase() + view.slice(1)} 
                 onClose={() => handleCloseView(view)} 
                 onMinimize={() => handleMinimizeView(view)}
                 onGuide={() => setIsGuideOpen(true)}
@@ -1222,6 +1222,7 @@ export default function App() {
                 {view === 'profile' && <Profile userProfile={activeProfile as any} onBack={() => handleSetCurrentView('home')} />}
                 {view === 'settings' && <SettingsView profile={activeProfile as any} onBack={() => handleSetCurrentView('home')} onLogout={handleLogout} isGuestMode={isGuestMode} />}
                 {view === 'friends' && <Friends userProfile={activeProfile as any} onBack={() => handleSetCurrentView('home')} onChat={(id, name, isGroup) => { setChatConfig({id, name, isGroup: !!isGroup}); handleSetCurrentView('chat'); }} onCall={(friendUid, friendGamertag) => { const callId = 'call_' + [activeProfile.uid, friendUid].sort().join('_'); setActivePartyId(callId); setTargetCallFriend({ uid: friendUid, gamertag: friendGamertag }); handleSetCurrentView('party'); }} onPlayGame={handlePlayGame} />}
+                {view === 'add-friends' && <Friends initialTab="add-friends" userProfile={activeProfile as any} onBack={() => handleSetCurrentView('home')} onChat={(id, name, isGroup) => { setChatConfig({id, name, isGroup: !!isGroup}); handleSetCurrentView('chat'); }} onCall={(friendUid, friendGamertag) => { const callId = 'call_' + [activeProfile.uid, friendUid].sort().join('_'); setActivePartyId(callId); setTargetCallFriend({ uid: friendUid, gamertag: friendGamertag }); handleSetCurrentView('party'); }} onPlayGame={handlePlayGame} />}
                 {view === 'chat' && (chatConfig ? <Chat userProfile={activeProfile as any} friendId={!chatConfig.isGroup ? chatConfig.id : undefined} friendGamertag={!chatConfig.isGroup ? chatConfig.name : undefined} chatId={chatConfig.isGroup ? chatConfig.id : undefined} isGroup={chatConfig.isGroup} chatName={chatConfig.isGroup ? chatConfig.name : undefined} onBack={() => handleSetCurrentView('friends')} /> : <div className="flex h-full items-center justify-center text-zinc-400 flex-col gap-4"><div>Select a friend to start chatting</div><button onClick={() => handleSetCurrentView('friends')} className="px-4 py-2 bg-[#00A4EF] text-white rounded">Open Friends</button></div>)}
                 {view === 'party' && <Party profile={activeProfile as any} initialPartyId={activePartyId} targetFriend={targetCallFriend} onBack={() => { setActivePartyId(undefined); setTargetCallFriend(undefined); handleSetCurrentView('home'); }} />}
                 {view === 'notifications' && <Notifications userProfile={activeProfile as any} onBack={() => handleSetCurrentView('home')} />}

@@ -3,16 +3,17 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   ChevronLeft, UserPlus, User, MessageSquare, Users, Phone, Sparkles, 
   Gamepad2, Shield, Plus, Radio, Users2, Play, Flame, Search, Check, 
-  ShieldCheck, Heart, Volume2 
+  ShieldCheck, Heart, Volume2, RefreshCw, Clock, Globe, Laptop, UserCheck
 } from 'lucide-react';
 import { UserProfile, FriendRequest } from '../types';
 import { db, auth } from '../firebase';
-import { collection, query, where, getDocs, addDoc, doc, onSnapshot, or, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, doc, onSnapshot, or, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { ALL_GAMES } from '../games';
 
 interface FriendsProps {
   key?: string;
   userProfile: UserProfile;
+  initialTab?: 'friends' | 'add-friends' | 'lfg' | 'clubs';
   onBack: () => void;
   onChat: (id: string, name: string, isGroup?: boolean) => void;
   onCall: (friendUid: string, friendGamertag: string) => void;
@@ -56,13 +57,20 @@ const fuzzyMatch = (searchTerm: string, target: string): boolean => {
   return searchIdx === search.length;
 };
 
-export function Friends({ userProfile, onBack, onChat, onCall, onPlayGame }: FriendsProps) {
-  const [activeTab, setActiveTab] = useState<'friends' | 'lfg' | 'clubs'>('friends');
+export function Friends({ userProfile, initialTab, onBack, onChat, onCall, onPlayGame }: FriendsProps) {
+  const [activeTab, setActiveTab] = useState<'friends' | 'add-friends' | 'lfg' | 'clubs'>(initialTab || 'friends');
   const [searchTag, setSearchTag] = useState('');
   const [searching, setSearching] = useState(false);
   const [showCreateGC, setShowCreateGC] = useState(false);
   const [gcName, setGcName] = useState('');
   
+  // Real discovery states
+  const [allCommunityUsers, setAllCommunityUsers] = useState<any[]>([]);
+  const [nearbyAccounts, setNearbyAccounts] = useState<any[]>([]);
+  const [autoSearchLoading, setAutoSearchLoading] = useState(false);
+  const [discoveryMode, setDiscoveryMode] = useState<'nearby' | 'all'>('nearby');
+  const [radarPulse, setRadarPulse] = useState(true);
+
   // LFG states
   const [showCreateLFG, setShowCreateLFG] = useState(false);
   const [lfgGameTitle, setLfgGameTitle] = useState('Eaglercraft');
@@ -80,10 +88,11 @@ export function Friends({ userProfile, onBack, onChat, onCall, onPlayGame }: Fri
 
   const currentUid = userProfile?.uid || auth.currentUser?.uid || 'guest';
 
-  // Sample Friends with rich presence
+  // Real Friends (strictly no fake bots or hardcoded players)
   const [friends, setFriends] = useState<{
     uid: string;
     gamertag: string;
+    avatar?: string;
     status?: string;
     presence?: { gameTitle: string; activity: string; onlineMinutes: number };
   }[]>(() => {
@@ -91,41 +100,26 @@ export function Friends({ userProfile, onBack, onChat, onCall, onPlayGame }: Fri
       const saved = localStorage.getItem(`ebox_friends_${currentUid}`);
       if (saved) return JSON.parse(saved);
     } catch(e) {}
-    return [
-      { 
-        uid: 'sample_friend_1', 
-        gamertag: 'RobloxPro99', 
-        status: 'Online',
-        presence: {
-          gameTitle: 'Eaglercraft',
-          activity: 'Surviving Night 14 • Castle build',
-          onlineMinutes: 28
-        }
-      },
-      { 
-        uid: 'sample_friend_2', 
-        gamertag: 'GamerGirl2026', 
-        status: 'Online',
-        presence: {
-          gameTitle: 'GTA 5/6',
-          activity: 'Cruising in Los Santos • Free Roam',
-          onlineMinutes: 45
-        }
-      },
-      {
-        uid: 'sample_friend_3',
-        gamertag: 'RetroChampion',
-        status: 'Online',
-        presence: {
-          gameTitle: 'Retro Bowl Original',
-          activity: 'Super Bowl Finals Q4',
-          onlineMinutes: 12
-        }
-      }
-    ];
+    return [];
   });
 
-  const [searchResults, setSearchResults] = useState<{uid: string, gamertag: string}[]>([]);
+  const [pendingSentUids, setPendingSentUids] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem(`ebox_pending_requests_${currentUid}`);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [searchResults, setSearchResults] = useState<{
+    uid: string;
+    gamertag: string;
+    avatar?: string;
+    status?: string;
+    score?: number;
+    role?: string;
+  }[]>([]);
   
   const [groupChats, setGroupChats] = useState<{id: string, name: string}[]>(() => {
     try {
@@ -133,52 +127,17 @@ export function Friends({ userProfile, onBack, onChat, onCall, onPlayGame }: Fri
       if (saved) return JSON.parse(saved);
     } catch(e) {}
     return [
-      { id: 'gc_general', name: 'General Lounge 🎮' },
-      { id: 'gc_gaming', name: 'TABS & Retro Squad' }
+      { id: 'gc_general', name: 'General Lounge 🎮' }
     ];
   });
 
-  // LFG Posts
+  // Real LFG Posts (no fake bot posts)
   const [lfgPosts, setLfgPosts] = useState<LFGPost[]>(() => {
     try {
       const saved = localStorage.getItem('ebox_lfg_posts');
       if (saved) return JSON.parse(saved);
     } catch(e) {}
-    return [
-      {
-        id: 'lfg_1',
-        creatorUid: 'sample_friend_1',
-        creatorGamertag: 'RobloxPro99',
-        avatar: 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?auto=format&fit=crop&w=150&q=80',
-        gameTitle: 'Eaglercraft',
-        description: 'Starting a new hardcore survival SMP! Need 2 chill players who love building.',
-        slotsNeeded: 2,
-        micRequired: true,
-        createdAt: '5m ago'
-      },
-      {
-        id: 'lfg_2',
-        creatorUid: 'sample_friend_2',
-        creatorGamertag: 'GamerGirl2026',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80',
-        gameTitle: '1v1 LOL',
-        description: 'Duo Box fights practice! Looking for someone to warmup before tournament.',
-        slotsNeeded: 1,
-        micRequired: false,
-        createdAt: '12m ago'
-      },
-      {
-        id: 'lfg_3',
-        creatorUid: 'sample_friend_3',
-        creatorGamertag: 'RetroChampion',
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
-        gameTitle: 'GTA 5/6',
-        description: 'Doing heists and car shows in Los Santos! Low memory preset ready.',
-        slotsNeeded: 3,
-        micRequired: true,
-        createdAt: '18m ago'
-      }
-    ];
+    return [];
   });
 
   // Clubs List
@@ -301,7 +260,7 @@ export function Friends({ userProfile, onBack, onChat, onCall, onPlayGame }: Fri
         setFriends(unique);
         localStorage.setItem(`ebox_friends_${currentUid}`, JSON.stringify(unique));
       }
-    }, (err) => console.error(err));
+    }, () => {});
 
     const qGc = query(collection(db, 'groupChats'), where('members', 'array-contains', currentUid));
     const unsubGc = onSnapshot(qGc, (snap) => {
@@ -318,69 +277,157 @@ export function Friends({ userProfile, onBack, onChat, onCall, onPlayGame }: Fri
     };
   }, [currentUid]);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchTag.trim()) return;
-    setSearching(true);
+  // Load Community Users & Nearby Accounts from Firestore and Local Accounts
+  const loadCommunityAndNearby = async () => {
+    setAutoSearchLoading(true);
     try {
+      // 1. Local accounts on this machine
+      const localAccs: any[] = JSON.parse(localStorage.getItem('ebox_accounts') || '[]');
+      const localFormatted = localAccs.map(la => ({
+        uid: la.uid,
+        gamertag: la.gamertag,
+        avatar: la.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${la.uid}`,
+        status: 'Online',
+        score: 0,
+        role: la.email === 'zaellacruze1@gmail.com' ? 'owner' : 'user',
+        isLocal: true
+      }));
+      setNearbyAccounts(localFormatted);
+
+      // 2. Real Firestore accounts
       const q = query(collection(db, 'users'));
       const snap = await getDocs(q);
-      const matches = snap.docs
-        .map(d => ({ uid: d.id, ...(d.data() as UserProfile) }))
-        .filter(u => fuzzyMatch(searchTag.trim(), u.gamertag) && u.uid !== userProfile.uid)
-        .sort((a, b) => a.gamertag.length - b.gamertag.length)
-        .slice(0, 10);
+      const fsUsers: any[] = [];
+      snap.forEach(d => {
+        const u = d.data();
+        fsUsers.push({
+          uid: d.id,
+          gamertag: u.gamertag || 'Player',
+          avatar: u.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${d.id}`,
+          status: u.status || 'Online',
+          score: u.score || 0,
+          role: u.role || (u.email === 'zaellacruze1@gmail.com' ? 'owner' : 'user'),
+          lastTrophyAt: u.lastTrophyAt
+        });
+      });
 
-      if (matches.length === 0) {
-        setSearchResults([{ uid: 'mock_' + searchTag, gamertag: searchTag.trim() }]);
-      } else {
-        setSearchResults(matches.map(u => ({ uid: u.uid, gamertag: u.gamertag })));
-      }
-    } catch(e: any) {
-      console.error(e);
-      setSearchResults([{ uid: 'mock_' + searchTag, gamertag: searchTag.trim() }]);
+      // Merge unique accounts
+      const merged = [...fsUsers];
+      localFormatted.forEach(la => {
+        if (!merged.find(u => u.uid === la.uid)) {
+          merged.push(la);
+        }
+      });
+      setAllCommunityUsers(merged);
+    } catch {
+      const localAccs: any[] = JSON.parse(localStorage.getItem('ebox_accounts') || '[]');
+      const fallback = localAccs.map(la => ({
+        uid: la.uid,
+        gamertag: la.gamertag,
+        avatar: la.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${la.uid}`,
+        status: 'Online',
+        score: 0,
+        role: la.email === 'zaellacruze1@gmail.com' ? 'owner' : 'user',
+        isLocal: true
+      }));
+      setNearbyAccounts(fallback);
+      setAllCommunityUsers(fallback);
     } finally {
-      setSearching(false);
+      setAutoSearchLoading(false);
     }
   };
 
-  const handleSendRequest = async (targetUid: string, targetGamertag: string) => {
-    try {
-      if (!targetUid.startsWith('mock_')) {
-        await addDoc(collection(db, 'friendRequests'), {
-          fromUid: userProfile.uid,
-          fromGamertag: userProfile.gamertag,
-          toUid: targetUid,
-          status: 'pending',
-          createdAt: serverTimestamp()
-        });
-      }
-      const updatedFriends = [...friends, { 
-        uid: targetUid, 
-        gamertag: targetGamertag, 
-        status: 'Online',
-        presence: { gameTitle: 'Playing Online', activity: 'In Lobby', onlineMinutes: 2 }
-      }];
-      setFriends(updatedFriends);
-      localStorage.setItem(`ebox_friends_${currentUid}`, JSON.stringify(updatedFriends));
+  useEffect(() => {
+    loadCommunityAndNearby();
+  }, [currentUid]);
 
-      alert(`Added ${targetGamertag} to your friends!`);
-      setSearchTag('');
+  // Synchronize pending requests sent by current user
+  useEffect(() => {
+    if (!currentUid || currentUid === 'guest') return;
+    const qReqs = query(
+      collection(db, 'friendRequests'),
+      where('fromUid', '==', currentUid),
+      where('status', '==', 'pending')
+    );
+    const unsub = onSnapshot(qReqs, (snap) => {
+      const uids = snap.docs.map(d => d.data().toUid);
+      setPendingSentUids(prev => [...new Set([...prev, ...uids])]);
+    }, () => {});
+    return () => unsub();
+  }, [currentUid]);
+
+  // Real Search (strictly NO fake players or mock bots)
+  const handleSearch = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!searchTag.trim()) {
       setSearchResults([]);
-    } catch(e: any) {
-      console.error(e);
-      const updatedFriends = [...friends, { 
-        uid: targetUid, 
-        gamertag: targetGamertag, 
-        status: 'Online',
-        presence: { gameTitle: 'Playing Online', activity: 'In Lobby', onlineMinutes: 2 }
-      }];
-      setFriends(updatedFriends);
-      localStorage.setItem(`ebox_friends_${currentUid}`, JSON.stringify(updatedFriends));
-      alert(`Added ${targetGamertag} to your friends!`);
-      setSearchTag('');
+      return;
+    }
+    setSearching(true);
+    const term = searchTag.trim().toLowerCase();
+    const matches = allCommunityUsers.filter(u => 
+      u.gamertag?.toLowerCase().includes(term) || (u.email && u.email.toLowerCase().includes(term))
+    );
+    setSearchResults(matches);
+    setSearching(false);
+  };
+
+  useEffect(() => {
+    if (searchTag.trim()) {
+      handleSearch();
+    } else {
       setSearchResults([]);
     }
+  }, [searchTag, allCommunityUsers]);
+
+  // Send real Friend Request
+  const handleSendRequest = async (targetUid: string, targetGamertag: string, targetAvatar?: string) => {
+    if (targetUid === currentUid) return;
+
+    // Immediately mark as pending locally
+    const updatedPending = [...new Set([...pendingSentUids, targetUid])];
+    setPendingSentUids(updatedPending);
+    try {
+      localStorage.setItem(`ebox_pending_requests_${currentUid}`, JSON.stringify(updatedPending));
+    } catch(e) {}
+
+    // Send real Firestore request
+    try {
+      await addDoc(collection(db, 'friendRequests'), {
+        fromUid: currentUid,
+        fromGamertag: userProfile?.gamertag || 'Player',
+        toUid: targetUid,
+        status: 'pending',
+        createdAt: serverTimestamp()
+      });
+      await addDoc(collection(db, 'notifications'), {
+        toUid: targetUid,
+        fromUid: currentUid,
+        fromGamertag: userProfile?.gamertag || 'Player',
+        fromAvatar: userProfile?.avatar || '',
+        type: 'friend_request',
+        read: false,
+        createdAt: serverTimestamp()
+      });
+    } catch (e) {
+      // Offline/local fallback
+    }
+
+    // Support single-machine multi-account testing
+    try {
+      const localReqs = JSON.parse(localStorage.getItem('ebox_local_friend_requests') || '[]');
+      localReqs.push({
+        id: 'lreq_' + Date.now(),
+        fromUid: currentUid,
+        fromGamertag: userProfile?.gamertag || 'Player',
+        toUid: targetUid,
+        status: 'pending',
+        createdAt: new Date().toISOString()
+      });
+      localStorage.setItem('ebox_local_friend_requests', JSON.stringify(localReqs));
+    } catch(e) {}
+
+    alert(`Friend request sent to ${targetGamertag}! They will receive it in their notifications.`);
   };
 
   const handleCallFriend = async (friendUid: string, friendGamertag: string) => {
@@ -534,116 +581,87 @@ export function Friends({ userProfile, onBack, onChat, onCall, onPlayGame }: Fri
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 bg-black/40 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md">
+        <div className="flex items-center gap-2 bg-black/40 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md overflow-x-auto custom-scrollbar">
           <button 
             onClick={() => setActiveTab('friends')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${activeTab === 'friends' ? 'bg-[#00A4EF] text-white shadow-md' : 'text-zinc-400 hover:text-white'}`}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${activeTab === 'friends' ? 'bg-[#00A4EF] text-white shadow-md' : 'text-zinc-400 hover:text-white'}`}
           >
             <User size={14} /> Friends ({friends.length})
           </button>
           <button 
+            onClick={() => setActiveTab('add-friends')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${activeTab === 'add-friends' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-900/40 ring-1 ring-blue-400' : 'text-blue-400 bg-blue-500/10 hover:bg-blue-500/20'}`}
+          >
+            <UserPlus size={14} /> Add Friends
+          </button>
+          <button 
             onClick={() => setActiveTab('lfg')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${activeTab === 'lfg' ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md' : 'text-zinc-400 hover:text-white'}`}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${activeTab === 'lfg' ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md' : 'text-zinc-400 hover:text-white'}`}
           >
             <Radio size={14} className="animate-pulse" /> LFG Matchmaking
           </button>
           <button 
             onClick={() => setActiveTab('clubs')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${activeTab === 'clubs' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md' : 'text-zinc-400 hover:text-white'}`}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${activeTab === 'clubs' ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md' : 'text-zinc-400 hover:text-white'}`}
           >
             <Shield size={14} /> Clubs & Squads ({clubs.length})
           </button>
         </div>
       </div>
 
-      {/* TAB 1: FRIENDS & RICH PRESENCE */}
+      {/* TAB 1: FRIENDS LIST */}
       {activeTab === 'friends' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="flex flex-col gap-8">
-            {/* Add Friend */}
-            <div className={`${isHalloween ? 'bg-[#1c0c03]/90 border-orange-500/30 shadow-[0_0_25px_rgba(255,107,0,0.15)]' : 'bg-zinc-900/90 border-white/10 shadow-xl'} p-6 rounded-2xl border backdrop-blur-xl transition-all`}>
-              <h3 className="text-xl font-bold mb-4 flex items-center gap-2.5">
-                <UserPlus size={22} className={isHalloween ? 'text-orange-400' : 'text-green-400'} /> Add a Friend
-              </h3>
-              <form onSubmit={handleSearch} className="flex flex-col gap-3">
-                <input 
-                  type="text"
-                  value={searchTag}
-                  onChange={(e) => setSearchTag(e.target.value)}
-                  placeholder="Search gamertag..."
-                  className={`border px-4 py-3 rounded-xl text-white focus:outline-none font-medium transition-all ${isHalloween ? 'bg-black/50 border-orange-500/40 focus:border-orange-500 shadow-inner' : 'bg-black/50 border-zinc-700 focus:border-green-500 shadow-inner'}`}
-                />
-                <button disabled={searching} type="submit" className={`${isHalloween ? 'bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 shadow-orange-900/30' : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 shadow-green-900/30'} disabled:opacity-50 font-bold py-3.5 rounded-xl transition-all shadow-lg text-sm uppercase tracking-wider cursor-pointer`}>
-                  {searching ? 'Searching...' : 'Search Players'}
-                </button>
-              </form>
-              
-              {searchResults.length > 0 && (
-                <div className="mt-4 flex flex-col gap-2.5 max-h-64 overflow-y-auto">
-                  <p className="text-xs text-zinc-400 font-bold uppercase tracking-wider">Search Results:</p>
-                  {searchResults.map(result => (
-                    <div key={result.uid} className="bg-black/40 border border-white/5 p-3.5 rounded-xl flex items-center justify-between hover:bg-black/60 transition-colors">
-                      <span className="font-semibold text-sm">{result.gamertag}</span>
-                      <button 
-                        onClick={() => handleSendRequest(result.uid, result.gamertag)}
-                        className={`${isHalloween ? 'bg-orange-600 hover:bg-orange-500' : 'bg-green-600 hover:bg-green-500'} px-4 py-1.5 rounded-lg text-xs font-bold transition-colors shadow-md cursor-pointer`}
-                      >
-                        Add Friend
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+        <div className="flex flex-col gap-6">
+          {/* Quick Banner to Add Friends */}
+          <div className="bg-gradient-to-r from-blue-900/40 via-indigo-900/30 to-black/40 border border-blue-500/30 p-5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-xl shadow-xl">
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 rounded-xl bg-blue-600/30 border border-blue-500/40 flex items-center justify-center text-blue-400 shrink-0">
+                <UserPlus size={22} />
+              </div>
+              <div>
+                <h4 className="text-base font-bold text-white">Find & Connect with Real Players</h4>
+                <p className="text-xs text-zinc-300">Search gamertags, auto-detect nearby accounts, or browse the community directory.</p>
+              </div>
             </div>
-
-            {/* Create Group Chat */}
-            <div className={`${isHalloween ? 'bg-[#1c0c03]/90 border-orange-500/30 shadow-[0_0_25px_rgba(255,107,0,0.15)]' : 'bg-zinc-900/90 border-white/10 shadow-xl'} p-6 rounded-2xl border backdrop-blur-xl transition-all`}>
-              <h3 className="text-xl font-bold mb-4 flex items-center gap-2.5">
-                <Sparkles size={22} className="text-purple-400" /> Group Chats
-              </h3>
-              <button 
-                onClick={() => setShowCreateGC(!showCreateGC)}
-                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-purple-900/30 text-sm cursor-pointer"
-              >
-                {showCreateGC ? 'Cancel' : '+ Create Group Chat'}
-              </button>
-              
-              {showCreateGC && (
-                <div className="mt-4 flex flex-col gap-3">
-                  <input 
-                    type="text"
-                    value={gcName}
-                    onChange={(e) => setGcName(e.target.value)}
-                    placeholder="Group chat name..."
-                    className="bg-black/50 border border-purple-500/40 px-4 py-3 rounded-xl text-white focus:outline-none focus:border-purple-500 shadow-inner"
-                  />
-                  <button 
-                    onClick={handleCreateGroupChat}
-                    className="bg-purple-600 hover:bg-purple-500 font-bold py-3 rounded-xl transition-colors text-sm shadow-lg shadow-purple-900/20 cursor-pointer"
-                  >
-                    Create Room
-                  </button>
-                </div>
-              )}
-            </div>
+            <button 
+              onClick={() => setActiveTab('add-friends')}
+              className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl shadow-lg hover:scale-105 transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+            >
+              <UserPlus size={15} /> Open Add Friends Page ↗
+            </button>
           </div>
 
-          <div className="flex flex-col gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Friend List with Rich Presence */}
-            <div className={`${isHalloween ? 'bg-[#1c0c03]/90 border-orange-500/30 shadow-[0_0_25px_rgba(255,107,0,0.15)]' : 'bg-zinc-900/90 border-white/10 shadow-xl'} p-6 rounded-2xl border backdrop-blur-xl transition-all flex flex-col h-[460px]`}>
+            <div className={`${isHalloween ? 'bg-[#1c0c03]/90 border-orange-500/30 shadow-[0_0_25px_rgba(255,107,0,0.15)]' : 'bg-zinc-900/90 border-white/10 shadow-xl'} p-6 rounded-2xl border backdrop-blur-xl transition-all flex flex-col h-[520px]`}>
               <div className="flex items-center justify-between mb-4 shrink-0">
                 <h3 className="text-xl font-bold flex items-center gap-2.5">
                   <User size={22} className="text-blue-400" /> My Friends ({friends.length})
                 </h3>
-                <span className="text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-semibold">
-                  Rich Presence Active
-                </span>
+                {friends.length > 0 && (
+                  <span className="text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-semibold">
+                    Real Friends Active
+                  </span>
+                )}
               </div>
 
               {friends.length === 0 ? (
-                <div className="flex flex-col items-center justify-center flex-1 text-center text-zinc-400 gap-2">
-                  <User size={40} className="text-zinc-600" />
-                  <p className="text-sm">You haven't added any friends yet. Search above to connect!</p>
+                <div className="flex flex-col items-center justify-center flex-1 text-center text-zinc-400 gap-4 p-6">
+                  <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-500 shadow-inner">
+                    <Users size={32} />
+                  </div>
+                  <div className="flex flex-col gap-1 max-w-sm">
+                    <h4 className="text-base font-bold text-white">No Friends Added Yet</h4>
+                    <p className="text-xs text-zinc-400 leading-relaxed">
+                      You haven't added any real players yet. Click below to search for anyone or see every account in the database!
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => setActiveTab('add-friends')}
+                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-lg hover:scale-105 transition-all flex items-center gap-2 cursor-pointer"
+                  >
+                    <UserPlus size={15} /> Find & Add Friends
+                  </button>
                 </div>
               ) : (
                 <div className="flex flex-col gap-3 overflow-y-auto pr-1 flex-1 custom-scrollbar">
@@ -651,9 +669,13 @@ export function Friends({ userProfile, onBack, onChat, onCall, onPlayGame }: Fri
                     <div key={f.uid} className="bg-black/40 border border-white/5 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 group hover:bg-black/60 transition-all shadow-md">
                       <div className="flex items-center gap-3">
                         <div className="relative">
-                          <div className="w-11 h-11 rounded-full bg-zinc-800 flex items-center justify-center font-bold text-zinc-300 border border-white/10 text-lg shadow-inner">
-                            {f.gamertag.charAt(0).toUpperCase()}
-                          </div>
+                          {f.avatar ? (
+                            <img src={f.avatar} alt={f.gamertag} className="w-11 h-11 rounded-full object-cover border border-white/10" />
+                          ) : (
+                            <div className="w-11 h-11 rounded-full bg-zinc-800 flex items-center justify-center font-bold text-zinc-300 border border-white/10 text-lg shadow-inner">
+                              {f.gamertag.charAt(0).toUpperCase()}
+                            </div>
+                          )}
                           <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-zinc-900 ${f.status === 'Online' ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' : (f.status === 'Do not disturb' ? 'bg-red-500' : 'bg-zinc-500')}`} />
                         </div>
                         <div className="flex flex-col">
@@ -706,34 +728,341 @@ export function Friends({ userProfile, onBack, onChat, onCall, onPlayGame }: Fri
                 </div>
               )}
             </div>
-            
-            {/* Group Chats List */}
-            <div className={`${isHalloween ? 'bg-[#1c0c03]/90 border-orange-500/30 shadow-[0_0_25px_rgba(255,107,0,0.15)]' : 'bg-zinc-900/90 border-white/10 shadow-xl'} p-6 rounded-2xl border backdrop-blur-xl transition-all flex flex-col h-[260px]`}>
-              <h3 className="text-xl font-bold mb-4 flex items-center gap-2.5 shrink-0">
-                <Users size={22} className="text-purple-400" /> My Group Chats ({groupChats.length})
-              </h3>
-              {groupChats.length === 0 ? (
-                <div className="flex flex-col items-center justify-center flex-1 text-center text-zinc-400 gap-2">
-                  <Users size={32} className="text-zinc-600" />
-                  <p className="text-sm">No group chats yet. Create one above!</p>
+
+            {/* Group Chats Column */}
+            <div className="flex flex-col gap-6">
+              <div className={`${isHalloween ? 'bg-[#1c0c03]/90 border-orange-500/30 shadow-[0_0_25px_rgba(255,107,0,0.15)]' : 'bg-zinc-900/90 border-white/10 shadow-xl'} p-6 rounded-2xl border backdrop-blur-xl transition-all flex flex-col h-[520px]`}>
+                <div className="flex items-center justify-between mb-4 shrink-0">
+                  <h3 className="text-xl font-bold flex items-center gap-2.5">
+                    <Sparkles size={22} className="text-purple-400" /> Group Chats ({groupChats.length})
+                  </h3>
+                  <button 
+                    onClick={() => setShowCreateGC(!showCreateGC)}
+                    className="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-500 font-bold rounded-lg text-xs transition-colors cursor-pointer"
+                  >
+                    {showCreateGC ? 'Cancel' : '+ New Group'}
+                  </button>
                 </div>
+
+                {showCreateGC && (
+                  <div className="mb-4 bg-black/40 border border-purple-500/30 p-3.5 rounded-xl flex flex-col gap-2.5 shrink-0">
+                    <input 
+                      type="text"
+                      value={gcName}
+                      onChange={(e) => setGcName(e.target.value)}
+                      placeholder="Group chat name..."
+                      className="bg-zinc-900 border border-purple-500/40 px-3.5 py-2.5 rounded-lg text-sm text-white focus:outline-none focus:border-purple-500"
+                    />
+                    <button 
+                      onClick={handleCreateGroupChat}
+                      className="bg-purple-600 hover:bg-purple-500 font-bold py-2 rounded-lg transition-colors text-xs text-white cursor-pointer"
+                    >
+                      Create Room
+                    </button>
+                  </div>
+                )}
+
+                {groupChats.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center flex-1 text-center text-zinc-400 gap-2">
+                    <Users size={32} className="text-zinc-600" />
+                    <p className="text-sm">No group chats yet. Create one above!</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3 overflow-y-auto pr-1 flex-1 custom-scrollbar">
+                    {groupChats.map(gc => (
+                      <div key={gc.id} className="bg-black/40 border border-white/5 p-4 rounded-xl flex items-center justify-between group hover:bg-black/60 transition-all">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-purple-300 font-bold">
+                            #
+                          </div>
+                          <span className="font-bold text-sm text-white">{gc.name}</span>
+                        </div>
+                        <button 
+                          onClick={() => onChat(gc.id, gc.name, true)} 
+                          className="bg-purple-600 hover:bg-purple-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all hover:scale-105 shadow-md flex items-center gap-1.5 cursor-pointer"
+                          title="Open Group Chat"
+                        >
+                          <MessageSquare size={14} /> Chat
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 2: DEDICATED ADD FRIENDS & DISCOVERY PAGE */}
+      {activeTab === 'add-friends' && (
+        <div className="flex flex-col gap-8">
+          {/* Section 1: Search Box at Top */}
+          <div className={`${isHalloween ? 'bg-[#1c0c03]/90 border-orange-500/30 shadow-[0_0_25px_rgba(255,107,0,0.15)]' : 'bg-zinc-900/90 border-white/10 shadow-2xl'} p-6 md:p-8 rounded-3xl border backdrop-blur-xl flex flex-col gap-4`}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-2xl font-bold flex items-center gap-2.5 text-white">
+                  <Search size={24} className="text-blue-400" /> Search for Players
+                </h3>
+                <p className="text-xs text-zinc-400 mt-1">
+                  Type any gamertag or username to find and send a real friend request.
+                </p>
+              </div>
+              <span className="text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 rounded-full flex items-center gap-1.5 self-start sm:self-auto">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> Live Player Database
+              </span>
+            </div>
+
+            {/* Search Input Field */}
+            <form onSubmit={(e) => { e.preventDefault(); handleSearch(); }} className="flex flex-col sm:flex-row gap-3 mt-2">
+              <div className="relative flex-1">
+                <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
+                <input 
+                  type="text"
+                  value={searchTag}
+                  onChange={(e) => setSearchTag(e.target.value)}
+                  placeholder="Enter player gamertag, username, or email..."
+                  className="w-full bg-black/60 border border-white/20 pl-11 pr-10 py-3.5 rounded-2xl text-white text-sm focus:outline-none focus:border-blue-500 shadow-inner font-medium placeholder-zinc-500"
+                />
+                {searchTag && (
+                  <button 
+                    type="button" 
+                    onClick={() => { setSearchTag(''); setSearchResults([]); }}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white p-1"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+              <button 
+                type="submit"
+                disabled={searching}
+                className="px-7 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm rounded-2xl shadow-lg shadow-blue-900/30 transition-all hover:scale-105 shrink-0 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {searching ? 'Searching...' : 'Search Players'}
+              </button>
+            </form>
+
+            {/* Search Results Display */}
+            {searchTag.trim() && (
+              <div className="mt-2 flex flex-col gap-3">
+                <div className="flex items-center justify-between border-t border-white/10 pt-4">
+                  <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+                    Search Results ({searchResults.length})
+                  </span>
+                  {searchResults.length > 0 && (
+                    <span className="text-xs text-blue-400 font-medium">Matches found in community</span>
+                  )}
+                </div>
+
+                {searchResults.length === 0 ? (
+                  <div className="bg-black/30 border border-white/5 p-6 rounded-2xl text-center text-zinc-400 text-sm">
+                    No real players found matching <span className="text-white font-semibold">"{searchTag}"</span>. Check spelling or browse the auto-discovery below.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-80 overflow-y-auto custom-scrollbar pr-1">
+                    {searchResults.map(result => {
+                      const isSelf = result.uid === currentUid;
+                      const isFriend = friends.some(f => f.uid === result.uid);
+                      const isPending = pendingSentUids.includes(result.uid);
+
+                      return (
+                        <div key={result.uid} className="bg-black/50 border border-white/10 p-4 rounded-2xl flex items-center justify-between gap-3 shadow-md hover:border-blue-500/40 transition-all">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="relative shrink-0">
+                              <img 
+                                src={result.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${result.uid}`} 
+                                alt={result.gamertag} 
+                                className="w-11 h-11 rounded-full object-cover border border-white/20 bg-zinc-800"
+                              />
+                              <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-black ${result.status === 'Online' ? 'bg-green-500' : 'bg-zinc-500'}`} />
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-bold text-sm text-white truncate">{result.gamertag}</span>
+                                {result.role === 'owner' && <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.2 rounded font-bold">Owner</span>}
+                              </div>
+                              <span className="text-[11px] text-zinc-400">{result.status || 'Registered Player'}</span>
+                            </div>
+                          </div>
+
+                          <div className="shrink-0">
+                            {isSelf ? (
+                              <span className="text-xs bg-zinc-800 text-zinc-400 px-3 py-1.5 rounded-xl border border-white/10 font-bold">You</span>
+                            ) : isFriend ? (
+                              <span className="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-xl font-bold flex items-center gap-1">
+                                <Check size={13} /> Friends
+                              </span>
+                            ) : isPending ? (
+                              <span className="text-xs text-amber-400 bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 rounded-xl font-bold flex items-center gap-1">
+                                <Clock size={13} /> Request Sent
+                              </span>
+                            ) : (
+                              <button 
+                                onClick={() => handleSendRequest(result.uid, result.gamertag, result.avatar)}
+                                className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 hover:scale-105 cursor-pointer"
+                              >
+                                <UserPlus size={14} /> Add Friend
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Section 2: Auto Search & Nearby Discovery Below Search Box */}
+          <div className={`${isHalloween ? 'bg-[#1c0c03]/90 border-orange-500/30 shadow-[0_0_25px_rgba(255,107,0,0.15)]' : 'bg-zinc-900/90 border-white/10 shadow-2xl'} p-6 md:p-8 rounded-3xl border backdrop-blur-xl flex flex-col gap-6`}>
+            {/* Auto Search Radar Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-white/10">
+              <div className="flex items-center gap-4">
+                <div className="relative w-12 h-12 rounded-2xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                  <Radio size={24} className="text-emerald-400 animate-pulse" />
+                  <span className="absolute inset-0 rounded-2xl border-2 border-emerald-400/40 animate-ping pointer-events-none" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-bold text-white">Radar & Auto-Search</h3>
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Active Auto-Scan
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-400 mt-1">
+                    Auto-scanning for accounts around your device and network, or explore every registered profile.
+                  </p>
+                </div>
+              </div>
+
+              {/* Rescan Button */}
+              <button 
+                onClick={loadCommunityAndNearby} 
+                disabled={autoSearchLoading}
+                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-zinc-300 hover:text-white rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 self-start md:self-auto cursor-pointer"
+                title="Rescan database and local accounts"
+              >
+                <RefreshCw size={14} className={autoSearchLoading ? 'animate-spin' : ''} />
+                {autoSearchLoading ? 'Scanning...' : 'Rescan Radar'}
+              </button>
+            </div>
+
+            {/* Mode Switcher: Nearby vs All Profiles */}
+            <div className="flex items-center gap-3 bg-black/40 p-1.5 rounded-2xl border border-white/10 max-w-md">
+              <button 
+                onClick={() => setDiscoveryMode('nearby')}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${discoveryMode === 'nearby' ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md' : 'text-zinc-400 hover:text-white'}`}
+              >
+                <Laptop size={14} /> Nearby & Local ({nearbyAccounts.length})
+              </button>
+              <button 
+                onClick={() => setDiscoveryMode('all')}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${discoveryMode === 'all' ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' : 'text-zinc-400 hover:text-white'}`}
+              >
+                <Globe size={14} /> All Profiles ({allCommunityUsers.length})
+              </button>
+            </div>
+
+            {/* Mode Description */}
+            <div className="text-xs text-zinc-400 flex items-center gap-2 -mt-2">
+              {discoveryMode === 'nearby' ? (
+                <span>📡 <strong>Nearby / Local Scan:</strong> Shows player profiles registered or used on this computer/browser session.</span>
               ) : (
-                <div className="flex flex-col gap-3 overflow-y-auto pr-1 flex-1 custom-scrollbar">
-                  {groupChats.map(gc => (
-                    <div key={gc.id} className="bg-black/40 border border-white/5 p-3.5 rounded-xl flex items-center justify-between group hover:bg-black/60 transition-all">
-                      <span className="font-bold text-sm">{gc.name}</span>
-                      <button 
-                        onClick={() => onChat(gc.id, gc.name, true)} 
-                        className="bg-zinc-800 hover:bg-zinc-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:scale-105 shadow-md flex items-center gap-1.5 cursor-pointer"
-                        title="Open Group Chat"
-                      >
-                        <MessageSquare size={14} /> Chat
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                <span>👥 <strong>All Profiles:</strong> Displaying every real account registered in the online database.</span>
               )}
             </div>
+
+            {/* Account Grid */}
+            {(() => {
+              const displayList = discoveryMode === 'nearby' ? nearbyAccounts : allCommunityUsers;
+
+              if (displayList.length === 0) {
+                return (
+                  <div className="bg-black/30 border border-white/5 p-8 rounded-2xl flex flex-col items-center justify-center text-center gap-3">
+                    <Radio size={36} className="text-zinc-600" />
+                    <p className="text-sm text-zinc-400">
+                      {discoveryMode === 'nearby' 
+                        ? 'No other local accounts found on this browser yet. Use the Lockscreen to add an account or switch to All Profiles!' 
+                        : 'No community profiles found. Create an account to get started!'}
+                    </p>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {displayList.map((u: any) => {
+                    const isSelf = u.uid === currentUid;
+                    const isFriend = friends.some(f => f.uid === u.uid);
+                    const isPending = pendingSentUids.includes(u.uid);
+
+                    return (
+                      <div 
+                        key={`profile-${u.uid}`}
+                        className="bg-black/40 hover:bg-black/60 border border-white/10 hover:border-emerald-500/40 p-5 rounded-2xl flex flex-col justify-between gap-4 transition-all shadow-lg group relative overflow-hidden"
+                      >
+                        <div className="flex items-center gap-3.5">
+                          <div className="relative shrink-0">
+                            <img 
+                              src={u.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.uid}`} 
+                              alt={u.gamertag} 
+                              className="w-13 h-13 rounded-2xl object-cover border-2 border-white/15 bg-zinc-800 shadow-md group-hover:scale-105 transition-transform"
+                            />
+                            <span className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-black ${u.status === 'Online' ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' : 'bg-zinc-500'}`} />
+                          </div>
+
+                          <div className="flex flex-col min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <h4 className="font-bold text-base text-white truncate">{u.gamertag}</h4>
+                              {u.role === 'owner' && (
+                                <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded font-bold shrink-0">
+                                  Owner
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-xs text-zinc-400 flex items-center gap-1 mt-0.5">
+                              <span className={`w-1.5 h-1.5 rounded-full ${u.status === 'Online' ? 'bg-green-400' : 'bg-zinc-500'}`} />
+                              {u.status || 'Active Player'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between border-t border-white/10 pt-3 text-xs">
+                          <span className="text-zinc-500 font-mono">
+                            {u.isLocal ? 'Local Profile' : 'Online Account'}
+                          </span>
+
+                          <div>
+                            {isSelf ? (
+                              <span className="text-xs bg-zinc-800 text-zinc-400 px-3 py-1.5 rounded-xl border border-white/10 font-bold">
+                                You
+                              </span>
+                            ) : isFriend ? (
+                              <span className="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-xl font-bold flex items-center gap-1">
+                                <Check size={13} /> Friends
+                              </span>
+                            ) : isPending ? (
+                              <span className="text-xs text-amber-400 bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 rounded-xl font-bold flex items-center gap-1">
+                                <Clock size={13} /> Request Sent
+                              </span>
+                            ) : (
+                              <button 
+                                onClick={() => handleSendRequest(u.uid, u.gamertag, u.avatar)}
+                                className="px-3.5 py-1.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-1.5 hover:scale-105 cursor-pointer"
+                              >
+                                <UserPlus size={14} /> Add Friend
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}

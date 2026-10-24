@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Bell, Settings as SettingsIcon, MessageSquare, Users, Store, Box, User, Activity, Image as ImageIcon, Mic, GraduationCap, ShieldAlert, ShieldCheck, Play, Pause, SkipBack, SkipForward, Music, Film, Volume2, Gamepad2 } from 'lucide-react';
+import { Search, Bell, Settings as SettingsIcon, MessageSquare, Users, UserPlus, Store, Box, User, Activity, Image as ImageIcon, Mic, GraduationCap, ShieldAlert, ShieldCheck, Play, Pause, SkipBack, SkipForward, Music, Film, Volume2, Gamepad2 } from 'lucide-react';
 import { ALL_GAMES } from '../games';
 import { UserProfile } from '../types';
 import { DesktopWidgets } from './DesktopWidgets';
@@ -81,13 +81,16 @@ export const Desktop = ({
   };
   const handleDragOver = (e: React.DragEvent) => e.preventDefault();
 
-  const [weather, setWeather] = useState<{ temp: number, condition: string } | null>(null);
+  const [weather, setWeather] = useState<{ temp: number, condition: string }>({ temp: 72, condition: "Partly cloudy" });
   useEffect(() => {
+    let isMounted = true;
     const fetchWeather = async () => {
       try {
-        const ipRes = await fetch('https://get.geojs.io/v1/ip/geo.json');
-        const ipData = await ipRes.json();
-        const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${ipData.latitude}&longitude=${ipData.longitude}&current_weather=true&temperature_unit=fahrenheit`);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 3000);
+        const weatherRes = await fetch('https://api.open-meteo.com/v1/forecast?latitude=40.7128&longitude=-74.0060&current_weather=true&temperature_unit=fahrenheit', { signal: controller.signal });
+        clearTimeout(timeout);
+        if (!weatherRes.ok) return;
         const data = await weatherRes.json();
         
         const wmoMap: Record<number, string> = {
@@ -121,16 +124,18 @@ export const Desktop = ({
           99: 'Thunderstorm with Heavy Hail'
         };
 
-        setWeather({
-          temp: Math.round(data.current_weather.temperature),
-          condition: wmoMap[data.current_weather.weathercode] || 'Unknown'
-        });
-      } catch (e) {
-        console.error(e);
-        setWeather({ temp: 72, condition: "Partly cloudy" });
+        if (isMounted && data?.current_weather) {
+          setWeather({
+            temp: Math.round(data.current_weather.temperature),
+            condition: wmoMap[data.current_weather.weathercode] || 'Partly cloudy'
+          });
+        }
+      } catch {
+        // Silently retain default weather state without logging console.error
       }
     };
     fetchWeather();
+    return () => { isMounted = false; };
   }, []);
   const [showCredits, setShowCredits] = useState(false);
   const [showWidgetsFlyout, setShowWidgetsFlyout] = useState(false);
@@ -325,6 +330,10 @@ export const Desktop = ({
               <button onClick={() => { setStartOpen(false); setCurrentView('friends'); }} className="flex flex-col items-center gap-2 group">
                 <div className="w-10 h-10 bg-indigo-600 rounded-md flex items-center justify-center group-hover:scale-105 transition-transform"><Users size={20} className="text-white"/></div>
                 <span className="text-[11px] text-white/90">Friends</span>
+              </button>
+              <button onClick={() => { setStartOpen(false); setCurrentView('add-friends'); }} className="flex flex-col items-center gap-2 group">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-md flex items-center justify-center group-hover:scale-105 transition-transform shadow-md"><UserPlus size={20} className="text-white"/></div>
+                <span className="text-[11px] text-white/90">Add Friends</span>
               </button>
               <button onClick={() => { setStartOpen(false); setCurrentView('chat'); }} className="flex flex-col items-center gap-2 group">
                 <div className="w-10 h-10 bg-purple-600 rounded-md flex items-center justify-center group-hover:scale-105 transition-transform"><MessageSquare size={20} className="text-white"/></div>

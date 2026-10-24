@@ -16,9 +16,12 @@ export function InstallPromptModal({ onDismiss }: { onDismiss: () => void }) {
   }, []);
 
   const handleInstallClick = async () => {
-    if (Notification.permission === 'default') {
-      await Notification.requestPermission();
-    }
+    try {
+      if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+        await Notification.requestPermission().catch(() => {});
+      }
+    } catch (_) {}
+
     if (deferredPrompt) {
       deferredPrompt.prompt();
       const choiceResult = await deferredPrompt.userChoice;
@@ -27,9 +30,11 @@ export function InstallPromptModal({ onDismiss }: { onDismiss: () => void }) {
       }
       setDeferredPrompt(null);
     } else {
-      if (Notification.permission === 'default') {
-        await Notification.requestPermission();
-      }
+      try {
+        if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+          await Notification.requestPermission().catch(() => {});
+        }
+      } catch (_) {}
       alert("To install this app, open your browser menu (Chrome/Edge) and select 'Install app' or 'Add to Home Screen'.");
     }
     onDismiss();

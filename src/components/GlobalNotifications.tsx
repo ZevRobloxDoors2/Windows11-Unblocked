@@ -13,7 +13,15 @@ interface GlobalNotificationsProps {
 }
 
 export function GlobalNotifications({ profile, playingGame, activeChatId, onNavigateToChat, onNavigateToParty }: GlobalNotificationsProps) {
-  useEffect(() => { if (Notification.permission === 'default') { Notification.requestPermission(); } }, []);
+  useEffect(() => {
+    // Avoid requesting notification permission automatically inside an iframe, which violates browser permissions policy
+    if (window.self !== window.top) return;
+    try {
+      if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission().catch(() => {});
+      }
+    } catch (_) {}
+  }, []);
   const [activeToasts, setActiveToasts] = useState<any[]>([]);
   const [incomingCall, setIncomingCall] = useState<any>(null);
 
@@ -34,8 +42,10 @@ export function GlobalNotifications({ profile, playingGame, activeChatId, onNavi
 
           if (data.type === 'incoming_call') {
             setIncomingCall({ id: notifId, ...data });
-            if (Notification.permission === 'granted') {
-              new Notification(`Incoming Call from ${data.fromGamertag}`, { body: 'Click to answer 1-on-1 voice call' });
+            if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+              try {
+                new Notification(`Incoming Call from ${data.fromGamertag}`, { body: 'Click to answer 1-on-1 voice call' });
+              } catch (_) {}
             }
             return;
           }
@@ -52,10 +62,12 @@ export function GlobalNotifications({ profile, playingGame, activeChatId, onNavi
 
           setActiveToasts(prev => [...prev, { id: notifId, ...data }]);
           
-          if (Notification.permission === 'granted') {
-            const title = data.type === 'message' ? (data.isGroup ? `New message in ${data.chatName}` : `New message from ${data.fromGamertag}`) : `Party Invite from ${data.fromGamertag}`;
-            const body = data.type === 'message' ? 'Click to open chat' : 'Click to join party';
-            new Notification(title, { body });
+          if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+            try {
+              const title = data.type === 'message' ? (data.isGroup ? `New message in ${data.chatName}` : `New message from ${data.fromGamertag}`) : `Party Invite from ${data.fromGamertag}`;
+              const body = data.type === 'message' ? 'Click to open chat' : 'Click to join party';
+              new Notification(title, { body });
+            } catch (_) {}
           }
           
           setTimeout(() => {
@@ -63,6 +75,8 @@ export function GlobalNotifications({ profile, playingGame, activeChatId, onNavi
           }, 6000);
         }
       });
+    }, () => {
+      // Gracefully handle any permission or network snapshot error
     });
     return () => unsub();
   }, [profile, playingGame]);

@@ -30,7 +30,7 @@ export function Notifications({ userProfile, onBack }: NotificationsProps) {
         data.push({ id: d.id, ...d.data() } as FriendRequest);
       });
       setRequests(data);
-    }, (err) => console.error(err));
+    }, () => {});
 
     // Listen to system alerts
     const qAlerts = query(
@@ -44,7 +44,7 @@ export function Notifications({ userProfile, onBack }: NotificationsProps) {
         data.push({ id: d.id, ...d.data() });
       });
       setAlerts(data);
-    }, (err) => console.error(err));
+    }, () => {});
 
     return () => {
       unsubReqs();
@@ -64,7 +64,7 @@ export function Notifications({ userProfile, onBack }: NotificationsProps) {
     try {
       await updateDoc(doc(db, 'systemAlerts', alertId), { read: true });
     } catch(e) {
-      console.error(e);
+      // Ignored
     }
   };
 
