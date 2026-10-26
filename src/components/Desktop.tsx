@@ -1,6 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Bell, Settings as SettingsIcon, MessageSquare, Users, UserPlus, Store, Box, User, Activity, Image as ImageIcon, Mic, GraduationCap, ShieldAlert, ShieldCheck, Play, Pause, SkipBack, SkipForward, Music, Film, Volume2, Gamepad2 } from 'lucide-react';
+import { 
+  Search, Bell, Settings as SettingsIcon, MessageSquare, Users, UserPlus, 
+  Store, Box, User, Activity, Image as ImageIcon, GraduationCap, 
+  ShieldAlert, Play, Pause, SkipBack, SkipForward, Music, Film, 
+  Volume2, VolumeX, Gamepad2, ChevronRight, ChevronUp, Power, RefreshCw, 
+  Laptop, Folder, FileText, Terminal, Calculator, Compass, Moon, Sun, 
+  Wifi, WifiOff, Bluetooth, Battery, BatteryCharging, ChevronLeft, Calendar as CalendarIcon,
+  LayoutGrid, Eye, Check, Sparkles, Monitor
+} from 'lucide-react';
 import { ALL_GAMES } from '../games';
 import { UserProfile } from '../types';
 import { DesktopWidgets } from './DesktopWidgets';
@@ -29,65 +37,81 @@ export const Desktop = ({
   miniPlayerMedia,
   onExpandMiniPlayer
 }: { 
-  profile: UserProfile, 
-  installedApps: string[],
-  onOpenStore: () => void,
-  onOpenSearch: () => void,
-  onPlayGame: (game: any) => void,
-  onMinimizeGame?: (gameId: string) => void,
-  time: string,
-  batteryInfo: any,
-  currentView: string,
-  setCurrentView: (view: string) => void,
-  openViews?: string[],
-  minimizedViews?: string[],
-  playingGame?: any,
-  suspendedGames?: any[],
-  notificationCount: number,
-  onLogout: () => void,
-  onActivateDeadComputer?: () => void,
-  onOpenModerationPanel?: () => void,
-  onOpenVerification?: () => void,
-  miniPlayerMedia?: any,
-  onExpandMiniPlayer?: (appId: string, media: any) => void
+  profile: UserProfile; 
+  installedApps: string[];
+  onOpenStore: () => void;
+  onOpenSearch: () => void;
+  onPlayGame: (game: any) => void;
+  onMinimizeGame?: (gameId: string) => void;
+  time: string;
+  batteryInfo: any;
+  currentView: string;
+  setCurrentView: (view: string) => void;
+  openViews?: string[];
+  minimizedViews?: string[];
+  playingGame?: any;
+  suspendedGames?: any[];
+  notificationCount: number;
+  onLogout: () => void;
+  onActivateDeadComputer?: () => void;
+  onOpenModerationPanel?: () => void;
+  onOpenVerification?: () => void;
+  miniPlayerMedia?: any;
+  onExpandMiniPlayer?: (appId: string, media: any) => void;
 }) => {
+  // Navigation & Flyout States
   const [startOpen, setStartOpen] = useState(false);
+  const [startTab, setStartTab] = useState<'pinned' | 'all'>('pinned');
+  const [startSearchQuery, setStartSearchQuery] = useState('');
+  const [showPowerMenu, setShowPowerMenu] = useState(false);
+  const [showQuickSettings, setShowQuickSettings] = useState(false);
+  const [showCalendarFlyout, setShowCalendarFlyout] = useState(false);
+  const [showWidgetsFlyout, setShowWidgetsFlyout] = useState(false);
+  const [showCredits, setShowCredits] = useState(false);
+  const [showBatteryNotice, setShowBatteryNotice] = useState(false);
+  const [selectedDesktopIcon, setSelectedDesktopIcon] = useState<string | null>(null);
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const dataUrl = ev.target?.result as string;
-        if (window.confirm("Do you want to set this image as your wallpaper? (Cancel to save to My Documents/Pictures)")) {
-          localStorage.setItem('custom_wallpaper', dataUrl);
-          window.location.reload();
-        } else {
-          const files = JSON.parse(localStorage.getItem('my_documents_files') || '[]');
-          files.push({
-            id: Date.now().toString(),
-            name: file.name,
-            type: 'image',
-            content: dataUrl,
-            folder: 'Pictures'
-          });
-          localStorage.setItem('my_documents_files', JSON.stringify(files));
-          alert('Image saved to My Documents > Pictures!');
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-  const handleDragOver = (e: React.DragEvent) => e.preventDefault();
+  // Quick Settings States
+  const [qsWifi, setQsWifi] = useState(true);
+  const [qsBluetooth, setQsBluetooth] = useState(true);
+  const [qsSound, setQsSound] = useState(true);
+  const [qsDnd, setQsDnd] = useState(false);
+  const [qsBatterySaver, setQsBatterySaver] = useState(false);
+  const [qsNightLight, setQsNightLight] = useState(false);
+  const [brightness, setBrightness] = useState(100);
+  const [volume, setVolume] = useState(80);
 
-  const [weather, setWeather] = useState<{ temp: number, condition: string }>({ temp: 72, condition: "Partly cloudy" });
+  // Calendar State
+  const [calendarDate, setCalendarDate] = useState(new Date());
+
+  // Wallpaper & Theme States
+  const [isHalloween, setIsHalloween] = useState(() => localStorage.getItem('halloween_theme') === 'true');
+  const WIN11_WALLPAPERS = [
+    { id: 'bloom-dark', name: 'Windows 11 Bloom (Dark)', url: 'https://images.unsplash.com/photo-1622737133809-d95047b9e673?auto=format&fit=crop&w=2560&q=85' },
+    { id: 'bloom-light', name: 'Windows 11 Bloom (Light)', url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=2560&q=85' },
+    { id: 'flow-dark', name: 'Windows 11 Flow', url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=2560&q=85' },
+    { id: 'sunrise', name: 'Windows 11 Sunrise', url: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&w=2560&q=85' },
+  ];
+  const [bgImage, setBgImage] = useState(() => localStorage.getItem('win11_bg') || WIN11_WALLPAPERS[0].url);
+  const halloweenBg = `${((import.meta as any).env?.BASE_URL || '/').replace(/\/$/, '')}/minecraft_halloween.jpg`;
+  const currentBg = isHalloween ? halloweenBg : bgImage;
+
+  // Context Menu State
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+
+  // Marquee Selection Box
+  const [selectionBox, setSelectionBox] = useState<{ startX: number; startY: number; currentX: number; currentY: number } | null>(null);
+  const desktopRef = useRef<HTMLDivElement>(null);
+
+  // Weather State
+  const [weather, setWeather] = useState<{ temp: number; condition: string }>({ temp: 72, condition: "Partly cloudy" });
+
   useEffect(() => {
     let isMounted = true;
     const fetchWeather = async () => {
       try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 3000);
+        const timeout = setTimeout(() => controller.abort(), 3500);
         const weatherRes = await fetch('https://api.open-meteo.com/v1/forecast?latitude=40.7128&longitude=-74.0060&current_weather=true&temperature_unit=fahrenheit', { signal: controller.signal });
         clearTimeout(timeout);
         if (!weatherRes.ok) return;
@@ -99,86 +123,49 @@ export const Desktop = ({
           2: 'Partly cloudy',
           3: 'Overcast',
           45: 'Fog',
-          48: 'Depositing rime fog',
           51: 'Light Drizzle',
-          53: 'Moderate Drizzle',
-          55: 'Dense Drizzle',
-          56: 'Light Freezing Drizzle',
-          57: 'Dense Freezing Drizzle',
           61: 'Slight Rain',
           63: 'Moderate Rain',
           65: 'Heavy Rain',
-          66: 'Light Freezing Rain',
-          67: 'Heavy Freezing Rain',
           71: 'Slight Snow',
-          73: 'Moderate Snow',
-          75: 'Heavy Snow',
-          77: 'Snow grains',
-          80: 'Slight Rain Showers',
-          81: 'Moderate Rain Showers',
-          82: 'Violent Rain Showers',
-          85: 'Slight Snow Showers',
-          86: 'Heavy Snow Showers',
-          95: 'Thunderstorm',
-          96: 'Thunderstorm with Hail',
-          99: 'Thunderstorm with Heavy Hail'
+          80: 'Rain Showers',
         };
 
-        if (isMounted && data?.current_weather) {
+        if (isMounted && data.current_weather) {
           setWeather({
             temp: Math.round(data.current_weather.temperature),
             condition: wmoMap[data.current_weather.weathercode] || 'Partly cloudy'
           });
         }
       } catch {
-        // Silently retain default weather state without logging console.error
+        // Silently retain default weather state
       }
     };
     fetchWeather();
     return () => { isMounted = false; };
   }, []);
-  const [showCredits, setShowCredits] = useState(false);
-  const [showWidgetsFlyout, setShowWidgetsFlyout] = useState(false);
-  const [showQuickSettings, setShowQuickSettings] = useState(false);
-  const [showBatteryNotice, setShowBatteryNotice] = useState(false);
-  
-  const [qsWifi, setQsWifi] = useState(true);
-  const [qsSound, setQsSound] = useState(true);
-  const [qsDnd, setQsDnd] = useState(false);
-  const [qsLowPower, setQsLowPower] = useState(false);
-
-  const [fullscreenCountdown, setFullscreenCountdown] = useState(5);
-  const [showFullscreenModal, setShowFullscreenModal] = useState(true);
-  const [contextMenu, setContextMenu] = useState<{x: number, y: number} | null>(null);
-  const [isHalloween, setIsHalloween] = useState(() => localStorage.getItem('halloween_theme') === 'true');
-  const [bgImage, setBgImage] = useState(() => localStorage.getItem('win11_bg') || 'https://images.unsplash.com/photo-1622737133809-d95047b9e673?auto=format&fit=crop&w=2000&q=80');
-  const halloweenBg = `${((import.meta as any).env?.BASE_URL || '/').replace(/\/$/, '')}/minecraft_halloween.jpg`;
-  const currentBg = isHalloween ? halloweenBg : bgImage;
-
-  useEffect(() => {
-    if (fullscreenCountdown > 0) {
-      const timer = setTimeout(() => setFullscreenCountdown(fullscreenCountdown - 1), 1000);
-      return () => clearTimeout(timer);
-    } else if (fullscreenCountdown === 0 && showFullscreenModal) {
-      setShowFullscreenModal(false);
-      try {
-        if (!document.fullscreenElement) {
-          document.documentElement.requestFullscreen().catch(() => console.log('Fullscreen blocked by browser'));
-        }
-      } catch(e) {}
-    }
-  }, [fullscreenCountdown, showFullscreenModal]);
-
-  useEffect(() => {
-    // Show battery notice shortly after desktop mounts
-    const timer = setTimeout(() => setShowBatteryNotice(true), 2000);
-    return () => clearTimeout(timer);
-  }, []);
 
   const installedGames = ALL_GAMES.filter(g => installedApps.includes(g.id));
 
-  const handleStartToggle = () => setStartOpen(!startOpen);
+  // Handle Drag & Drop Wallpaper
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dataUrl = ev.target?.result as string;
+        if (window.confirm("Set this image as your Windows 11 wallpaper?")) {
+          setBgImage(dataUrl);
+          localStorage.setItem('win11_bg', dataUrl);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  const handleDragOver = (e: React.DragEvent) => e.preventDefault();
 
+  // Context Menu Handlers
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     setContextMenu({ x: e.clientX, y: e.clientY });
@@ -188,14 +175,56 @@ export const Desktop = ({
     if (contextMenu) setContextMenu(null);
   };
 
-  const handleChangeBg = () => {
-    const url = prompt('Enter image URL for background:');
-    if (url) {
-      setBgImage(url);
-      localStorage.setItem('win11_bg', url);
-    }
+  useEffect(() => {
+    const handleClick = () => {
+      closeContextMenu();
+      setShowPowerMenu(false);
+    };
+    window.addEventListener('click', handleClick);
+    return () => window.removeEventListener('click', handleClick);
+  }, [contextMenu, showPowerMenu]);
+
+  // Marquee Selection Logic
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.target !== desktopRef.current) return;
+    setSelectedDesktopIcon(null);
+    setStartOpen(false);
+    setShowQuickSettings(false);
+    setShowCalendarFlyout(false);
+    setSelectionBox({
+      startX: e.clientX,
+      startY: e.clientY,
+      currentX: e.clientX,
+      currentY: e.clientY
+    });
   };
 
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!selectionBox) return;
+    setSelectionBox(prev => prev ? { ...prev, currentX: e.clientX, currentY: e.clientY } : null);
+  };
+
+  const handleMouseUp = () => {
+    if (selectionBox) setSelectionBox(null);
+  };
+
+  // Keyboard shortcut (Win key to toggle Start)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Meta' || (e.altKey && e.key === 'Home')) {
+        setStartOpen(prev => !prev);
+      } else if (e.key === 'Escape') {
+        setStartOpen(false);
+        setShowQuickSettings(false);
+        setShowCalendarFlyout(false);
+        setShowWidgetsFlyout(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Panic & Cloak actions
   const handlePanicMode = () => {
     const win = window.open('about:blank', '_blank');
     if (win) {
@@ -214,476 +243,636 @@ export const Desktop = ({
     }
   };
 
-  const handleDisguiseMode = () => {
-    document.title = 'Dashboard';
-    let link: HTMLLinkElement = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
-    if (!link) {
-      link = document.createElement('link');
-      link.rel = 'icon';
-      document.head.appendChild(link);
-    }
-    link.href = 'https://du11hjcvx0uqb.cloudfront.net/dist/images/favicon-e10d657a73.ico';
-    setShowQuickSettings(false);
-  };
+  // Calendar Helper Days
+  const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
+  const getFirstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay();
+  const currentMonthDays = getDaysInMonth(calendarDate.getFullYear(), calendarDate.getMonth());
+  const firstDay = getFirstDayOfMonth(calendarDate.getFullYear(), calendarDate.getMonth());
+  const today = new Date();
 
-  useEffect(() => {
-    const handleClick = () => closeContextMenu();
-    window.addEventListener('click', handleClick);
-    return () => window.removeEventListener('click', handleClick);
-  }, [contextMenu]);
+  // Pinned Apps in Windows 11 Start Menu
+  const PINNED_APPS = [
+    { id: 'edge', title: 'Microsoft Edge', icon: '🌐', color: 'from-blue-500 to-cyan-500', action: () => { const chromeApp = ALL_GAMES.find(g => g.id === 'Chrome'); if (chromeApp) onPlayGame(chromeApp); } },
+    { id: 'store', title: 'Microsoft Store', icon: '🛍️', color: 'from-blue-600 to-indigo-600', action: onOpenStore },
+    { id: 'settings', title: 'Settings', icon: '⚙️', color: 'from-zinc-600 to-zinc-700', action: () => setCurrentView('settings') },
+    { id: 'explorer', title: 'File Explorer', icon: '📁', color: 'from-amber-500 to-yellow-600', action: () => setCurrentView('home') },
+    { id: 'chat', title: 'Chat & Friends', icon: '💬', color: 'from-purple-600 to-indigo-600', action: () => setCurrentView('friends') },
+    { id: 'activity', title: 'Friend Activity', icon: '🔥', color: 'from-orange-500 to-amber-600', action: () => setCurrentView('activity') },
+    { id: 'party', title: 'Voice Lounge', icon: '🎙️', color: 'from-emerald-600 to-teal-600', action: () => setCurrentView('party') },
+    { id: 'notifications', title: 'Notifications', icon: '🔔', color: 'from-blue-500 to-sky-600', action: () => setCurrentView('notifications') },
+    { id: 'photos', title: 'Photos', icon: '🖼️', color: 'from-pink-500 to-rose-600', action: () => setCurrentView('profile') },
+    { id: 'terminal', title: 'Terminal', icon: '💻', color: 'from-zinc-800 to-black', action: () => { const cmd = ALL_GAMES.find(g => g.id === 'cmd' || g.id === 'terminal'); if (cmd) onPlayGame(cmd); else alert('Windows Terminal is ready.'); } },
+    { id: 'classroom', title: 'Classroom', icon: '🎓', color: 'from-green-600 to-emerald-700', action: () => setCurrentView('classroom') },
+    { id: 'local-share', title: 'Quick Share', icon: '📡', color: 'from-indigo-600 to-blue-700', action: () => setCurrentView('local-share') }
+  ];
+
+  const filteredPinnedApps = PINNED_APPS.filter(app => 
+    app.title.toLowerCase().includes(startSearchQuery.toLowerCase())
+  );
 
   return (
     <div 
-      className={`absolute inset-0 bg-cover bg-center overflow-hidden z-0 ${isHalloween ? 'brightness-90 saturate-125' : ''}`} 
+      ref={desktopRef}
+      className={`absolute inset-0 bg-cover bg-center overflow-hidden z-0 select-none ${isHalloween ? 'brightness-90 saturate-125' : ''}`} 
       style={{ backgroundImage: `url('${currentBg}')` }}
       onContextMenu={handleContextMenu}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
     >
-      {/* Spooky Halloween ambient glow overlay */}
-      {isHalloween && (
-        <div className="absolute inset-0 pointer-events-none z-[1] overflow-hidden">
-          <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-orange-600/15 rounded-full blur-[140px]" />
-          <div className="absolute bottom-0 left-1/4 w-[500px] h-[500px] bg-purple-600/20 rounded-full blur-[140px]" />
-        </div>
+      {/* Ambient Lighting Filter for Windows 11 Depth */}
+      <div className="absolute inset-0 pointer-events-none bg-black/10 z-[1]" />
+
+      {/* Marquee Drag Selection Box */}
+      {selectionBox && (
+        <div 
+          className="absolute z-30 pointer-events-none bg-[#0078D4]/20 border border-[#0078D4]/70 rounded-xs"
+          style={{
+            left: Math.min(selectionBox.startX, selectionBox.currentX),
+            top: Math.min(selectionBox.startY, selectionBox.currentY),
+            width: Math.abs(selectionBox.currentX - selectionBox.startX),
+            height: Math.abs(selectionBox.currentY - selectionBox.startY)
+          }}
+        />
       )}
-      {/* Context Menu */}
+
+      {/* Modern Windows 11 Context Menu */}
       <AnimatePresence>
         {contextMenu && (
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.1 }}
-            className="absolute bg-[#242424]/90 backdrop-blur-xl border border-white/10 rounded-md shadow-2xl py-1 z-[300] min-w-[200px]"
-            style={{ left: contextMenu.x, top: contextMenu.y }}
+            transition={{ duration: 0.12, ease: 'easeOut' }}
+            className="absolute bg-[#242424]/95 backdrop-blur-2xl border border-white/[0.14] rounded-xl shadow-[0_16px_40px_rgba(0,0,0,0.6)] py-1.5 z-[400] min-w-[220px] text-xs text-white"
+            style={{ left: Math.min(contextMenu.x, window.innerWidth - 240), top: Math.min(contextMenu.y, window.innerHeight - 280) }}
+            onClick={(e) => e.stopPropagation()}
           >
-            <button onClick={handleChangeBg} className="w-full px-4 py-1.5 text-sm text-left text-white hover:bg-white/10 flex items-center gap-2">
-              <ImageIcon size={14} /> Change Background
+            <button 
+              onClick={() => { closeContextMenu(); window.location.reload(); }} 
+              className="w-full px-3 py-2 text-left hover:bg-white/[0.08] flex items-center justify-between transition-colors"
+            >
+              <span className="flex items-center gap-2.5"><RefreshCw size={14} className="text-zinc-400" /> Refresh</span>
+              <span className="text-[10px] text-zinc-500">F5</span>
             </button>
-            <div className="h-px bg-white/10 my-1"></div>
-            <button onClick={() => setCurrentView('settings')} className="w-full px-4 py-1.5 text-sm text-left text-white hover:bg-white/10 flex items-center gap-2">
-              <SettingsIcon size={14} /> Settings
+            <div className="h-px bg-white/[0.08] my-1" />
+            <button 
+              onClick={() => { 
+                const nextIdx = (WIN11_WALLPAPERS.findIndex(w => w.url === bgImage) + 1) % WIN11_WALLPAPERS.length;
+                const nextW = WIN11_WALLPAPERS[nextIdx];
+                setBgImage(nextW.url);
+                localStorage.setItem('win11_bg', nextW.url);
+                closeContextMenu();
+              }} 
+              className="w-full px-3 py-2 text-left hover:bg-white/[0.08] flex items-center gap-2.5 transition-colors"
+            >
+              <ImageIcon size={14} className="text-blue-400" /> Next desktop background
+            </button>
+            <button 
+              onClick={() => { closeContextMenu(); onOpenStore(); }} 
+              className="w-full px-3 py-2 text-left hover:bg-white/[0.08] flex items-center gap-2.5 transition-colors"
+            >
+              <Store size={14} className="text-emerald-400" /> Open Microsoft Store
+            </button>
+            <div className="h-px bg-white/[0.08] my-1" />
+            <button 
+              onClick={() => { closeContextMenu(); setCurrentView('settings'); }} 
+              className="w-full px-3 py-2 text-left hover:bg-white/[0.08] flex items-center gap-2.5 transition-colors"
+            >
+              <SettingsIcon size={14} className="text-zinc-400" /> Display settings
+            </button>
+            <button 
+              onClick={() => { closeContextMenu(); setCurrentView('settings'); }} 
+              className="w-full px-3 py-2 text-left hover:bg-white/[0.08] flex items-center gap-2.5 transition-colors"
+            >
+              <Sparkles size={14} className="text-amber-400" /> Personalize
             </button>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Desktop Icons */}
-      <div className="absolute top-0 left-0 bottom-12 p-2 flex flex-col flex-wrap gap-2 content-start w-full pointer-events-none">
-        <motion.div drag dragMomentum={false} className="pointer-events-auto">
+      {/* Windows 11 Desktop Icons */}
+      <div className="absolute top-2 left-2 bottom-14 flex flex-col flex-wrap gap-2 content-start z-10 pointer-events-none">
+        {/* Recycle Bin */}
+        <div className="pointer-events-auto">
           <button 
-            onClick={onOpenStore}
-            className="w-20 p-2 flex flex-col items-center gap-1 hover:bg-white/10 rounded-sm transition-colors text-white"
-            onDoubleClick={onOpenStore}
+            onClick={() => setSelectedDesktopIcon('recycle')}
+            className={`w-[78px] p-2 flex flex-col items-center gap-1.5 rounded-lg transition-all ${
+              selectedDesktopIcon === 'recycle' 
+                ? 'bg-[#0078D4]/25 border border-[#0078D4]/60 shadow-sm' 
+                : 'hover:bg-white/[0.08] border border-transparent'
+            }`}
           >
-            <div className="w-10 h-10 bg-[#00A4EF] rounded-md flex items-center justify-center shadow-lg">
-              <Store size={24} className="text-white" />
+            <div className="w-11 h-11 flex items-center justify-center text-3xl filter drop-shadow-md">
+              🗑️
             </div>
-            <span className="text-xs text-center text-shadow-sm font-medium line-clamp-2 leading-tight drop-shadow-md">Microsoft Store</span>
+            <span className="text-[11px] text-center text-white font-medium line-clamp-2 leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+              Recycle Bin
+            </span>
           </button>
-        </motion.div>
+        </div>
 
-        {installedGames.map(game => (
-          <motion.div drag dragMomentum={false} key={game.id} className="pointer-events-auto">
+        {/* This PC */}
+        <div className="pointer-events-auto">
+          <button 
+            onClick={() => { setSelectedDesktopIcon('this-pc'); }}
+            onDoubleClick={() => setCurrentView('home')}
+            className={`w-[78px] p-2 flex flex-col items-center gap-1.5 rounded-lg transition-all ${
+              selectedDesktopIcon === 'this-pc' 
+                ? 'bg-[#0078D4]/25 border border-[#0078D4]/60 shadow-sm' 
+                : 'hover:bg-white/[0.08] border border-transparent'
+            }`}
+          >
+            <div className="w-11 h-11 flex items-center justify-center text-3xl filter drop-shadow-md">
+              💻
+            </div>
+            <span className="text-[11px] text-center text-white font-medium line-clamp-2 leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+              This PC
+            </span>
+          </button>
+        </div>
+
+        {/* Microsoft Store Desktop Shortcut */}
+        <div className="pointer-events-auto">
+          <button 
+            onClick={() => setSelectedDesktopIcon('store')}
+            onDoubleClick={onOpenStore}
+            className={`w-[78px] p-2 flex flex-col items-center gap-1.5 rounded-lg transition-all ${
+              selectedDesktopIcon === 'store' 
+                ? 'bg-[#0078D4]/25 border border-[#0078D4]/60 shadow-sm' 
+                : 'hover:bg-white/[0.08] border border-transparent'
+            }`}
+          >
+            <div className="w-11 h-11 bg-gradient-to-br from-[#0078D4] to-[#00A4EF] rounded-xl flex items-center justify-center shadow-lg border border-white/20">
+              <Store size={22} className="text-white" />
+            </div>
+            <span className="text-[11px] text-center text-white font-medium line-clamp-2 leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+              Microsoft Store
+            </span>
+          </button>
+        </div>
+
+        {/* Installed Games Shortcuts */}
+        {installedGames.slice(0, 10).map(game => (
+          <div key={game.id} className="pointer-events-auto">
             <button 
-              onClick={() => onPlayGame(game)}
+              onClick={() => setSelectedDesktopIcon(game.id)}
               onDoubleClick={() => onPlayGame(game)}
-              className="w-20 p-2 flex flex-col items-center gap-1 hover:bg-white/10 rounded-sm transition-colors text-white"
+              className={`w-[78px] p-2 flex flex-col items-center gap-1.5 rounded-lg transition-all ${
+                selectedDesktopIcon === game.id 
+                  ? 'bg-[#0078D4]/25 border border-[#0078D4]/60 shadow-sm' 
+                  : 'hover:bg-white/[0.08] border border-transparent'
+              }`}
             >
-              <div className="w-10 h-10 bg-white/10 rounded-md overflow-hidden flex items-center justify-center shadow-lg border border-white/20">
+              <div className="w-11 h-11 bg-zinc-800/80 rounded-xl overflow-hidden flex items-center justify-center shadow-lg border border-white/15">
                 <img src={game.image} alt={game.title} className="w-full h-full object-cover" />
               </div>
-              <span className="text-xs text-center text-shadow-sm font-medium line-clamp-2 leading-tight drop-shadow-md">{game.title}</span>
+              <span className="text-[11px] text-center text-white font-medium line-clamp-2 leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                {game.title}
+              </span>
             </button>
-          </motion.div>
+          </div>
         ))}
       </div>
 
-      {/* Start Menu Overlay */}
+      {/* ======================================================== */}
+      {/* WINDOWS 11 START MENU                                    */}
+      {/* ======================================================== */}
       <AnimatePresence>
         {startOpen && (
           <motion.div 
-            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            initial={{ opacity: 0, y: 32, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 50, scale: 0.95 }}
-            transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="absolute bottom-16 left-1/2 -translate-x-1/2 w-[600px] h-[700px] max-h-[80vh] bg-[#242424]/95 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl flex flex-col p-6 z-[200]"
+            exit={{ opacity: 0, y: 24, scale: 0.97 }}
+            transition={{ type: 'spring', damping: 28, stiffness: 360 }}
+            className="absolute bottom-14 left-1/2 -translate-x-1/2 w-[640px] max-w-[95vw] h-[660px] max-h-[85vh] win11-mica rounded-2xl shadow-[0_32px_72px_rgba(0,0,0,0.7),0_0_1px_rgba(255,255,255,0.2)] flex flex-col p-6 z-[300] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
           >
-            <div className="relative mb-6">
+            {/* Top Windows 11 Search Input */}
+            <div className="relative mb-5 shrink-0">
               <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
-              <input type="text" placeholder="Type here to search" className="w-full bg-[#1c1c1c] border-b-2 border-blue-500 rounded-t-md px-4 py-2 pl-10 text-sm text-white focus:outline-none" />
+              <input 
+                type="text" 
+                placeholder="Type here to search" 
+                value={startSearchQuery}
+                onChange={(e) => setStartSearchQuery(e.target.value)}
+                className="w-full bg-[#1c1c1c]/80 border border-white/[0.08] focus:border-[#0078D4] focus:ring-2 focus:ring-[#0078D4]/30 rounded-xl px-4 py-2.5 pl-11 text-xs text-white placeholder-zinc-400 transition-all outline-none shadow-inner"
+              />
             </div>
 
-            <div className="flex justify-between items-center mb-4 px-2">
-              <h3 className="text-sm font-semibold text-white">Pinned</h3>
-              <button className="text-xs text-white/70 hover:text-white bg-white/5 hover:bg-white/10 px-2 py-1 rounded transition-colors">All apps {'>'}</button>
-            </div>
-
-            <div className="grid grid-cols-6 gap-4 mb-8 px-2">
-              <button onClick={() => { setStartOpen(false); onOpenStore(); }} className="flex flex-col items-center gap-2 group">
-                <div className="w-10 h-10 bg-[#00A4EF] rounded-md flex items-center justify-center group-hover:scale-105 transition-transform"><Store size={20} className="text-white"/></div>
-                <span className="text-[11px] text-white/90">Store</span>
-              </button>
-              <button onClick={() => { setStartOpen(false); setCurrentView('settings'); }} className="flex flex-col items-center gap-2 group">
-                <div className="w-10 h-10 bg-zinc-700 rounded-md flex items-center justify-center group-hover:scale-105 transition-transform"><SettingsIcon size={20} className="text-white"/></div>
-                <span className="text-[11px] text-white/90">Settings</span>
-              </button>
-              <button onClick={() => { setStartOpen(false); setCurrentView('friends'); }} className="flex flex-col items-center gap-2 group">
-                <div className="w-10 h-10 bg-indigo-600 rounded-md flex items-center justify-center group-hover:scale-105 transition-transform"><Users size={20} className="text-white"/></div>
-                <span className="text-[11px] text-white/90">Friends</span>
-              </button>
-              <button onClick={() => { setStartOpen(false); setCurrentView('add-friends'); }} className="flex flex-col items-center gap-2 group">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-md flex items-center justify-center group-hover:scale-105 transition-transform shadow-md"><UserPlus size={20} className="text-white"/></div>
-                <span className="text-[11px] text-white/90">Add Friends</span>
-              </button>
-              <button onClick={() => { setStartOpen(false); setCurrentView('chat'); }} className="flex flex-col items-center gap-2 group">
-                <div className="w-10 h-10 bg-purple-600 rounded-md flex items-center justify-center group-hover:scale-105 transition-transform"><MessageSquare size={20} className="text-white"/></div>
-                <span className="text-[11px] text-white/90">Chat</span>
-              </button>
-              <button onClick={() => { setStartOpen(false); setCurrentView('activity'); }} className="flex flex-col items-center gap-2 group">
-                <div className="w-10 h-10 bg-green-600 rounded-md flex items-center justify-center group-hover:scale-105 transition-transform"><Activity size={20} className="text-white"/></div>
-                <span className="text-[11px] text-white/90">Activity</span>
+            {/* Pinned vs All Apps Header */}
+            <div className="flex items-center justify-between mb-4 px-2 shrink-0">
+              <h3 className="text-xs font-bold text-white tracking-wide">
+                {startTab === 'pinned' ? 'Pinned' : 'All apps'}
+              </h3>
+              <button 
+                onClick={() => setStartTab(startTab === 'pinned' ? 'all' : 'pinned')}
+                className="text-[11px] text-zinc-300 hover:text-white bg-white/[0.06] hover:bg-white/[0.1] px-2.5 py-1 rounded-md transition-colors flex items-center gap-1 cursor-pointer font-medium"
+              >
+                {startTab === 'pinned' ? 'All apps >' : '< Back to Pinned'}
               </button>
             </div>
 
-            <div className="flex justify-between items-center mb-4 px-2">
-              <h3 className="text-sm font-semibold text-white">Recommended</h3>
-              <button className="text-xs text-white/70 hover:text-white bg-white/5 hover:bg-white/10 px-2 py-1 rounded transition-colors">More {'>'}</button>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-2 mb-4 px-2 overflow-y-auto max-h-[220px]">
-              {installedGames.slice(0, 6).map(game => (
-                <button 
-                  key={`rec-${game.id}`}
-                  onClick={() => { setStartOpen(false); onPlayGame(game); }} 
-                  className="flex items-center gap-3 hover:bg-white/10 p-2 rounded-md transition-colors"
-                >
-                  <img src={game.image} alt={game.title} className="w-8 h-8 rounded object-cover" />
-                  <div className="flex flex-col text-left">
-                    <span className="text-xs font-semibold text-white truncate max-w-[120px]">{game.title}</span>
-                    <span className="text-[10px] text-white/50">Recently opened</span>
+            {/* TAB: PINNED APPS */}
+            {startTab === 'pinned' && (
+              <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar pr-1">
+                {/* 6-Column Grid of Windows 11 Pinned Icons */}
+                <div className="grid grid-cols-6 gap-y-4 gap-x-2 mb-6 px-1">
+                  {filteredPinnedApps.map(app => (
+                    <button 
+                      key={app.id}
+                      onClick={() => { setStartOpen(false); app.action(); }} 
+                      className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-white/[0.08] active:bg-white/[0.04] active:scale-95 transition-all group cursor-pointer"
+                    >
+                      <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${app.color} flex items-center justify-center text-xl shadow-md group-hover:shadow-lg group-hover:scale-105 transition-transform`}>
+                        {app.icon}
+                      </div>
+                      <span className="text-[11px] text-zinc-200 group-hover:text-white truncate max-w-[80px] text-center">
+                        {app.title}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Recommended Section */}
+                <div className="mt-auto border-t border-white/[0.08] pt-4 px-1">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-xs font-bold text-white tracking-wide">Recommended</h4>
+                    <span className="text-[11px] text-zinc-400">Recent games & apps</span>
                   </div>
-                </button>
-              ))}
-              {openViews && openViews.length > 0 && openViews.slice(0, 2).map(view => (
-                <button 
-                  key={`rec-app-${view}`}
-                  onClick={() => { setStartOpen(false); setCurrentView(view); }} 
-                  className="flex items-center gap-3 hover:bg-white/10 p-2 rounded-md transition-colors"
-                >
-                  <div className="w-8 h-8 rounded bg-white/10 flex items-center justify-center">
-                     <SettingsIcon size={16} className="text-white" />
-                  </div>
-                  <div className="flex flex-col text-left">
-                    <span className="text-xs font-semibold text-white capitalize">{view}</span>
-                    <span className="text-[10px] text-white/50">Recently opened</span>
-                  </div>
-                </button>
-              ))}
-            </div>
 
-            <div className="mt-auto flex items-center justify-between bg-[#1c1c1c] -mx-6 -mb-6 p-4 rounded-b-xl border-t border-white/5">
-              <div onClick={() => { setStartOpen(false); setCurrentView('profile'); }} className="flex items-center gap-3 hover:bg-white/10 p-2 rounded-md cursor-pointer transition-colors">
-                <img src={profile.avatar} className="w-8 h-8 rounded-full" />
-                <span className="text-sm font-medium text-white">{profile.gamertag}</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    {installedGames.slice(0, 4).map(game => (
+                      <button 
+                        key={`rec-${game.id}`}
+                        onClick={() => { setStartOpen(false); onPlayGame(game); }} 
+                        className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/[0.08] active:scale-98 transition-all text-left cursor-pointer"
+                      >
+                        <img src={game.image} alt={game.title} className="w-8 h-8 rounded-lg object-cover border border-white/10 shrink-0" />
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-xs font-semibold text-white truncate">{game.title}</span>
+                          <span className="text-[10px] text-zinc-400">Recently opened</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <button onClick={onLogout} className="text-zinc-400 hover:text-white p-2 hover:bg-white/10 rounded-md transition-colors">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
-              </button>
+            )}
+
+            {/* TAB: ALL APPS (ALPHABETICAL LIST) */}
+            {startTab === 'all' && (
+              <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 flex flex-col gap-3">
+                <div className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider px-2">A - Z Community Catalog</div>
+                {ALL_GAMES.map(game => (
+                  <button 
+                    key={`all-${game.id}`}
+                    onClick={() => { setStartOpen(false); onPlayGame(game); }}
+                    className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/[0.08] transition-all text-left cursor-pointer"
+                  >
+                    <img src={game.image} alt={game.title} className="w-8 h-8 rounded-lg object-cover border border-white/10 shrink-0" />
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-xs font-semibold text-white truncate">{game.title}</span>
+                      <span className="text-[10px] text-zinc-400">{game.type || 'Game'}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Bottom User & Power Footer */}
+            <div className="mt-auto flex items-center justify-between bg-black/40 -mx-6 -mb-6 p-4 border-t border-white/[0.08] shrink-0">
+              <div 
+                onClick={() => { setStartOpen(false); setCurrentView('profile'); }} 
+                className="flex items-center gap-3 hover:bg-white/[0.08] p-1.5 px-3 rounded-xl cursor-pointer transition-colors"
+              >
+                <div className="relative">
+                  <img src={profile.avatar} className="w-8 h-8 rounded-full border border-white/20" alt="Avatar" />
+                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border border-black" />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-xs font-semibold text-white">{profile.gamertag}</span>
+                  <span className="text-[10px] text-zinc-400">{profile.email || 'Online'}</span>
+                </div>
+              </div>
+
+              {/* Power Button & Flyout */}
+              <div className="relative">
+                <button 
+                  onClick={() => setShowPowerMenu(!showPowerMenu)} 
+                  className="p-2 text-zinc-400 hover:text-white hover:bg-white/[0.08] rounded-xl transition-colors cursor-pointer"
+                  title="Power"
+                >
+                  <Power size={18} />
+                </button>
+
+                <AnimatePresence>
+                  {showPowerMenu && (
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                      className="absolute bottom-full right-0 mb-2 w-48 bg-[#242424]/95 backdrop-blur-2xl border border-white/[0.14] rounded-xl shadow-2xl p-1.5 text-xs text-white z-[500]"
+                    >
+                      <button 
+                        onClick={() => { setShowPowerMenu(false); setStartOpen(false); onLogout(); }} 
+                        className="w-full p-2 rounded-lg hover:bg-white/[0.08] text-left flex items-center gap-2.5 transition-colors cursor-pointer"
+                      >
+                        <User size={14} className="text-zinc-400" /> Sign out
+                      </button>
+                      <button 
+                        onClick={() => { setShowPowerMenu(false); window.location.reload(); }} 
+                        className="w-full p-2 rounded-lg hover:bg-white/[0.08] text-left flex items-center gap-2.5 transition-colors cursor-pointer"
+                      >
+                        <RefreshCw size={14} className="text-zinc-400" /> Restart E-Box
+                      </button>
+                      <button 
+                        onClick={() => { setShowPowerMenu(false); if (onActivateDeadComputer) onActivateDeadComputer(); }} 
+                        className="w-full p-2 rounded-lg hover:bg-red-500/20 text-red-400 text-left flex items-center gap-2.5 transition-colors cursor-pointer"
+                      >
+                        <Power size={14} /> Shut down
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Quick Settings Modal */}
+      {/* ======================================================== */}
+      {/* WINDOWS 11 QUICK SETTINGS FLYOUT                         */}
+      {/* ======================================================== */}
       <AnimatePresence>
         {showQuickSettings && (
           <motion.div 
-            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 50, scale: 0.95 }}
-            transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="absolute bottom-16 right-4 w-80 bg-[#242424]/95 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl flex flex-col p-5 z-[200]"
+            exit={{ opacity: 0, y: 24, scale: 0.96 }}
+            transition={{ type: 'spring', damping: 26, stiffness: 350 }}
+            className="absolute bottom-14 right-3 w-84 win11-mica rounded-2xl shadow-[0_24px_64px_rgba(0,0,0,0.65)] p-5 z-[300] flex flex-col gap-4 text-white"
+            onClick={(e) => e.stopPropagation()}
           >
-            {/* Media Controls Card in Quick Settings */}
-            {(miniPlayerMedia || localStorage.getItem('aura_current_track') || localStorage.getItem('aura_music_persistence')) && (() => {
-              const media = miniPlayerMedia || (() => {
-                try {
-                  const saved = localStorage.getItem('aura_current_track') || localStorage.getItem('aura_music_persistence');
-                  if (saved) {
-                    const parsed = JSON.parse(saved);
-                    return {
-                      appId: 'Win Music',
-                      title: parsed.song || parsed.title || 'Playing Music',
-                      subtitle: parsed.artist || 'Aura Music',
-                      artwork: parsed.cover || parsed.artwork
-                    };
-                  }
-                } catch(e) {}
-                return null;
-              })();
+            {/* Quick Toggle Tiles */}
+            <div className="grid grid-cols-3 gap-2.5">
+              {/* Wi-Fi */}
+              <button 
+                onClick={() => setQsWifi(!qsWifi)} 
+                className={`p-3 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  qsWifi ? 'bg-[#0078D4] text-white shadow-md' : 'bg-white/[0.06] hover:bg-white/[0.1] text-zinc-400'
+                }`}
+              >
+                {qsWifi ? <Wifi size={18} /> : <WifiOff size={18} />}
+                <span className="text-[10px] font-semibold truncate max-w-full">Wi-Fi</span>
+              </button>
 
-              if (!media) return null;
+              {/* Bluetooth */}
+              <button 
+                onClick={() => setQsBluetooth(!qsBluetooth)} 
+                className={`p-3 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  qsBluetooth ? 'bg-[#0078D4] text-white shadow-md' : 'bg-white/[0.06] hover:bg-white/[0.1] text-zinc-400'
+                }`}
+              >
+                <Bluetooth size={18} />
+                <span className="text-[10px] font-semibold truncate max-w-full">Bluetooth</span>
+              </button>
 
-              return (
-                <div className="mb-4 bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col gap-2.5">
-                  <div className="flex items-center gap-3">
-                    {media.artwork ? (
-                      <img src={media.artwork} alt={media.title} className="w-12 h-12 rounded-lg object-cover shrink-0 border border-white/10" />
-                    ) : (
-                      <div className="w-12 h-12 rounded-lg bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center shrink-0 text-indigo-300 font-bold">
-                        <Music size={20} />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-400">
-                        {media.appId === 'WinFlix' ? <Film size={12} /> : <Music size={12} />}
-                        <span>{media.appId}</span>
-                      </div>
-                      <h4 className="text-xs font-bold truncate text-white mt-0.5">{media.title}</h4>
-                      <p className="text-[11px] text-zinc-400 truncate">{media.subtitle}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-center gap-4 pt-1 border-t border-white/5">
-                    <button
-                      onClick={() => {
-                        localStorage.setItem('aura_player_command', JSON.stringify({ action: 'prev', timestamp: Date.now() }));
-                      }}
-                      className="p-2 text-zinc-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                      title="Previous Track"
-                    >
-                      <SkipBack size={16} />
-                    </button>
-                    <button
-                      onClick={() => {
-                        localStorage.setItem('aura_player_command', JSON.stringify({ action: 'togglePlay', timestamp: Date.now() }));
-                      }}
-                      className="w-9 h-9 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center shadow-lg shadow-indigo-600/30 transition-all"
-                      title="Play / Pause"
-                    >
-                      <Play size={16} fill="currentColor" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        localStorage.setItem('aura_player_command', JSON.stringify({ action: 'next', timestamp: Date.now() }));
-                      }}
-                      className="p-2 text-zinc-300 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                      title="Next Track"
-                    >
-                      <SkipForward size={16} />
-                    </button>
-                  </div>
-                </div>
-              );
-            })()}
+              {/* Do Not Disturb */}
+              <button 
+                onClick={() => setQsDnd(!qsDnd)} 
+                className={`p-3 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  qsDnd ? 'bg-[#0078D4] text-white shadow-md' : 'bg-white/[0.06] hover:bg-white/[0.1] text-zinc-400'
+                }`}
+              >
+                <Moon size={18} />
+                <span className="text-[10px] font-semibold truncate max-w-full">Focus</span>
+              </button>
 
-            <div className="grid grid-cols-3 gap-3 mb-4">
-              <button onClick={() => setQsWifi(!qsWifi)} className="flex flex-col items-center gap-2 group">
-                <div className={`w-full aspect-video rounded-md flex items-center justify-center transition-colors ${qsWifi ? 'bg-[#00A4EF]/20 border border-[#00A4EF]/30 group-hover:bg-[#00A4EF]/30' : 'bg-white/10 group-hover:bg-white/20'}`}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={qsWifi ? "#00A4EF" : "white"} strokeWidth="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
-                </div>
-                <span className="text-[10px] text-white/90 font-medium">Wi-Fi</span>
+              {/* Low Power */}
+              <button 
+                onClick={() => setQsBatterySaver(!qsBatterySaver)} 
+                className={`p-3 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  qsBatterySaver ? 'bg-amber-600 text-white shadow-md' : 'bg-white/[0.06] hover:bg-white/[0.1] text-zinc-400'
+                }`}
+              >
+                <Battery size={18} />
+                <span className="text-[10px] font-semibold truncate max-w-full">Saver</span>
               </button>
-              <button onClick={() => setQsSound(!qsSound)} className="flex flex-col items-center gap-2 group">
-                <div className={`w-full aspect-video rounded-md flex items-center justify-center transition-colors ${qsSound ? 'bg-[#00A4EF]/20 border border-[#00A4EF]/30 group-hover:bg-[#00A4EF]/30' : 'bg-white/10 group-hover:bg-white/20'}`}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={qsSound ? "#00A4EF" : "white"} strokeWidth="2">{qsSound ? <><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></> : <><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></>}</svg>
-                </div>
-                <span className="text-[10px] text-white/90 font-medium">Sound</span>
+
+              {/* Night Light */}
+              <button 
+                onClick={() => setQsNightLight(!qsNightLight)} 
+                className={`p-3 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  qsNightLight ? 'bg-amber-500 text-black shadow-md' : 'bg-white/[0.06] hover:bg-white/[0.1] text-zinc-400'
+                }`}
+              >
+                <Sun size={18} />
+                <span className="text-[10px] font-semibold truncate max-w-full">Night light</span>
               </button>
-              <button onClick={() => setQsDnd(!qsDnd)} className="flex flex-col items-center gap-2 group">
-                <div className={`w-full aspect-video rounded-md flex items-center justify-center transition-colors ${qsDnd ? 'bg-purple-500/20 border border-purple-500/30 group-hover:bg-purple-500/30' : 'bg-white/10 group-hover:bg-white/20'}`}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={qsDnd ? "#a855f7" : "white"} strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                </div>
-                <span className="text-[10px] text-white/90 font-medium">Do Not Disturb</span>
-              </button>
-              <button onClick={handlePanicMode} className="flex flex-col items-center gap-2 group">
-                <div className="w-full aspect-video bg-white/10 rounded-md flex items-center justify-center group-hover:bg-red-500/30 transition-colors">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-white group-hover:text-red-400" strokeWidth="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
-                </div>
-                <span className="text-[10px] text-white/90 font-medium">Panic Mode</span>
-              </button>
-              <button onClick={handlePanicMode} className="flex flex-col items-center gap-2 group">
-                <div className="w-full aspect-video bg-white/10 rounded-md flex items-center justify-center group-hover:bg-blue-500/30 transition-colors">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-white group-hover:text-blue-400" strokeWidth="2"><path d="M2 12h20"></path><path d="M12 2v20"></path><path d="M4.93 4.93l14.14 14.14"></path><path d="M4.93 19.07L19.07 4.93"></path></svg>
-                </div>
-                <span className="text-[10px] text-white/90 font-medium">Teacher Mode</span>
-              </button>
-              <button onClick={handleDisguiseMode} className="flex flex-col items-center gap-2 group">
-                <div className="w-full aspect-video bg-white/10 rounded-md flex items-center justify-center group-hover:bg-green-500/30 transition-colors">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-white group-hover:text-green-400" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                </div>
-                <span className="text-[10px] text-white/90 font-medium">Disguise Mode</span>
-              </button>
-              <button onClick={() => setQsLowPower(!qsLowPower)} className="flex flex-col items-center gap-2 group">
-                <div className={`w-full aspect-video rounded-md flex items-center justify-center transition-colors ${qsLowPower ? 'bg-amber-500/20 border border-amber-500/30 group-hover:bg-amber-500/30' : 'bg-white/10 group-hover:bg-white/20'}`}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={qsLowPower ? "#f59e0b" : "white"} strokeWidth="2"><rect x="2" y="7" width="16" height="10" rx="2" ry="2"></rect><line x1="22" y1="11" x2="22" y2="13"></line><line x1="6" y1="12" x2="14" y2="12"></line><line x1="10" y1="8" x2="10" y2="16"></line></svg>
-                </div>
-                <span className="text-[10px] text-white/90 font-medium">Low Power Mode</span>
+
+              {/* Panic Cloak */}
+              <button 
+                onClick={handlePanicMode} 
+                className="p-3 rounded-xl flex flex-col items-center justify-center gap-1.5 bg-red-600/30 hover:bg-red-600 text-red-300 hover:text-white transition-all cursor-pointer"
+                title="Immediate Google Classroom cloak"
+              >
+                <GraduationCap size={18} />
+                <span className="text-[10px] font-semibold truncate max-w-full">School Cloak</span>
               </button>
             </div>
-            
-            <div className="flex flex-col gap-3 mt-2 border-t border-white/5 pt-4">
+
+            {/* Sliders: Brightness & Volume */}
+            <div className="flex flex-col gap-3 pt-2 border-t border-white/[0.08]">
+              {/* Brightness */}
               <div className="flex items-center gap-3">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-                <input type="range" min="0" max="100" defaultValue="50" className="w-full h-1 bg-white/20 rounded-lg appearance-none cursor-pointer" />
+                <Sun size={16} className="text-zinc-400 shrink-0" />
+                <input 
+                  type="range" 
+                  min="20" 
+                  max="100" 
+                  value={brightness} 
+                  onChange={(e) => setBrightness(Number(e.target.value))}
+                  className="w-full h-1.5 bg-white/20 accent-[#0078D4] rounded-lg cursor-pointer" 
+                />
+                <span className="text-[10px] text-zinc-400 w-7 text-right">{brightness}%</span>
+              </div>
+
+              {/* Volume */}
+              <div className="flex items-center gap-3">
+                {volume === 0 ? <VolumeX size={16} className="text-zinc-400 shrink-0" /> : <Volume2 size={16} className="text-zinc-400 shrink-0" />}
+                <input 
+                  type="range" 
+                  min="0" 
+                  max="100" 
+                  value={volume} 
+                  onChange={(e) => setVolume(Number(e.target.value))}
+                  className="w-full h-1.5 bg-white/20 accent-[#0078D4] rounded-lg cursor-pointer" 
+                />
+                <span className="text-[10px] text-zinc-400 w-7 text-right">{volume}%</span>
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
-      {/* Battery Notice (Windows 11 Toast) */}
-      <AnimatePresence>
-        {showBatteryNotice && (
-          <motion.div 
-            initial={{ opacity: 0, x: 50, scale: 0.95 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: 50, scale: 0.95 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="absolute bottom-16 right-4 w-80 bg-[#242424]/95 backdrop-blur-2xl border border-white/10 rounded-lg shadow-2xl flex flex-col p-4 z-[300]"
-          >
-            <div className="flex items-start justify-between mb-2">
+            {/* Footer: Battery & All Settings */}
+            <div className="flex items-center justify-between pt-2 border-t border-white/[0.08] text-xs text-zinc-400">
               <div className="flex items-center gap-2">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00A4EF" strokeWidth="2"><rect x="2" y="7" width="16" height="10" rx="2" ry="2"></rect><line x1="22" y1="11" x2="22" y2="13"></line></svg>
-                <span className="text-[11px] font-semibold text-white/90 uppercase tracking-wide">System</span>
+                <BatteryCharging size={16} className="text-emerald-400" />
+                <span>{batteryInfo?.isSupported ? `${batteryInfo.level}%` : '100% Plugged in'}</span>
               </div>
-              <button onClick={() => setShowBatteryNotice(false)} className="text-zinc-400 hover:text-white transition-colors">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12"></path></svg>
+              <button 
+                onClick={() => { setShowQuickSettings(false); setCurrentView('settings'); }} 
+                className="p-1.5 hover:bg-white/[0.08] rounded-lg text-zinc-300 hover:text-white transition-colors"
+                title="All settings"
+              >
+                <SettingsIcon size={16} />
               </button>
             </div>
-            <h3 className="text-sm font-bold text-white mb-1">Battery status</h3>
-            <p className="text-xs text-white/80 leading-relaxed">
-              {batteryInfo.isSupported 
-                ? `Your battery is at ${batteryInfo.level}% and ${batteryInfo.charging ? 'charging' : 'not charging'}.`
-                : "Battery information is not supported on this device or browser."}
-            </p>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Fullscreen Modal */}
+      {/* ======================================================== */}
+      {/* WINDOWS 11 CALENDAR & ACTION CENTER FLYOUT               */}
+      {/* ======================================================== */}
       <AnimatePresence>
-        {showFullscreenModal && (
+        {showCalendarFlyout && (
           <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[1000] bg-black/80 flex items-center justify-center pointer-events-none"
-          >
-            <div className="bg-zinc-900 border border-white/10 p-8 rounded-xl shadow-2xl flex flex-col items-center">
-              <h2 className="text-2xl font-bold text-white mb-2">Going in Fullscreen</h2>
-              <p className="text-4xl font-black text-[#00A4EF]">{fullscreenCountdown}</p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Credits Modal */}
-      <AnimatePresence>
-        {showCredits && (
-          <motion.div 
-            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            initial={{ opacity: 0, y: 24, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 50, scale: 0.95 }}
-            transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="absolute bottom-16 left-4 w-72 bg-[#242424]/95 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl flex flex-col p-6 z-[200]"
+            exit={{ opacity: 0, y: 24, scale: 0.96 }}
+            transition={{ type: 'spring', damping: 26, stiffness: 350 }}
+            className="absolute bottom-14 right-3 w-80 win11-mica rounded-2xl shadow-[0_24px_64px_rgba(0,0,0,0.65)] p-5 z-[300] flex flex-col gap-4 text-white"
+            onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-bold text-white mb-4">Credits</h3>
-            <div className="space-y-4">
-              <div>
-                <h4 className="text-sm font-semibold text-[#00A4EF]">Coders:</h4>
-                <p className="text-xs text-white/80 mt-1">EyesHD - Owner</p>
-                <p className="text-xs text-white/80">Gemini - Co-Owner</p>
+            {/* Header: Month & Year */}
+            <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+              <span className="text-sm font-bold">
+                {calendarDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+              </span>
+              <div className="flex items-center gap-1">
+                <button 
+                  onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))}
+                  className="p-1 hover:bg-white/[0.08] rounded-md transition-colors"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <button 
+                  onClick={() => setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))}
+                  className="p-1 hover:bg-white/[0.08] rounded-md transition-colors"
+                >
+                  <ChevronRight size={16} />
+                </button>
               </div>
-              <div>
-                <h4 className="text-sm font-semibold text-[#00A4EF]">Testers:</h4>
-                <p className="text-xs text-white/80 mt-1">Sebastian Call Lopez</p>
-                <p className="text-xs text-white/80">Pierre Bell</p>
-                <p className="text-xs text-white/80">Cameron Barefield</p>
+            </div>
+
+            {/* Days Grid */}
+            <div className="grid grid-cols-7 gap-1 text-center text-xs">
+              {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
+                <div key={d} className="text-zinc-500 font-semibold py-1">{d}</div>
+              ))}
+              {Array.from({ length: firstDay }).map((_, i) => (
+                <div key={`empty-${i}`} />
+              ))}
+              {Array.from({ length: currentMonthDays }).map((_, i) => {
+                const dayNum = i + 1;
+                const isToday = dayNum === today.getDate() && calendarDate.getMonth() === today.getMonth() && calendarDate.getFullYear() === today.getFullYear();
+                return (
+                  <div 
+                    key={`day-${dayNum}`}
+                    className={`h-8 flex items-center justify-center rounded-full text-xs transition-colors cursor-pointer ${
+                      isToday 
+                        ? 'bg-[#0078D4] text-white font-bold shadow-md' 
+                        : 'hover:bg-white/[0.08] text-zinc-300'
+                    }`}
+                  >
+                    {dayNum}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Focus Assist Pill */}
+            <div className="border-t border-white/[0.08] pt-3 flex items-center justify-between text-xs text-zinc-400">
+              <div className="flex items-center gap-2">
+                <Moon size={14} className="text-purple-400" />
+                <span>Focus session</span>
               </div>
-              <div className="pt-2 border-t border-white/10">
-                <p className="text-[10px] text-white/60 italic leading-tight">Thank you to all of the Testers for their support and their testing for looking out for problems for our release!!!</p>
-                <p className="text-[10px] text-white/80 font-bold mt-2 text-center">THANK YOU ALL FOR TRYING OUT MY WINDOWS 11!!!</p>
-              </div>
+              <button 
+                onClick={() => alert("Focus session started! Do Not Disturb active.")}
+                className="px-2.5 py-1 bg-[#0078D4] text-white rounded-md text-[11px] font-semibold hover:bg-blue-600 transition-colors cursor-pointer"
+              >
+                25 min
+              </button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Taskbar */}
-      <div className={`absolute bottom-0 left-0 w-full h-12 ${(localStorage.getItem('performance_preset') === 'low' || localStorage.getItem('taskbar_blur') === 'false') ? 'bg-[#1a1a1a]' : 'bg-transparent backdrop-blur-[50px]'} border-t border-white/10 shadow-[0_-2px_15px_rgba(255,255,255,0.03)] flex items-center justify-between px-2 z-[250]`}>
-        <div className="flex-1 flex items-center h-full gap-2 px-2">
-          {/* Weather Widget */}
-          <div onClick={() => setShowWidgetsFlyout(true)} className="flex items-center gap-2 hover:bg-white/10 px-2 py-1 rounded-md cursor-pointer transition-colors text-white">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.5 19a4.5 4.5 0 0 0 0-9h-.1A7 7 0 1 0 5 17h12.5Z"></path><path d="M12 2v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="M2 12h2"></path><path d="m4.93 19.07 1.41-1.41"></path></svg>
-            <div className="flex flex-col">
-              <span className="text-[11px] font-semibold">{weather ? `${weather.temp}°F` : `...`}</span>
-              <span className="text-[10px] text-white/70 truncate max-w-[60px]">{weather ? weather.condition : `Loading`}</span>
+      {/* ======================================================== */}
+      {/* WINDOWS 11 AUTHENTIC CENTERED TASKBAR                    */}
+      {/* ======================================================== */}
+      <div className={`absolute bottom-0 left-0 w-full h-12 win11-taskbar flex items-center justify-between px-2 z-[250]`}>
+        {/* Left Side: Windows 11 Weather & Widgets Button */}
+        <div className="flex-1 flex items-center h-full gap-1">
+          <div 
+            onClick={() => setShowWidgetsFlyout(true)} 
+            className="flex items-center gap-2.5 hover:bg-white/[0.08] active:bg-white/[0.04] px-2.5 py-1.5 rounded-md cursor-pointer transition-all text-white group"
+            title="Open Widgets board"
+          >
+            <div className="w-5 h-5 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
+              <Sun size={18} />
+            </div>
+            <div className="flex flex-col text-left">
+              <span className="text-[11px] font-semibold leading-tight">{weather ? `${weather.temp}°F` : '72°F'}</span>
+              <span className="text-[10px] text-zinc-400 leading-tight truncate max-w-[80px]">{weather ? weather.condition : 'Clear'}</span>
             </div>
           </div>
-          <button className="text-white hover:bg-white/10 p-1.5 rounded-md transition-colors" onClick={() => setShowCredits(!showCredits)}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-          </button>
-
-          {/* Taskbar Rich Presence Indicator */}
-          {playingGame && (
-            <div 
-              onClick={() => onPlayGame(playingGame)} 
-              className="hidden md:flex items-center gap-2 bg-gradient-to-r from-blue-600/30 to-indigo-600/30 hover:from-blue-600/50 hover:to-indigo-600/50 border border-blue-400/40 px-3 py-1 rounded-full text-xs text-white shadow-[0_0_15px_rgba(59,130,246,0.3)] transition-all cursor-pointer group"
-              title="Rich Presence: Click to focus active game"
-            >
-              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse shrink-0" />
-              <Gamepad2 size={13} className="text-blue-400 group-hover:rotate-12 transition-transform" />
-              <span className="font-semibold truncate max-w-[110px]">{playingGame.title}</span>
-              <span className="text-[10px] text-blue-200 bg-blue-500/20 px-1.5 py-0.5 rounded">Active</span>
-            </div>
-          )}
         </div>
+
+        {/* Center: Windows 11 Centered App Icons */}
         <div className="flex items-center gap-1.5 justify-center absolute left-1/2 -translate-x-1/2 h-full">
-          {/* Windows Start Button */}
+          {/* Windows 11 Start Button */}
           <button 
-            onClick={handleStartToggle}
-            className={`w-10 h-10 flex items-center justify-center rounded-md hover:bg-white/10 transition-colors ${startOpen ? 'bg-white/10 shadow-[0_0_15px_rgba(255,255,255,0.1)]' : ''}`}
+            onClick={() => setStartOpen(!startOpen)}
+            className={`w-10 h-10 flex items-center justify-center rounded-md hover:bg-white/[0.08] active:bg-white/[0.04] active:scale-90 transition-all ${
+              startOpen ? 'bg-white/[0.1] shadow-inner' : ''
+            }`}
+            title="Start"
           >
-            <svg viewBox="0 0 88 88" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
-              <path d="M0 0h42v42H0zm46 0h42v42H46zM0 46h42v42H0zm46 0h42v42H46z" fill="#00A4EF"/>
+            <svg viewBox="0 0 88 88" width="22" height="22" xmlns="http://www.w3.org/2000/svg">
+              <path d="M0 0h42v42H0zm46 0h42v42H46zM0 46h42v42H0zm46 0h42v42H46z" fill="#0078D4"/>
             </svg>
           </button>
 
-          {/* Spooky Tilted Pumpkin Button with Glowing Eyes */}
+          {/* Windows 11 Search Button */}
           <button 
-            onClick={() => {
-              const nextVal = !isHalloween;
-              setIsHalloween(nextVal);
-              localStorage.setItem('halloween_theme', String(nextVal));
-            }}
-            className={`w-10 h-10 flex items-center justify-center rounded-md transition-all relative group ${isHalloween ? 'bg-orange-500/30 shadow-[0_0_20px_rgba(255,107,0,0.8)]' : 'hover:bg-orange-500/20'}`}
-            title="Toggle Halloween Theme"
+            onClick={() => { setStartOpen(false); onOpenSearch(); }} 
+            className="w-10 h-10 flex items-center justify-center rounded-md hover:bg-white/[0.08] active:scale-90 transition-all"
+            title="Search"
           >
-            <div className="relative transform -rotate-12 group-hover:rotate-0 transition-transform">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="#ff7518" stroke="#2b1100" strokeWidth="1.2">
-                <ellipse cx="12" cy="13" rx="8.5" ry="7.5" />
-                <path d="M12 3.5v3.5" stroke="#2e7d32" strokeWidth="2.5" strokeLinecap="round" fill="none" />
-                {/* Glowing Eyes */}
-                <polygon points="7.5,10 10.5,12 8,14" fill="#ffeb3b" className="drop-shadow-[0_0_6px_#ffeb3b] animate-pulse" />
-                <polygon points="16.5,10 13.5,12 16,14" fill="#ffeb3b" className="drop-shadow-[0_0_6px_#ffeb3b] animate-pulse" />
-                {/* Spooky Smile */}
-                <path d="M8.5 16.5l1.5 1.5 1-1 1 1 1-1 1.5 1.5" stroke="#ffeb3b" strokeWidth="1.5" fill="none" strokeLinecap="round" className="drop-shadow-[0_0_4px_#ffeb3b]" />
-              </svg>
-            </div>
-          </button>
-          
-          <button onClick={() => { setStartOpen(false); onOpenSearch(); }} className="w-10 h-10 flex items-center justify-center rounded-md hover:bg-white/10 transition-colors">
-            <Search size={20} className="text-white" />
-          </button>
-          
-          <button onClick={() => { setStartOpen(false); setCurrentView('home'); }} className="w-10 h-10 flex items-center justify-center rounded-md hover:bg-white/10 transition-colors relative group">
-            <div className="w-7 h-7 rounded-full border-[1.5px] border-white flex items-center justify-center group-hover:bg-green-500 group-hover:border-green-500 transition-colors"> 
-               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"></path><path d="M12 8v8"></path><path d="M8 12h8"></path></svg>
-            </div>
+            <Search size={18} className="text-zinc-200" />
           </button>
 
-          
+          {/* Windows 11 Task View / Desktops */}
+          <button 
+            onClick={() => setCurrentView('home')} 
+            className="w-10 h-10 flex items-center justify-center rounded-md hover:bg-white/[0.08] active:scale-90 transition-all"
+            title="Task View"
+          >
+            <LayoutGrid size={18} className="text-zinc-200" />
+          </button>
+
+          {/* Windows 11 Widgets Board Shortcut */}
+          <button 
+            onClick={() => setShowWidgetsFlyout(true)} 
+            className="w-10 h-10 flex items-center justify-center rounded-md hover:bg-white/[0.08] active:scale-90 transition-all"
+            title="Widgets"
+          >
+            <Compass size={18} className="text-blue-400" />
+          </button>
+
           {/* Pinned Chrome */}
           <motion.div layout className="relative group flex items-center h-full">
             <button 
@@ -691,45 +880,52 @@ export const Desktop = ({
                 const chromeApp = ALL_GAMES.find(g => g.id === 'Chrome');
                 if (chromeApp) onPlayGame(chromeApp); 
               }} 
-              className="w-10 h-10 flex items-center justify-center rounded-md hover:bg-white/10 transition-colors relative"
+              className="w-10 h-10 flex items-center justify-center rounded-md hover:bg-white/[0.08] active:scale-90 transition-all relative"
+              title="Google Chrome"
             >
-              <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/Google_Chrome_icon_%28February_2022%29.svg" className="w-5 h-5 object-contain" />
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 h-1 bg-transparent rounded-full transition-all w-1.5 group-hover:bg-[#00A4EF]" />
+              <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/Google_Chrome_icon_%28February_2022%29.svg" className="w-5 h-5 object-contain" alt="Chrome" />
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[3px] bg-transparent rounded-full transition-all w-1.5 group-hover:bg-[#0078D4]" />
             </button>
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 z-[1000] drop-shadow-2xl flex flex-col items-center">
-              <div className="bg-zinc-900 border border-white/20 p-2 rounded-lg shadow-xl mb-2 min-w-[120px] flex flex-col items-center gap-2">
-                <span className="text-xs font-semibold text-white truncate max-w-[100px] capitalize">Chrome</span>
-              </div>
-            </div>
           </motion.div>
 
-          {/* Pinned Chat */}
+          {/* Pinned Microsoft Store */}
           <motion.div layout className="relative group flex items-center h-full">
             <button 
-              onClick={() => { setStartOpen(false); setCurrentView('chat'); }} 
-              className={`w-10 h-10 flex items-center justify-center rounded-md hover:bg-white/10 transition-colors relative ${currentView === 'chat' || currentView === 'friends' ? 'bg-white/10' : ''}`}
+              onClick={onOpenStore} 
+              className="w-10 h-10 flex items-center justify-center rounded-md hover:bg-white/[0.08] active:scale-90 transition-all relative"
+              title="Microsoft Store"
             >
-              <MessageSquare size={20} className={currentView === 'chat' || currentView === 'friends' ? 'text-[#00A4EF]' : 'text-white'} />
-              <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-1 bg-[#00A4EF] rounded-full transition-all ${currentView === 'chat' || currentView === 'friends' ? 'w-4' : 'w-1.5'}`} />
-            </button>
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 z-[1000] drop-shadow-2xl flex flex-col items-center">
-              <div className="bg-zinc-900 border border-white/20 p-2 rounded-lg shadow-xl mb-2 min-w-[120px] flex flex-col items-center gap-2">
-                <span className="text-xs font-semibold text-white truncate max-w-[100px] capitalize">Chat</span>
-                <div className="w-24 h-16 bg-black rounded flex items-center justify-center border border-white/10">
-                  <MessageSquare size={24} className="text-white/30" />
-                </div>
+              <div className="w-6 h-6 rounded bg-[#0078D4] flex items-center justify-center shadow-md">
+                <Store size={15} className="text-white" />
               </div>
-            </div>
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[3px] bg-transparent rounded-full transition-all w-1.5 group-hover:bg-[#0078D4]" />
+            </button>
           </motion.div>
 
-          {/* Dynamic App Icons with Layout animation */}
+          {/* Pinned Chat / Friends */}
+          <motion.div layout className="relative group flex items-center h-full">
+            <button 
+              onClick={() => { setStartOpen(false); setCurrentView('friends'); }} 
+              className={`w-10 h-10 flex items-center justify-center rounded-md hover:bg-white/[0.08] active:scale-90 transition-all relative ${
+                currentView === 'friends' || currentView === 'chat' ? 'bg-white/[0.1]' : ''
+              }`}
+              title="Friends & Chat"
+            >
+              <MessageSquare size={18} className={currentView === 'friends' || currentView === 'chat' ? 'text-[#0078D4]' : 'text-zinc-200'} />
+              {/* Authentic Windows 11 Running Indicator Pill */}
+              <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-[3px] rounded-full transition-all ${
+                currentView === 'friends' || currentView === 'chat' ? 'w-4 bg-[#0078D4]' : 'w-1.5 bg-white/40 group-hover:bg-white/80'
+              }`} />
+            </button>
+          </motion.div>
+
+          {/* Dynamic Open Windows */}
           <AnimatePresence mode="popLayout">
             {(openViews || []).filter(v => v !== 'chat' && v !== 'friends').map(view => {
               let Icon = Box;
               if (view === 'store') Icon = Store;
               if (view === 'profile') Icon = User;
               if (view === 'settings') Icon = SettingsIcon;
-              if (view === 'friends' || view === 'chat') Icon = MessageSquare;
               if (view === 'party') Icon = Users;
               if (view === 'notifications') Icon = Bell;
               if (view === 'activity') Icon = Activity;
@@ -739,155 +935,119 @@ export const Desktop = ({
                 <motion.div 
                   key={`sys-${view}`}
                   layout
-                  initial={{ opacity: 0, y: 10, scale: 0.8 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.8 }}
                   transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                   className="relative group flex items-center h-full"
                 >
                   <button 
                     onClick={() => { setStartOpen(false); setCurrentView(view); }} 
-                    className={`w-10 h-10 flex items-center justify-center rounded-md hover:bg-white/10 transition-colors relative ${isFocused ? 'bg-white/10' : ''}`}
+                    className={`w-10 h-10 flex items-center justify-center rounded-md hover:bg-white/[0.08] active:scale-90 transition-all relative ${
+                      isFocused ? 'bg-white/[0.1]' : ''
+                    }`}
                   >
-                    <Icon size={20} className={isFocused ? 'text-[#00A4EF]' : 'text-white'} />
-                    {/* Running indicator */}
-                    <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-1 bg-[#00A4EF] rounded-full transition-all ${isFocused ? 'w-4' : 'w-1.5'}`} />
+                    <Icon size={18} className={isFocused ? 'text-[#0078D4]' : 'text-zinc-200'} />
+                    {/* Windows 11 Running Pill */}
+                    <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-[3px] rounded-full transition-all ${
+                      isFocused ? 'w-4 bg-[#0078D4]' : 'w-1.5 bg-white/60'
+                    }`} />
                   </button>
-                  
-                  {/* Hover Preview Window */}
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 z-[1000] drop-shadow-2xl flex flex-col items-center">
-                    <div className="bg-zinc-900 border border-white/20 p-2 rounded-lg shadow-xl mb-2 min-w-[120px] flex flex-col items-center gap-2">
-                      <span className="text-xs font-semibold text-white truncate max-w-[100px] capitalize">{view}</span>
-                      <div className="w-24 h-16 bg-black rounded flex items-center justify-center border border-white/10">
-                        <Icon size={24} className="text-white/30" />
-                      </div>
-                    </div>
-                  </div>
                 </motion.div>
               );
             })}
-            
-            {/* Suspended Games */}
-            {(suspendedGames || []).map((s: any) => (
-              <motion.div 
-                key={`game-${s.game.instanceId || s.game.id}`}
-                layout
-                initial={{ opacity: 0, y: 10, scale: 0.8 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                className="relative group flex items-center h-full"
-              >
-                <button 
-                  onClick={() => { setStartOpen(false); onPlayGame(s.game); }} 
-                  className={`w-10 h-10 flex items-center justify-center rounded-md hover:bg-white/10 transition-colors relative`}
-                >
-                  <img src={s.game.image} alt={s.game.title} className="w-6 h-6 rounded object-cover" />
-                  <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-1 bg-[#00A4EF] rounded-full transition-all w-1.5`} />
-                </button>
-                
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 z-[1000] drop-shadow-2xl flex flex-col items-center">
-                  <div className="bg-zinc-900 border border-white/20 p-2 rounded-lg shadow-xl mb-2 min-w-[120px] flex flex-col items-center gap-2">
-                    <span className="text-xs font-semibold text-white truncate max-w-[120px]">{s.game.title}</span>
-                    <div className="w-24 h-16 bg-black rounded flex items-center justify-center border border-white/10 overflow-hidden relative">
-                       <img src={s.game.image} className="absolute inset-0 w-full h-full object-cover opacity-50 blur-sm" />
-                       <img src={s.game.image} className="w-8 h-8 rounded z-10" />
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
 
             {/* Active Game */}
             {playingGame && (
               <motion.div 
                 key={`game-${playingGame.instanceId || playingGame.id}`}
                 layout
-                initial={{ opacity: 0, y: 10, scale: 0.8 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 className="relative group flex items-center h-full"
               >
                 <button 
                   onClick={() => { setStartOpen(false); if (onMinimizeGame) onMinimizeGame(playingGame.instanceId || playingGame.id); }}
-                  className={`w-10 h-10 flex items-center justify-center rounded-md hover:bg-white/10 transition-colors relative bg-white/10`}
+                  className="w-10 h-10 flex items-center justify-center rounded-md hover:bg-white/[0.08] active:scale-90 transition-all relative bg-white/[0.1]"
+                  title={playingGame.title}
                 >
-                  <img src={playingGame.image} alt={playingGame.title} className="w-6 h-6 rounded object-cover" />
-                  <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-1 bg-[#00A4EF] rounded-full transition-all w-4`} />
+                  <img src={playingGame.image} alt={playingGame.title} className="w-5 h-5 rounded-md object-cover" />
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 h-[3px] bg-[#0078D4] rounded-full w-4" />
                 </button>
-                
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 z-[1000] drop-shadow-2xl flex flex-col items-center">
-                  <div className="bg-zinc-900 border border-white/20 p-2 rounded-lg shadow-xl mb-2 min-w-[120px] flex flex-col items-center gap-2">
-                    <span className="text-xs font-semibold text-white truncate max-w-[120px]">{playingGame.title}</span>
-                    <div className="w-24 h-16 bg-black rounded flex items-center justify-center border border-white/10 overflow-hidden relative">
-                       <img src={playingGame.image} className="absolute inset-0 w-full h-full object-cover opacity-80" />
-                    </div>
-                  </div>
-                </div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
-        
+
+        {/* Right Side: Windows 11 System Tray & Action Center */}
         <div className="flex-1 flex justify-end items-center h-full gap-1">
-          
-          {/* Teacher Icon for Dead Computer */}
-          <button
-            onClick={onActivateDeadComputer}
-            className="flex items-center gap-2 hover:bg-white/10 px-2 h-full rounded-md cursor-pointer transition-colors"
-            title="School Mode"
+          {/* Overflow Chevron */}
+          <button 
+            onClick={() => setShowCredits(!showCredits)}
+            className="w-7 h-8 flex items-center justify-center rounded-md hover:bg-white/[0.08] text-zinc-400 hover:text-white transition-colors"
+            title="Show hidden icons"
           >
-            <GraduationCap size={16} className="text-white" />
+            <ChevronUp size={14} />
           </button>
-          
-          {/* Chat Logo for Friends */}
-          <button
-            onClick={() => setCurrentView('friends')}
-            className="flex items-center gap-2 hover:bg-white/10 px-2 h-full rounded-md cursor-pointer transition-colors"
-            title="Friends & Chat"
-          >
-            <MessageSquare size={16} className="text-white" />
-          </button>
-          
-          {(profile?.email === 'zaellacruze1@gmail.com' || profile?.role === 'staff' || profile?.role === 'owner') && (
-            <button
-              onClick={onOpenModerationPanel}
-              className="flex items-center gap-2 hover:bg-red-500/20 px-2 h-full rounded-md cursor-pointer transition-colors"
-              title="Moderation & Admin Panel"
-            >
-              <ShieldAlert size={16} className="text-red-500 animate-pulse" />
-            </button>
-          )}
-          
-          {/* Quick Settings Cluster */}
+
+          {/* Quick Settings Pill (Wi-Fi + Audio + Battery unified capsule) */}
           <div 
-            className="flex items-center gap-2 hover:bg-white/10 px-3 py-1 rounded-md cursor-pointer transition-colors"
-            onClick={() => setShowQuickSettings(!showQuickSettings)}
+            onClick={() => { setShowQuickSettings(!showQuickSettings); setShowCalendarFlyout(false); }}
+            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md hover:bg-white/[0.08] active:bg-white/[0.04] cursor-pointer transition-all border border-transparent ${
+              showQuickSettings ? 'bg-white/[0.1] border-white/[0.1]' : ''
+            }`}
+            title="Internet, audio, and battery controls"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
-            {batteryInfo.isSupported && (
-              <svg onClick={(e) => { e.stopPropagation(); setShowBatteryNotice(!showBatteryNotice); setShowQuickSettings(false); }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><rect x="2" y="7" width="16" height="10" rx="2" ry="2"></rect><line x1="22" y1="11" x2="22" y2="13"></line></svg>
-            )}
+            <Wifi size={14} className={qsWifi ? "text-white" : "text-zinc-500"} />
+            <Volume2 size={14} className={qsSound ? "text-white" : "text-zinc-500"} />
+            <BatteryCharging size={14} className="text-emerald-400" />
           </div>
-          
-          {/* Time and Notifications */}
-                      <div className="flex items-center gap-1 hover:bg-white/10 px-2 rounded-md cursor-pointer transition-colors h-full" onClick={() => setCurrentView('notifications')}>
-            <div className="flex flex-col items-end justify-center px-1">
-              <span className="text-[11px] font-medium text-white">{time}</span>
-              <span className="text-[11px] text-white/80">{new Date().toLocaleDateString()}</span>
-            </div>
+
+          {/* Clock & Date Pill */}
+          <div 
+            onClick={() => { setShowCalendarFlyout(!showCalendarFlyout); setShowQuickSettings(false); }}
+            className={`flex flex-col items-end justify-center px-2 py-1 rounded-md hover:bg-white/[0.08] active:bg-white/[0.04] cursor-pointer transition-all border border-transparent ${
+              showCalendarFlyout ? 'bg-white/[0.1] border-white/[0.1]' : ''
+            }`}
+            title="Calendar and Notifications"
+          >
+            <span className="text-[11px] font-semibold text-white leading-tight">{time}</span>
+            <span className="text-[10px] text-zinc-400 leading-tight">{new Date().toLocaleDateString([], { month: 'numeric', day: 'numeric', year: 'numeric' })}</span>
+          </div>
+
+          {/* Notification Bell */}
+          <button 
+            onClick={() => setCurrentView('notifications')}
+            className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-white/[0.08] relative text-zinc-300 hover:text-white transition-colors"
+            title="Notifications"
+          >
+            <Bell size={15} />
             {notificationCount > 0 && (
-              <div className="relative ml-1">
-                <Bell size={14} className="text-white" />
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-500 rounded-full border border-zinc-900"></span>
-              </div>
+              <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-[#0078D4] text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                {notificationCount}
+              </span>
             )}
-          </div>
+          </button>
+
+          {/* Authentic 2px "Show Desktop" line at far right edge */}
+          <div 
+            onClick={() => {
+              // Minimize / show desktop
+              if (openViews && openViews.length > 0) {
+                setCurrentView('home');
+              }
+            }}
+            className="w-1.5 h-8 border-l border-white/20 hover:bg-white/30 transition-colors cursor-pointer ml-1"
+            title="Show desktop"
+          />
         </div>
       </div>
+
+      {/* Widgets Flyout Modal */}
       {showWidgetsFlyout && <WidgetsFlyout onClose={() => setShowWidgetsFlyout(false)} weather={weather} />}
     </div>
   );
 };
+export default Desktop;
