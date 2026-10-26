@@ -1,1 +1,0 @@
-sed -i "s/  const getUrl = (file: string, index: number) => {/  const getBasePath = () => { const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'; return !isDev ? '\/Ebox-Cloud-Unblocked' : ''; };\n  const getUrl = (file: string, index: number) => {/" src/App.tsx

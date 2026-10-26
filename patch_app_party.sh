@@ -1,3 +1,0 @@
-sed -i "s/const \[chatConfig, setChatConfig\] = useState/const [activePartyId, setActivePartyId] = useState<string | undefined>(undefined);\n  const [chatConfig, setChatConfig] = useState/" src/App.tsx
-sed -i "s/onNavigateToParty={() => setCurrentView('party')}/onNavigateToParty={(id) => { setActivePartyId(id); setCurrentView('party'); }}/" src/App.tsx
-sed -i 's/<Party key="party" profile={activeProfile} onBack={() => setCurrentView('\''home'\'')} \/>/<Party key="party" profile={activeProfile} initialPartyId={activePartyId} onBack={() => { setActivePartyId(undefined); setCurrentView('\''home'\''); }} \/>/' src/App.tsx

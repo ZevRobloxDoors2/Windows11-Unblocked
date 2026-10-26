@@ -1,2 +1,0 @@
-sed -i "s/export const Party: React.FC<{ profile: any, onBack: () => void }> = ({ profile, onBack }) => {/export const Party: React.FC<{ profile: any, onBack: () => void, initialPartyId?: string }> = ({ profile, onBack, initialPartyId }) => {\n  const [partyId] = useState(initialPartyId || Math.random().toString(36).substring(2, 9));/" src/components/Party.tsx
-sed -i "s/const partyId = 'global-party';//" src/components/Party.tsx

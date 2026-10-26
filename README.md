@@ -1,5 +1,5 @@
-# Aura OS Browser
-Aura OS is a chromebook simulator for students, Just fork the project, and then play, Below this message explains how to do that.
+# CentralTok
+CentralTok is a tiktok for students in the High School Central, Just for Students. Just fork the project, and then play, Below this message explains how to do that.
 
 ## How to Fork [Make your own link]
 Step 1: The top right of the screen on the page, Click Fork.
@@ -21,6 +21,7 @@ If not, you will be asked to take down, the modifed verison of the website.
 The creator of this website haven't used a single UV proxy or Scramjet.
 
 # Unblocked Extensions
+- LanSchools Air (Working on, not secure yet)
 - Securly
 - Hapara Highlights
 - GoGuardan

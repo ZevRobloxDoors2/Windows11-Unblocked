@@ -1,5 +1,6 @@
 {
-  "name": "Windows 11",
-  "description": "A functional and interactive recreation of the Windows 11",
-  "requestFramePermissions": []
+  "name": "AuraFlix",
+  "description": "A video and media sharing platform with community forums, announcements, and exclusive sneak peeks.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

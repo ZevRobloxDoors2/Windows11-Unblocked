@@ -1,1 +1,0 @@
-sed -i "s/    } else if (choice === 'always') {/    } else if (choice === 'just_once') {\n      setShowDropboxPrompt(false);\n      applyDropboxCloak();\n    } else if (choice === 'always') {/" src/App.tsx

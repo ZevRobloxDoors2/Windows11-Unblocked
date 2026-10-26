@@ -1,68 +1,31 @@
-@import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
-@theme {
-  --font-sans: "Segoe UI Variable", "Segoe UI", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+@variant dark (&:where(.dark, .dark *));
+
+@layer utilities {
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
-body {
-  @apply bg-black text-white overflow-hidden select-none;
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* Windows 11 Mica & Acrylic glass materials */
-.win11-mica {
-  background: rgba(32, 32, 32, 0.85);
-  backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
-}
-
-.win11-acrylic {
-  background: rgba(28, 28, 28, 0.75);
-  backdrop-filter: blur(50px) saturate(200%);
-  -webkit-backdrop-filter: blur(50px) saturate(200%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.win11-taskbar {
-  background: rgba(24, 24, 24, 0.75);
-  backdrop-filter: blur(60px) saturate(190%);
-  -webkit-backdrop-filter: blur(60px) saturate(190%);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
-}
-
-/* Windows 11 subtle scrollbars */
-::-webkit-scrollbar {
-  width: 4px;
+.video-slider {
+  -webkit-appearance: none;
+  background: rgba(255, 255, 255, 0.3);
   height: 4px;
-  background: transparent;
+  border-radius: 2px;
+  outline: none;
 }
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 9999px;
+.video-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.35);
-}
-
-@keyframes win11Open {
-  from {
-    opacity: 0;
-    transform: translateY(24px) scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.animate-win11-open {
-  animation: win11Open 0.22s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
-}
-

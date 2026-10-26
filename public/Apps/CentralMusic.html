@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central Music - Aura OS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent: #00f2fe;
+            --accent-glow: rgba(0, 242, 254, 0.4);
+            --brand-gradient: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
+            --glass-bg: rgba(15, 23, 42, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --bg-dark: #050b14;
+            --text-main: #ffffff;
+            --text-dim: #94a3b8;
+        }
+
+        * { box-sizing: border-box; -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
+
+        body {
+            margin: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #bg-blur-img {
+            position: fixed; inset: -15%; width: 130%; height: 130%;
+            z-index: -2; opacity: 0.25;
+            filter: blur(120px);
+            background-size: cover; background-position: center;
+            transition: background-image 1.2s ease-in-out;
+        }
+
+        #bg-overlay {
+            position: fixed; inset: 0; z-index: -1;
+            background: radial-gradient(circle at 50% 50%, rgba(5, 11, 20, 0.8) 0%, rgba(2, 4, 10, 0.95) 100%);
+        }
+
+        /* Sidebar */
+        #sidebar {
+            width: 380px; background: rgba(8, 15, 30, 0.85);
+            backdrop-filter: blur(40px); -webkit-backdrop-filter: blur(40px);
+            border-right: 1px solid var(--glass-border);
+            display: flex; flex-direction: column; z-index: 10;
+        }
+
+        .sidebar-header { padding: 30px; border-bottom: 1px solid var(--glass-border); }
+        .sidebar-header h2 { font-weight: 800; letter-spacing: -1px; margin: 0; font-size: 1.5rem; background: linear-gradient(to right, #00f2fe, #4facfe); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        #queue-list { flex: 1; overflow-y: auto; padding: 20px; }
+        #queue-list::-webkit-scrollbar { width: 6px; }
+        #queue-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+        .q-row {
+            display: flex; align-items: center; padding: 12px; border-radius: 16px;
+            margin-bottom: 8px; cursor: pointer; transition: all 0.25s ease;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+        }
+        .q-row:hover { background: rgba(0, 242, 254, 0.06); border-color: rgba(0, 242, 254, 0.2); transform: translateY(-1px); }
+        .q-row.active { background: rgba(0, 242, 254, 0.12); border-color: var(--accent); box-shadow: 0 4px 20px rgba(0, 242, 254, 0.15); }
+        
+        .q-row img { width: 50px; height: 50px; border-radius: 12px; margin-right: 15px; object-fit:cover; border: 1px solid var(--glass-border); }
+
+        /* Main Player Area */
+        main { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; padding: 40px; }
+
+        #art-zone {
+            width: 320px; height: 320px; border-radius: 2.5rem;
+            overflow: hidden; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 40px var(--accent-glow);
+            margin-bottom: 40px; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid var(--glass-border); position: relative;
+            background: rgba(255,255,255,0.02);
+        }
+        #art-zone img { width: 100%; height: 100%; object-fit: cover; }
+
+        .track-meta { text-align: center; margin-bottom: 30px; }
+        .track-meta h1 { font-size: 2rem; font-weight: 800; margin: 0 0 8px; letter-spacing: -0.5px; }
+        .track-meta p { color: var(--accent); font-weight: 600; margin: 0; font-size: 0.95rem; opacity: 0.9; }
+
+        #lyrics-container {
+            width: 100%; max-width: 600px; height: 25vh; overflow-y: auto;
+            text-align: center; display: none; margin-bottom: 30px;
+            mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
+        }
+        #lyrics-container::-webkit-scrollbar { display: none; }
+
+        .lyric-line { font-size: 1.5rem; font-weight: 700; color: rgba(255,255,255,0.25); margin: 24px 0; transition: 0.3s ease; }
+        .lyric-line.active { color: var(--accent); transform: scale(1.08); text-shadow: 0 0 20px var(--accent-glow); }
+
+        /* Player Controls */
+        .player-controls { width: 100%; max-width: 550px; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(20px); border: 1px solid var(--glass-border); padding: 25px 35px; border-radius: 2rem; box-shadow: 0 15px 35px rgba(0,0,0,0.4); }
+        
+        .time-row { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-dim); font-weight: 600; margin-bottom: 8px; }
+
+        input[type="range"] { 
+            width: 100%; accent-color: var(--accent); height: 6px; cursor: pointer; 
+            background: rgba(255,255,255,0.1); border-radius: 10px; margin-bottom: 25px;
+            appearance: none; -webkit-appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none; width: 14px; height: 14px; border-radius: 50%;
+            background: #ffffff; box-shadow: 0 0 10px var(--accent); cursor: pointer;
+            transition: transform 0.2s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.3); }
+
+        .playback-btns { display: flex; justify-content: center; align-items: center; gap: 35px; }
+        .icon-btn { background: none; border: none; color: white; cursor: pointer; font-size: 1.8rem; transition: all 0.2s; opacity: 0.85; }
+        .icon-btn:hover { opacity: 1; transform: scale(1.1); color: var(--accent); }
+        .play-main { 
+            width: 64px; height: 64px; border-radius: 50%; 
+            background: var(--brand-gradient); display: flex; align-items: center; justify-content: center;
+            font-size: 1.8rem !important; box-shadow: 0 10px 25px var(--accent-glow);
+            opacity: 1 !important;
+        }
+        .play-main:hover { transform: scale(1.08) !important; color: #fff !important; }
+
+        .btn-add { 
+            background: var(--brand-gradient); color: white; border: none; padding: 14px 28px; 
+            border-radius: 14px; font-weight: 700; cursor: pointer; transition: all 0.3s;
+            box-shadow: 0 8px 20px var(--accent-glow); font-size: 0.9rem;
+        }
+        .btn-add:hover { transform: translateY(-2px); box-shadow: 0 12px 25px var(--accent-glow); }
+
+        /* Search Overlay & Tabs */
+        .overlay { position: fixed; inset: 0; background: rgba(2, 4, 10, 0.94); backdrop-filter: blur(30px); z-index: 100; display: none; padding: 40px; flex-direction: column; }
+        .search-box-input {
+            width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); 
+            padding: 22px 30px; border-radius: 1.5rem; color: white; font-size: 1.2rem; outline: none; margin-top: 20px;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5); transition: border-color 0.3s;
+        }
+        .search-box-input:focus { border-color: var(--accent); box-shadow: 0 0 25px rgba(0, 242, 254, 0.15), inset 0 2px 10px rgba(0,0,0,0.5); }
+
+        .search-tab {
+            background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border);
+            color: var(--text-dim); padding: 10px 24px; border-radius: 12px; font-weight: 700;
+            cursor: pointer; transition: all 0.2s; font-size: 0.85rem;
+        }
+        .search-tab:hover { background: rgba(0, 242, 254, 0.08); color: white; }
+        .search-tab.active { background: var(--brand-gradient); color: white; border-color: transparent; box-shadow: 0 4px 15px var(--accent-glow); }
+
+        body.lyric-mode #art-zone { width: 120px; height: 120px; margin-bottom: 20px; border-radius: 1.5rem; }
+        body.lyric-mode .track-meta h1 { font-size: 1.4rem; }
+    </style>
+</head>
+<body>
+
+    <div id="bg-blur-img"></div>
+    <div id="bg-overlay"></div>
+
+    <aside id="sidebar">
+        <div class="sidebar-header">
+            <h2>Central <span style="color:#ffffff">Music</span></h2>
+            <p style="font-size: 0.7rem; color: var(--accent); margin: 6px 0 0; font-weight: 700; letter-spacing: 1px;">AURA OS AUDIO SYSTEM</p>
+        </div>
+        <div id="queue-list"></div>
+        <div style="padding: 25px;">
+            <button class="btn-add" style="width:100%;" onclick="showOverlay('search-overlay')">+ Discover Tracks & Albums</button>
+        </div>
+        <div style="padding: 15px 30px; font-size: 0.7rem; color: var(--text-dim); border-top: 1px solid var(--glass-border); text-align: center;">
+            Central Music &bull; Aura OS
+        </div>
+    </aside>
+
+    <main>
+        <div id="art-zone">
+            <div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:rgba(0,242,254,0.05); color:var(--accent); font-weight:800; font-size:1.5rem; text-align:center; padding:20px;">Central Music</div>
+        </div>
+        
+        <div class="track-meta">
+            <h1 id="track-title">Ready for Launch</h1>
+            <p id="track-artist">Select or search a track, album or soundtrack to begin</p>
+        </div>
+
+        <div id="lyrics-container"></div>
+
+        <div class="player-controls">
+            <div class="time-row">
+                <span id="time-cur">0:00</span>
+                <span id="time-dur">0:00</span>
+            </div>
+            <input type="range" id="seek-bar" value="0" min="0" max="100">
+            <div class="playback-btns">
+                <button class="icon-btn" onclick="changeTrack(-1)" title="Previous">⏮</button>
+                <button id="play-btn" class="icon-btn play-main" onclick="togglePlay()" title="Play/Pause">▶</button>
+                <button class="icon-btn" onclick="changeTrack(1)" title="Next">⏭</button>
+                <button id="lyric-btn" class="icon-btn" style="font-size: 1.3rem; margin-left: 10px;" onclick="toggleLyrics()" title="Lyrics">🎤</button>
+            </div>
+        </div>
+    </main>
+
+    <div id="search-overlay" class="overlay">
+        <div style="max-width: 1000px; margin: 0 auto; width: 100%; height: 100%; display: flex; flex-direction: column; padding: 20px 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1 style="color: var(--accent); margin: 0; font-size: 2rem;">Discover Catalog</h1>
+                    <p style="color: var(--text-dim); margin: 5px 0 0; font-size: 0.9rem;">Browse tracks, full albums & game/movie soundtracks</p>
+                </div>
+                <button class="btn-add" style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);" onclick="hideOverlays()">✕ Close</button>
+            </div>
+            
+            <input type="text" class="search-box-input" id="search-box-input" placeholder="Search tracks, albums, or soundtracks..." 
+                   onkeypress="if(event.key==='Enter') execSearch(this.value)">
+
+            <!-- Search Category Tabs -->
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+                <button class="search-tab active" id="tab-track" onclick="setSearchType('track')">🎵 Tracks</button>
+                <button class="search-tab" id="tab-album" onclick="setSearchType('album')">💿 Albums</button>
+                <button class="search-tab" id="tab-soundtrack" onclick="setSearchType('soundtrack')">🎧 Soundtracks</button>
+            </div>
+
+            <div id="search-results" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; margin-top: 25px; overflow-y: auto; flex: 1; padding-bottom: 40px;"></div>
+        </div>
+    </div>
+
+    <audio id="player"></audio>
+
+    <script>
+        // Ensure miniplayer stays hidden while inside Central Music app
+        localStorage.setItem('aura_in_music_app', 'true');
+        window.addEventListener('beforeunload', () => {
+            localStorage.setItem('aura_in_music_app', 'false');
+        });
+
+        const audio = document.getElementById('player');
+        const bgBlur = document.getElementById('bg-blur-img');
+        const lyricsContainer = document.getElementById('lyrics-container');
+        
+        let queue = JSON.parse(localStorage.getItem('t9_queue') || '[]');
+        let currentIndex = -1;
+        let currentTrackData = null;
+        let lyricsData = [];
+        let isLyricMode = false;
+        let currentSearchType = 'track';
+
+        const WORKER_URL = "https://centraltok.zaellacruze1.workers.dev";
+        const CLIENT_ID = "so5r9Dsxv6jJRgHa5fGXfevkxr4VgNJf";
+
+        function cleanQuery(str) {
+            return str.replace(/[^a-zA-Z0-9 ]/g, '').trim().replace(/\s+/g, '+');
+        }
+
+        function setSearchType(type) {
+            currentSearchType = type;
+            document.querySelectorAll('.search-tab').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${type}`).classList.add('active');
+            const box = document.getElementById('search-box-input');
+            if (box && box.value) {
+                execSearch(box.value);
+            }
+        }
+
+        async function execSearch(query) {
+            const container = document.getElementById('search-results');
+            container.innerHTML = `<div style="color:var(--accent); grid-column: 1/-1; text-align:center; padding:40px; font-weight:700;">Searching ${currentSearchType}s...</div>`;
+            
+            let results = [];
+            let entityParam = currentSearchType === 'album' ? 'album' : currentSearchType === 'soundtrack' ? 'album' : 'musicTrack';
+            let termQuery = currentSearchType === 'soundtrack' ? `${query} soundtrack` : query;
+
+            try {
+                const itunesRes = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(termQuery)}&entity=${entityParam}&limit=24`);
+                const itunesData = await itunesRes.json();
+                if (itunesData.results) {
+                    results = itunesData.results.map(item => ({
+                        title: item.trackName || item.collectionName,
+                        artist: item.artistName,
+                        artwork: item.artworkUrl100 ? item.artworkUrl100.replace('100x100bb', '600x600bb') : '',
+                        url: item.previewUrl || '',
+                        streamUrl: item.previewUrl || ''
+                    }));
+                }
+            } catch (err) {
+                console.error("Search failed", err);
+            }
+
+            if (!results || results.length === 0) {
+                try {
+                    const res = await fetch(`${WORKER_URL}/s/${cleanQuery(query)}`);
+                    const data = await res.json();
+                    results = data.results || data;
+                } catch(e) {}
+            }
+
+            let list = [];
+            if (Array.isArray(results)) {
+                list = results;
+            } else if (results && Array.isArray(results.results)) {
+                list = results.results;
+            } else if (results && typeof results === 'object') {
+                const found = Object.values(results).find(v => Array.isArray(v));
+                list = found || [];
+            }
+
+            container.innerHTML = '';
+            if (!list || list.length === 0) {
+                container.innerHTML = `<div style="color:var(--text-dim); grid-column: 1/-1; text-align:center; padding:40px;">No ${currentSearchType}s found. Try another search.</div>`;
+                return;
+            }
+
+            list.forEach(t => {
+                const card = document.createElement('div');
+                card.style.cssText = "background: rgba(255,255,255,0.03); padding: 15px; border-radius: 16px; cursor: pointer; border: 1px solid var(--glass-border); transition:0.25s;";
+                card.onmouseover = () => { card.style.borderColor = "var(--accent)"; card.style.background = "rgba(0,242,254,0.05)"; };
+                card.onmouseout = () => { card.style.borderColor = "var(--glass-border)"; card.style.background = "rgba(255,255,255,0.03)"; };
+                card.onclick = () => { 
+                    if (t.streamUrl) {
+                        addToQueue(t); 
+                        hideOverlays();
+                    } else {
+                        // Album or soundtrack item clicked: search for tracks within it
+                        document.getElementById('search-box-input').value = t.title + ' ' + t.artist;
+                        execSearch(t.title);
+                    }
+                };
+                card.innerHTML = `<img src="${t.artwork || t.artworkUrl100 || ''}" style="width:100%; aspect-ratio:1; border-radius:12px; object-fit:cover; margin-bottom:12px; background:#050b14;">
+                                  <div style="font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:0.95rem; margin-bottom:4px;">${t.title || t.trackName}</div>
+                                  <div style="color:var(--text-dim); font-size:0.75rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.artist || t.artistName} (${currentSearchType.toUpperCase()})</div>`;
+                container.appendChild(card);
+            });
+        }
+
+        async function playTrack(index) {
+            if (index < 0 || index >= queue.length) return;
+            currentIndex = index;
+            let track = queue[index];
+
+            if (track.streamUrl) {
+                currentTrackData = {
+                    song: track.title,
+                    title: track.title,
+                    artist: track.artist,
+                    artwork: track.artwork,
+                    streamUrl: track.streamUrl
+                };
+                audio.src = track.streamUrl;
+                document.getElementById('art-zone').innerHTML = `<img src="${track.artwork || ''}">`;
+                bgBlur.style.backgroundImage = `url(${track.artwork || ''})`;
+                document.getElementById('track-title').innerText = track.title;
+                document.getElementById('track-artist').innerText = track.artist;
+                audio.play();
+                document.getElementById('play-btn').innerText = '⏸';
+                updateQueueUI();
+                if (isLyricMode) fetchLyrics(track.artist, track.title);
+                return;
+            }
+
+            try {
+                const slug = track.url.replace(/https?:\/\/soundcloud\.com\//, '');
+                const res = await fetch(`${WORKER_URL}/d/${slug}`);
+                const data = await res.json();
+                
+                currentTrackData = data;
+                audio.src = data.streamUrl;
+                document.getElementById('art-zone').innerHTML = `<img src="${data.artwork}">`;
+                bgBlur.style.backgroundImage = `url(${data.artwork})`;
+                document.getElementById('track-title').innerText = data.song || data.title;
+                document.getElementById('track-artist').innerText = data.artist;
+                audio.play();
+                document.getElementById('play-btn').innerText = '⏸';
+                updateQueueUI();
+                
+                if (isLyricMode) fetchLyrics(data.artist, data.song || data.title);
+            } catch (e) {
+                if (track.url && (track.url.startsWith('http://') || track.url.startsWith('https://'))) {
+                    currentTrackData = track;
+                    audio.src = track.url;
+                    document.getElementById('art-zone').innerHTML = `<img src="${track.artwork || ''}">`;
+                    bgBlur.style.backgroundImage = `url(${track.artwork || ''})`;
+                    document.getElementById('track-title').innerText = track.title;
+                    document.getElementById('track-artist').innerText = track.artist;
+                    audio.play();
+                    document.getElementById('play-btn').innerText = '⏸';
+                    updateQueueUI();
+                } else {
+                    alert("Playback Error: Unable to stream track.");
+                }
+            }
+        }
+
+        function toggleLyrics() {
+            isLyricMode = !isLyricMode;
+            document.body.classList.toggle('lyric-mode', isLyricMode);
+            lyricsContainer.style.display = isLyricMode ? 'block' : 'none';
+            if (isLyricMode && currentTrackData) fetchLyrics(currentTrackData.artist, currentTrackData.song || currentTrackData.title);
+        }
+
+        async function fetchLyrics(artist, title) {
+            lyricsContainer.innerHTML = '<p class="lyric-line" style="color:var(--accent)">Scanning Satellite Data...</p>';
+            let synced = false;
+            try {
+                const res = await fetch(`https://lrclib.net/api/search?q=${encodeURIComponent(artist + ' ' + title)}`);
+                if (res.ok) {
+                    const list = await res.json();
+                    if (Array.isArray(list) && list.length > 0) {
+                        const match = list[0];
+                        if (match.syncedLyrics) {
+                            const lines = match.syncedLyrics.split('\n');
+                            lyricsData = lines.map(line => {
+                                const m = line.match(/\[(\d+):(\d+\.\d+)\](.*)/);
+                                return m ? { time: parseInt(m[1]) * 60 + parseFloat(m[2]), text: m[3] } : null;
+                            }).filter(x => x);
+                            if (lyricsData.length > 0) synced = true;
+                        } else if (match.plainLyrics) {
+                            const lines = match.plainLyrics.split('\n').filter(l => l.trim().length > 0);
+                            lyricsData = lines.map((text, i) => ({ time: i * 4, text }));
+                            if (lyricsData.length > 0) synced = true;
+                        }
+                    }
+                }
+            } catch (e) {}
+
+            if (synced) {
+                lyricsContainer.innerHTML = lyricsData.map((l, i) => `<div class="lyric-line" id="l-${i}">${l.text}</div>`).join('');
+            } else {
+                const fallbackTexts = [
+                    `♪ Playing ${title} ♪`,
+                    `Artist: ${artist}`,
+                    `Feel the rhythm flowing...`,
+                    `Aura OS Audio Stream`,
+                    `${title} - Live Mix`,
+                    `Enjoy the vibe...`,
+                    `Keep the music playing ♪`
+                ];
+                lyricsData = fallbackTexts.map((text, i) => ({ time: i * 5, text }));
+                lyricsContainer.innerHTML = lyricsData.map((l, i) => `<div class="lyric-line" id="l-${i}">${l.text}</div>`).join('');
+            }
+        }
+
+        function broadcastState() {
+            if (!currentTrackData) return;
+            localStorage.setItem('aura_current_track', JSON.stringify({
+                title: currentTrackData.song || currentTrackData.title,
+                artist: currentTrackData.artist,
+                artwork: currentTrackData.artwork,
+                isPlaying: !audio.paused,
+                currentTime: audio.currentTime,
+                duration: audio.duration
+            }));
+        }
+
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'aura_player_command' && e.newValue) {
+                try {
+                    const cmd = JSON.parse(e.newValue);
+                    if (cmd.action === 'togglePlay') togglePlay();
+                    if (cmd.action === 'next') changeTrack(1);
+                    if (cmd.action === 'prev') changeTrack(-1);
+                    if (cmd.action === 'seek') audio.currentTime = cmd.time;
+                } catch(err) {}
+            }
+        });
+
+        audio.ontimeupdate = () => {
+            const b = document.getElementById('seek-bar');
+            b.max = audio.duration || 0; b.value = audio.currentTime;
+            document.getElementById('time-cur').innerText = formatTime(audio.currentTime);
+            document.getElementById('time-dur').innerText = formatTime(audio.duration);
+            broadcastState();
+
+            if (isLyricMode && lyricsData.length > 0) {
+                const idx = lyricsData.findIndex((l, i) => audio.currentTime >= l.time && (!lyricsData[i+1] || audio.currentTime < lyricsData[i+1].time));
+                if (idx !== -1) {
+                    document.querySelectorAll('.lyric-line').forEach(el => el.classList.remove('active'));
+                    const active = document.getElementById(`l-${idx}`);
+                    if (active) {
+                        active.classList.add('active');
+                        active.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            }
+        };
+
+        function togglePlay() { 
+            if(!audio.src) return;
+            audio.paused ? (audio.play(), document.getElementById('play-btn').innerText = '⏸') : (audio.pause(), document.getElementById('play-btn').innerText = '▶'); 
+        }
+        function changeTrack(dir) { playTrack(currentIndex + dir); }
+        function formatTime(s) { if(isNaN(s)) return "0:00"; const m=Math.floor(s/60), sc=Math.floor(s%60); return `${m}:${sc<10?'0':''}${sc}`; }
+        function showOverlay(id) { document.getElementById(id).style.display = 'flex'; }
+        function hideOverlays() { document.querySelectorAll('.overlay').forEach(o => o.style.display = 'none'); }
+        function addToQueue(t) { queue.push(t); save(); if (currentIndex === -1) playTrack(queue.length - 1); }
+        function save() { localStorage.setItem('t9_queue', JSON.stringify(queue)); updateQueueUI(); }
+        
+        function updateQueueUI() {
+            const list = document.getElementById('queue-list');
+            list.innerHTML = queue.map((t, i) => `
+                <div class="q-row ${i === currentIndex ? 'active' : ''}" onclick="playTrack(${i})">
+                    <img src="${t.artwork || t.artworkUrl100 || ''}">
+                    <div style="flex:1; overflow:hidden">
+                        <div style="font-weight:700; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; font-size:0.9rem;">${t.title || t.trackName}</div>
+                        <div style="font-size:0.75rem; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${t.artist || t.artistName}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('seek-bar').oninput = (e) => audio.currentTime = e.target.value;
+        audio.onended = () => changeTrack(1);
+        updateQueueUI();
+    </script>
+</body>
+</html>

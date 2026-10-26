@@ -1,60 +1,165 @@
 {
   "entities": {
-    "User": {
-      "title": "User",
-      "description": "User profile.",
+    "Call": {
+      "title": "Call",
+      "description": "Represents a WebRTC call session for signaling.",
       "type": "object",
       "properties": {
-        "uid": { "type": "string" },
-        "gamertag": { "type": "string", "maxLength": 30 },
-        "gamertagLower": { "type": "string", "maxLength": 30 },
-        "avatar": { "type": "string", "maxLength": 500 },
-        "status": { "type": "string", "enum": ["Online", "Appear offline", "Do not disturb"] },
-        "score": { "type": "number" },
-        "lastTrophyAt": { "type": "string", "format": "date-time" },
-        "recentGames": { "type": "array" },
-        "vibrationEnabled": { "type": "boolean" },
-        "homeTheme": { "type": "string" }
+        "id": { "type": "string" },
+        "callerId": { "type": "string" },
+        "receiverId": { "type": "string" },
+        "status": { "type": "string", "enum": ["initiating", "ringing", "active", "ended"] },
+        "offer": { "type": "object" },
+        "answer": { "type": "object" },
+        "callerCandidates": { "type": "array" },
+        "receiverCandidates": { "type": "array" },
+        "timestamp": { "type": "number" }
       },
-      "required": ["uid", "gamertag", "gamertagLower", "avatar", "status", "score", "lastTrophyAt"]
+      "required": ["id", "callerId", "receiverId", "status", "timestamp"]
     },
-    "FriendRequest": {
-      "title": "Friend Request",
-      "description": "Friend request from one user to another.",
+    "GroupChat": {
+      "title": "Group Chat",
+      "description": "A group chat with a voice channel.",
       "type": "object",
       "properties": {
-        "fromUid": { "type": "string" },
-        "fromGamertag": { "type": "string", "maxLength": 30 },
-        "toUid": { "type": "string" },
-        "status": { "type": "string", "enum": ["pending", "accepted", "rejected"] },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["fromUid", "fromGamertag", "toUid", "status", "createdAt"]
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "avatarUrl": { "type": "string" },
+        "memberIds": { "type": "array" },
+        "voiceChannel": {
+          "type": "object",
+          "properties": {
+            "active": { "type": "boolean" },
+            "participants": { "type": "array" }
+          }
+        }
+      }
     },
-    "Message": {
-      "title": "Message",
-      "description": "A chat message.",
+    "UserStatus": {
+      "title": "User Status",
+      "description": "Presence and status of a user.",
       "type": "object",
       "properties": {
-        "senderId": { "type": "string" },
-        "text": { "type": "string", "maxLength": 1000 },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "isTyping": { "type": "boolean" },
+        "typingIn": { "type": "string" },
+        "lastActive": { "type": "number" }
+      }
+    },
+    "GameData": {
+      "title": "Game Data",
+      "description": "User's progress and state for a specific game.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "gameId": { "type": "string" },
+        "data": { "type": "string" },
+        "updatedAt": { "type": "number" }
       },
-      "required": ["senderId", "text", "createdAt"]
+      "required": ["id", "userId", "gameId", "data", "updatedAt"]
+    },
+    "WatchParty": {
+      "title": "Watch Party",
+      "description": "A real-time session for synchronized video watching.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "hostId": { "type": "string" },
+        "currentVideoId": { "type": "string" },
+        "participants": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["playing", "paused"] },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["id", "hostId", "currentVideoId", "participants", "status", "createdAt", "updatedAt"]
+    },
+    "Announcement": {
+      "title": "Announcement",
+      "description": "A system-wide or targeted announcement banner.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "text": { "type": "string" },
+        "type": { "type": "string", "enum": ["global", "page", "game"] },
+        "targetPage": { "type": "string" },
+        "targetGameIds": { "type": "array", "items": { "type": "string" } },
+        "color": { "type": "string" },
+        "size": { "type": "string", "enum": ["sm", "md", "lg"] },
+        "createdAt": { "type": "number" },
+        "expiresAt": { "type": "number" },
+        "active": { "type": "boolean" }
+      },
+      "required": ["id", "text", "type", "color", "size", "createdAt", "active"]
+    },
+    "VerificationRequest": {
+      "title": "Verification Request",
+      "description": "A request for student verification badge.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "reason": { "type": "string" },
+        "schoolIdUrl": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "userId", "firstName", "lastName", "schoolIdUrl", "status", "createdAt"]
+    },
+    "SneakPeek": {
+      "title": "Sneak Peek",
+      "description": "Exclusive preview of an upcoming feature or roadmap drop.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "authorId": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "status": { "type": "string", "enum": ["rolling_out", "in_development", "testing", "concept"] },
+        "progressPercentage": { "type": "number" },
+        "targetVersion": { "type": "string" },
+        "tags": { "type": "array" },
+        "timestamp": { "type": "number" }
+      },
+      "required": ["id", "authorId", "title", "content", "status", "progressPercentage", "targetVersion", "timestamp"]
     }
   },
   "firestore": {
-    "users/{userId}": {
-      "schema": "User",
-      "description": "Stores user profiles."
+    "sneak_peeks/{peekId}": {
+      "schema": "SneakPeek",
+      "description": "Sneak peeks and dev roadmap drops."
     },
-    "friendRequests/{requestId}": {
-      "schema": "FriendRequest",
-      "description": "Stores friend requests and relationships."
+    "calls/{callId}": {
+      "schema": "Call",
+      "description": "WebRTC signaling data for calls."
     },
-    "chats/{chatId}/messages/{messageId}": {
-      "schema": "Message",
-      "description": "Stores direct messages between two users. chatId is constructed as uid1_uid2."
+    "group_chats/{groupId}": {
+      "schema": "GroupChat",
+      "description": "Group chat data and voice state."
+    },
+    "user_statuses/{userId}": {
+      "schema": "UserStatus",
+      "description": "User presence information."
+    },
+    "game_data/{gameDataId}": {
+      "schema": "GameData",
+      "description": "Persistent game progress for users."
+    },
+    "watch_parties/{partyId}": {
+      "schema": "WatchParty",
+      "description": "Synchronized video watching sessions."
+    },
+    "announcements/{announcementId}": {
+      "schema": "Announcement",
+      "description": "System announcements and targeted banners."
+    },
+    "verification_requests/{requestId}": {
+      "schema": "VerificationRequest",
+      "description": "Student verification applications."
     }
   }
 }
