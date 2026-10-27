@@ -78,10 +78,22 @@ export const signInWithGoogle = async () => {
 
 export const signInAsGuest = async () => {
   try {
+    if (!auth) {
+      return {
+        uid: 'guest_' + Math.random().toString(36).substring(2, 9),
+        isAnonymous: true,
+        displayName: 'Guest User',
+      };
+    }
     const result = await signInAnonymously(auth);
     return result.user;
-  } catch (error) {
-    console.error("Error signing in anonymously", error);
-    throw error;
+  } catch (error: any) {
+    console.warn("Firebase anonymous authentication is disabled or restricted in Firebase Console (auth/admin-restricted-operation). Using guest fallback session.", error?.code || error?.message);
+    return {
+      uid: 'guest_' + Math.random().toString(36).substring(2, 9),
+      isAnonymous: true,
+      displayName: 'Guest User',
+    };
   }
 };
+

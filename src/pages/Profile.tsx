@@ -68,7 +68,20 @@ export function Profile() {
 
   const loadProfile = async () => {
     const users = await getUsers();
-    const user = users.find(u => u.handle === handle);
+    const raw = handle || '';
+    const cleanHandle = raw.replace(/^@+/, '').trim().toLowerCase();
+    const user = users.find(u => {
+      const uHandle = (u.handle || '').replace(/^@+/, '').trim().toLowerCase();
+      const uUsername = (u.username || '').trim().toLowerCase();
+      return (
+        uHandle === cleanHandle ||
+        u.handle === raw ||
+        `@${u.handle}` === raw ||
+        uUsername === cleanHandle ||
+        u.id === raw
+      );
+    });
+
     if (user) {
       setProfileUser(user);
       setIsFollowing((currentUser?.following || []).includes(user.id) || false);
@@ -104,6 +117,8 @@ export function Profile() {
         const allAppeals = await getAppeals();
         setMyAppeals(allAppeals.filter(a => a.userId === user.id && a.videoId));
       }
+    } else {
+      setProfileUser(null);
     }
     setLoading(false);
   };

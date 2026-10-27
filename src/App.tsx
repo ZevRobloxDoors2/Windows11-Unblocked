@@ -59,7 +59,6 @@ export default function App() {
               <Route path="/video/:videoId" element={<Home />} />
               <Route path="/explore" element={<Explore />} />
               <Route path="/upload" element={<Upload />} />
-              <Route path="/@:handle" element={<Profile />} />
               <Route path="/profile/:handle" element={<Profile />} />
               <Route path="/messages" element={<Inbox />} />
               <Route path="/messages/:handle" element={<Chat />} />
@@ -72,6 +71,8 @@ export default function App() {
               <Route path="/sneak-peeks" element={<SneakPeeks />} />
               <Route path="/games-apps" element={<GamesApps />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/:handle" element={<Profile />} />
+              <Route path="*" element={<Home />} />
             </Routes>
           </Layout>
         </AuthWrapper>

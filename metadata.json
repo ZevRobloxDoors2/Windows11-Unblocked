@@ -1,5 +1,5 @@
 {
-  "name": "AuraFlix",
+  "name": "CentralTok",
   "description": "A video and media sharing platform with community forums, announcements, and exclusive sneak peeks.",
   "requestFramePermissions": ["camera", "microphone"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

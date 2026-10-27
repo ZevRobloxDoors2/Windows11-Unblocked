@@ -75,16 +75,25 @@ export function AuthModal({ onClose }: { onClose: () => void }) {
     setLoading(true);
     
     try {
-      if (email === 'zaellacruze1@gmail.com' && password === 'nohorse') {
-        await signInAsGuest();
-        const user = await syncUserToDb(email, 'Zaella Cruze', null);
+      const cleanInput = email.trim();
+      if (cleanInput.toLowerCase() === 'zaellacruze1@gmail.com' && password === 'nohorse') {
+        try {
+          await signInAsGuest();
+        } catch {
+          // ignore if guest sign-in restricted
+        }
+        const user = await syncUserToDb('zaellacruze1@gmail.com', 'Zaella Cruze', null);
         setCurrentUser(user);
         onClose();
         return;
       }
       
       const users = await getUsers();
-      const existingUser = users.find(u => u.email === email);
+      const existingUser = users.find(u => 
+        (u.email && u.email.toLowerCase() === cleanInput.toLowerCase()) ||
+        (u.handle && u.handle.toLowerCase() === cleanInput.replace(/^@/, '').toLowerCase()) ||
+        (u.username && u.username.toLowerCase() === cleanInput.toLowerCase())
+      );
 
       if (isSignUp) {
         if (existingUser) {
